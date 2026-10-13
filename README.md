@@ -13,6 +13,12 @@
 | `docs/` | ADR · 이벤트 목록 · 시크릿 목록(값 없음) · 인프라 · 로그 컨벤션 | 전원 | 전원 |
 | `.github/workflows/` | `infra`(plan) · `infra-schedule`(08:00 apply · 22:00 destroy) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 |
 
+## 전체 아키텍처
+
+![곳간 아키텍처 구조도](docs/aws-architecture.svg)
+
+주황 점선 프레임(EKS 클러스터 · 노드 · 파드 · EBS)이 매일 08:00 생성 · 22:00 삭제되는 부분이고, 나머지(VPC · EIP · ECR · S3 · SNS/SQS · DynamoDB · IAM)는 상시입니다. 네트워크 · 서브넷 · 보안 그룹 상세는 [가이드라인 04장](https://gotganguide.vercel.app/guideline#s4).
+
 ## 매일 돌아가는 것
 
 ```
