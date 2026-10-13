@@ -1,4 +1,5 @@
 # 서비스별 항목 — CI(backend.yml) 는 자기 서비스의 tag 줄만 바꾼다. 공유 파일: 도메인별 구획 안에서만 수정 (컨벤션 1-4)
+# 모든 Deployment 는 templates/deployment.yaml 이 nodeSelector tier=app(백 티어 노드 그룹) + 파드 라벨 tier=backend(NetworkPolicy — DB 접근 허용 기준) 를 붙인다 (10/13 3차). 서비스별로 바꾸지 않는다
 namespace: sesac-gojigi
 
 image:

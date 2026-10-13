@@ -1,5 +1,5 @@
 # 클러스터 부트스트랩 — cluster/ apply 직후 (infra-schedule 이 호출) 또는 수동. 담당 구지훈 · 10/13 결정 3
-# 순서: kubeconfig → namespace · configmap → secrets-sync → db(MySQL · Redis) → keycloak(realm ConfigMap) → observability → ArgoCD → application.yaml → gateway NLB 주소 확인
+# 순서: kubeconfig → namespace · configmap · networkpolicy(DB 티어) → secrets-sync → db(MySQL · Redis, db 노드) → keycloak(realm ConfigMap) → observability → ArgoCD → application.yaml → gateway NLB 주소 확인
 # 매일 08:00 빈 DB 에서 시작 — 데이터는 Flyway 시드(R__demo_seed.sql) · Keycloak 은 realm import + 시드 스크립트(이경석) 로 복원
 name: bootstrap
 on:
@@ -36,12 +36,13 @@ jobs:
         run: aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_NAME }} --region ${{ vars.AWS_REGION }}
 
       # ── 1. namespace · configmap (secrets-sync 는 위 job 에서 이미 끝남 — namespace 는 그쪽에서도 보장한다)
-      - name: namespace · app-config
+      - name: namespace · app-config · networkpolicy
         run: |
           kubectl apply -f deploy/k8s/00-namespace.yaml
           kubectl apply -f deploy/k8s/01-configmap.yaml
+          kubectl apply -f deploy/k8s/02-networkpolicy.yaml   # DB 티어: 3306 · 6379 는 tier=backend 파드만, DB 파드 egress 는 DNS 뿐
 
-      # ── 2. DB (StorageClass → MySQL + init-schemas.sh ConfigMap → Redis)
+      # ── 2. DB (StorageClass → MySQL + init-schemas.sh ConfigMap → Redis) — db 노드 그룹(tier=db) 에 뜬다
       - name: db
         run: |
           kubectl apply -f deploy/k8s/db/storageclass.yaml
@@ -58,7 +59,7 @@ jobs:
           kubectl apply -f deploy/k8s/keycloak/keycloak.yaml
           kubectl rollout status deployment/keycloak -n "$NS" --timeout=600s
 
-      # ── 4. 관측성 (monitoring namespace · Prometheus · Loki · Grafana · Zipkin · exporters)
+      # ── 4. 관측성 (monitoring namespace · Prometheus · Loki · Grafana · Zipkin · kube-state-metrics — blackbox exporter 없음)
       - name: observability
         run: |
           kubectl apply -f deploy/observability/00-namespace.yaml

@@ -1,5 +1,96 @@
-# MySQL 8.4 — Headless Service + StatefulSet(1) + PVC(ebs-sc) + init-schemas.sh ConfigMap 마운트(/docker-entrypoint-initdb.d)
+# MySQL 8.4 — Headless Service + StatefulSet(1) + PVC(ebs-sc, EBS 볼륨 gp3 디스크 20Gi) + init-schemas.sh ConfigMap 마운트(/docker-entrypoint-initdb.d)
 # args: --default-time-zone=+09:00 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci (컨벤션 3-5 · 3-9)
 # 비밀번호는 K8s Secret mysql-secret 을 envFrom 으로 (MYSQL_ROOT_PASSWORD · USER/STORE/PRODUCT/ORDER/PAYMENT/REVIEW/SETTLEMENT/KEYCLOAK_DB_PASSWORD).
 # mysql-secret 은 secrets-sync 워크플로가 GitHub Secrets 에서 만든다 (docs/secrets.md). requests 1Gi · innodb_buffer_pool_size=256M. 담당 구지훈
+# ConfigMap mysql-init 은 bootstrap 워크플로가 `kubectl create configmap mysql-init --from-file=init-schemas.sh` 로 만든다
 # 클러스터는 매일 22:00 destroy → 08:00 재생성이라 PVC 도 매일 새로 만들어진다 — 데이터는 Flyway 시드(R__demo_seed.sql) 로 복원
+# DB 티어(10/13 3차): nodeSelector tier=db + toleration 으로 db 노드 그룹(t3.medium ×1, 2a) 에만 뜬다. 파드 라벨 tier=db 는 02-networkpolicy.yaml 의 대상 선택자
+#   → 3306 은 tier=backend 파드(업무 서비스 · Keycloak) 만 접근, 이 파드의 egress 는 DNS 뿐. EBS 볼륨이 2a 에 묶이므로 노드도 2a 고정
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: sesac-gojigi
+  labels:
+    app: mysql
+    tier: db
+spec:
+  clusterIP: None                     # headless — StatefulSet 파드 DNS mysql-0.mysql, 앱은 mysql.sesac-gojigi.svc.cluster.local(01-configmap DB_HOST)
+  selector:
+    app: mysql
+  ports:
+    - { port: 3306, targetPort: 3306 }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: sesac-gojigi
+  labels:
+    app: mysql
+    tier: db
+spec:
+  serviceName: mysql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+        tier: db                      # NetworkPolicy 대상 (02-networkpolicy.yaml)
+    spec:
+      nodeSelector:
+        tier: db                      # db 노드 그룹(t3.medium, 2a) 에만
+      tolerations:
+        - { key: tier, operator: Equal, value: db, effect: NoSchedule }
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          args:
+            - --default-time-zone=+09:00                 # DB · JDBC · JVM 세 곳 모두 Asia/Seoul (컨벤션 3-5)
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+            - --innodb-buffer-pool-size=256M             # requests 1Gi 안에서
+          envFrom:
+            - secretRef: { name: mysql-secret }        # MYSQL_ROOT_PASSWORD + *_DB_PASSWORD 8개 → init-schemas.sh 가 읽음
+          env:
+            - { name: TZ, value: Asia/Seoul }
+          ports:
+            - { containerPort: 3306 }
+          resources:
+            requests: { cpu: 250m, memory: 1Gi }
+            limits: { memory: 1536Mi }
+          startupProbe:                                  # 최초 기동 + init-schemas.sh 실행 시간 대기 (최대 5s × 60 = 5분)
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            periodSeconds: 20
+            failureThreshold: 3
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/mysql }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }   # 최초 1회 — 스키마 8개 · 계정
+      volumes:
+        - name: init
+          configMap:
+            name: mysql-init
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: ebs-sc                       # EBS 볼륨(gp3 디스크) — AZ 2a 에 묶임
+        resources:
+          requests:
+            storage: 20Gi

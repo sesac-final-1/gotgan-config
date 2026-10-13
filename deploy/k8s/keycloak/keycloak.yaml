@@ -18,7 +18,10 @@ spec:
     metadata:
       labels:
         app: keycloak
+        tier: backend                                  # NetworkPolicy(02-networkpolicy.yaml) — keycloakdb(MySQL 3306) 에 닿으려면 필요
     spec:
+      nodeSelector:
+        tier: app                                      # 백 티어 노드 그룹
       containers:
         - name: keycloak
           image: quay.io/keycloak/keycloak:26.8          # 로컬 docker-compose 와 같은 버전으로 고정

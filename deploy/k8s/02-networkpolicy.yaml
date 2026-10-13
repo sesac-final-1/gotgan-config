@@ -1,0 +1,45 @@
+# DB 티어 NetworkPolicy (10/13 3차 · 가이드라인 04장 · 컨벤션 5-3). 담당 구지훈
+# - db-ingress-from-backend : tier=db 파드(MySQL 3306 · Redis 6379) 로 들어오는 트래픽은 같은 네임스페이스의 tier=backend 파드만
+# - db-egress-deny-except-dns : tier=db 파드는 밖으로 나가지 않는다 (kube-dns 53 만 허용 → NAT 경로 없음)
+# tier=backend 라벨은 Helm deployment.yaml(업무 서비스 · gateway) 과 keycloak.yaml 이 붙인다. 라벨이 없는 파드(디버그용 mysql 클라이언트 등)는 DB 에 닿지 못한다
+# bootstrap 워크플로가 01-configmap.yaml 직후 적용한다. VPC CNI 의 NetworkPolicy 는 EKS 애드온 설정 enableNetworkPolicy=true 가 필요 (cluster/main.tf)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-ingress-from-backend
+  namespace: sesac-gojigi
+spec:
+  podSelector:
+    matchLabels:
+      tier: db
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: backend             # 같은 네임스페이스(sesac-gojigi) 의 백 티어 파드만
+      ports:
+        - { protocol: TCP, port: 3306 }   # MySQL
+        - { protocol: TCP, port: 6379 }   # Redis
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-egress-deny-except-dns
+  namespace: sesac-gojigi
+spec:
+  podSelector:
+    matchLabels:
+      tier: db
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }

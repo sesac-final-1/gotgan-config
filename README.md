@@ -5,8 +5,8 @@
 | 폴더 | 내용 | 실행 주체 | 담당 |
 |---|---|---|---|
 | `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `cluster` → `cicd` → `app` (apply 순서) | `infra-schedule` 워크플로(OIDC) · 구지훈 | 구지훈 |
-| `deploy/k8s/` | 기본 계층 — namespace · configmap · MySQL · Redis · Keycloak | `bootstrap` 워크플로 | 구지훈 · 이경석(keycloak) |
-| `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · System Status 대시보드 | `bootstrap` 워크플로 | 박지연 |
+| `deploy/k8s/` | 기본 계층 — namespace · configmap · `02-networkpolicy`(DB 티어) · MySQL · Redis · Keycloak | `bootstrap` 워크플로 | 구지훈 · 이경석(keycloak) |
+| `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · System Status 대시보드 (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
 | `deploy/helm/sesac-gojigi-app/` | 서비스 9개 Deployment · Service · ServiceAccount — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
 | `deploy/argocd/` | ArgoCD Application ("이 저장소의 helm 폴더를 감시하라") | `bootstrap` 워크플로 | 이경석 |
 | `scripts/` | scale-nodes · duckdns-update · build-and-push (수동 보조) | 사람 | 구지훈 |
@@ -17,13 +17,13 @@
 
 ![곳간 아키텍처 구조도](docs/aws-architecture.svg)
 
-주황 점선 프레임(EKS 클러스터 · 노드 · 파드 · EBS)이 매일 08:00 생성 · 22:00 삭제되는 부분이고, 나머지(VPC · EIP · ECR · S3 · SNS/SQS · DynamoDB · IAM)는 상시입니다. 네트워크 · 서브넷 · 보안 그룹 상세는 [가이드라인 04장](https://gotganguide.vercel.app/guideline#s4).
+**3티어**입니다 — 프론트 티어(Vercel) → 백 티어(EKS `app` 노드 그룹 t3.large ×2: gateway · 업무 서비스 · Keycloak · 관측성 · ArgoCD) → DB 티어(EKS `db` 노드 그룹 t3.medium ×1: MySQL · Redis만, NetworkPolicy로 백 티어 파드만 3306 · 6379 접근). 프론트가 백 티어를 거치지 않는 유일한 예외는 파일 업로드(백엔드가 발급한 presigned URL로 브라우저 → S3 PUT). 주황 점선 프레임(EKS 클러스터 · 노드 · 파드 · EBS 볼륨)이 매일 08:00 생성 · 22:00 삭제되는 부분이고, 나머지(VPC · EIP · ECR · S3 · SNS/SQS · DynamoDB · IAM)는 상시입니다. 네트워크 · 서브넷 · 보안 그룹 상세는 [가이드라인 04장](https://gotganguide.vercel.app/guideline#s4).
 
 ## 매일 돌아가는 것
 
 ```
 KST 08:00  infra-schedule(apply)  → terraform apply infra/terraform/cluster
-           └→ bootstrap           → k8s 기본 계층 → secrets-sync(GitHub Secrets → K8s Secret) → MySQL · Redis · Keycloak
+           └→ bootstrap           → k8s 기본 계층(namespace · configmap · networkpolicy) → secrets-sync(GitHub Secrets → K8s Secret) → MySQL · Redis(db 노드) · Keycloak
                                     → observability → ArgoCD 설치 + Application → 서비스 9개 배포 (약 20분)
 KST 22:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
 ```
