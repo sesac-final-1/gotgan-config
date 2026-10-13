@@ -1,0 +1,20 @@
+# Terraform — 상태는 S3, provider 캐시는 init
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# 비밀 값 — GitHub Secrets 에만
+.env
+.env.*
+!.env.example
+*.pem
+*-secret.yaml
+
+# 개인 환경
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

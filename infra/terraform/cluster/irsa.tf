@@ -1,0 +1,3 @@
+# IRSA 역할은 cluster/ 에 둔다 — 신뢰 정책이 그날의 EKS OIDC 공급자를 가리키므로 클러스터와 함께 매일 재생성 (이름이 같아 Helm values 의 roleArn 은 불변). 권한 대상(S3 · SQS · SNS) 은 app/ remote state 에서 읽는다
+# sesac-gojigi-{service}-irsa — user(sqs) · store(sns store-events · s3 seller-docs) · product(sqs · s3 images/products) · order(sns order-events) · review(sqs · s3 images/reviews) · settlement(sqs · sns settlement-events · s3 reports GetObject — 명세서 presign)
+# gateway · payment · admin 은 IRSA 없음 (시크릿은 GitHub Secrets → secrets-sync 워크플로가 K8s Secret 으로 만든다 — KMS · Secrets Manager 권한 없음). grafana: CloudWatch 읽기

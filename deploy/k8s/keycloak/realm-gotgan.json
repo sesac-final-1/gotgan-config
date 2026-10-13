@@ -1,0 +1,77 @@
+{
+  "realm": "gotgan",
+  "displayName": "곳간 GOTGAN",
+  "enabled": true,
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 1209600,
+  "ssoSessionMaxLifespan": 1209600,
+  "roles": {
+    "realm": [
+      {
+        "name": "BUYER",
+        "description": "구매자 — 가입 시 기본"
+      },
+      {
+        "name": "SELLER",
+        "description": "판매자 — 입점 승인 시 추가 (StoreApproved)"
+      },
+      {
+        "name": "ADMIN",
+        "description": "스토어 관리자 — 시드 계정으로만"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "gotgan-backend",
+      "name": "gotgan backend (user-service 대리 호출)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "${GOTGAN_BACKEND_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "user_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "user_id",
+            "claim.name": "user_id",
+            "jsonType.label": "long",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "store_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "store_id",
+            "claim.name": "store_id",
+            "jsonType.label": "long",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "roles",
+            "multivalued": "true",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ]
+}

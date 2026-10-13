@@ -1,0 +1,21 @@
+# "이 저장소의 deploy/helm 폴더를 감시하라" — kubectl 1회 (담당 이경석 · 가이드라인 12장)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sesac-gojigi-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sesac-final-1/gotgan-config.git   # 10/13 결정 1: 저장소 3분할 — config 저장소의 deploy/helm 감시
+    targetRevision: main
+    path: deploy/helm/sesac-gojigi-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sesac-gojigi
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false

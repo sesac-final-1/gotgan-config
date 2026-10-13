@@ -1,0 +1,138 @@
+# 인프라 일일 스케줄 — 08:00 KST cluster/ apply → bootstrap · 22:00 KST cluster/ destroy (10/13 결정 3). 담당 구지훈
+# vpc · ecr · cicd · app(S3 · SNS/SQS · DynamoDB · IRSA · EIP · SSM)은 상시 유지 — 이 워크플로는 infra/terraform/cluster/ 만 다룬다
+# apply/destroy 는 이 워크플로(OIDC 역할) 또는 구지훈만 (컨벤션 5-2). 수동: Actions → infra-schedule → Run workflow → action
+name: infra-schedule
+on:
+  schedule:
+    - cron: '0 23 * * *'   # UTC 23:00 = KST 08:00 → apply
+    - cron: '0 13 * * *'   # UTC 13:00 = KST 22:00 → destroy
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'apply | destroy'
+        required: true
+        type: choice
+        options: [apply, destroy]
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read    # bootstrap 은 workflow_call 로 호출 (gh workflow run 방식이면 actions: write 필요)
+
+concurrency:
+  group: infra-schedule   # apply 와 destroy 가 겹치지 않게 (호출되는 bootstrap · secrets-sync 는 다른 그룹 — 같은 그룹이면 호출자가 자기를 기다려 교착)
+  cancel-in-progress: false
+
+env:
+  TF_DIR: infra/terraform/cluster
+  TF_VERSION: '1.9.x'   # TODO 구지훈: provider.tf 의 required_version 과 맞출 것
+
+jobs:
+  decide:
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.pick.outputs.action }}
+    steps:
+      - id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 23 * * *" ]; then
+            echo "action=apply" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+            echo "action=destroy" >> "$GITHUB_OUTPUT"
+          else
+            echo "알 수 없는 트리거: ${{ github.event.schedule }}"; exit 1
+          fi
+
+  # ── 08:00 apply: cluster/ → bootstrap (workflow_call)
+  apply:
+    needs: decide
+    if: needs.decide.outputs.action == 'apply'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: terraform apply cluster/
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve
+      - name: 노드 준비 대기
+        run: |
+          aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_NAME }} --region ${{ vars.AWS_REGION }}
+          kubectl wait --for=condition=Ready nodes --all --timeout=600s
+
+  bootstrap:
+    needs: apply
+    uses: ./.github/workflows/bootstrap.yml
+    secrets: inherit
+
+  # ── 22:00 destroy: ArgoCD 앱 → LoadBalancer Service → PVC → NLB 제거 대기 → terraform destroy cluster/
+  destroy:
+    needs: decide
+    if: needs.decide.outputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    env:
+      NS: sesac-gojigi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: kubeconfig (클러스터가 이미 없으면 K8s 정리는 건너뜀)
+        id: kube
+        run: |
+          if aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_NAME }} --region ${{ vars.AWS_REGION }}; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ArgoCD Application 삭제 (prune 으로 서비스 9개 정리)
+        if: steps.kube.outputs.exists == 'true'
+        run: |
+          kubectl delete -f deploy/argocd/application.yaml --ignore-not-found --timeout=120s || \
+            kubectl patch application sesac-gojigi-app -n argocd -p '{"metadata":{"finalizers":null}}' --type=merge || true
+
+      - name: LoadBalancer Service 삭제 (NLB — EIP 가 app/ 소유라 Terraform destroy 전에 떼어야 한다)
+        if: steps.kube.outputs.exists == 'true'
+        run: |
+          kubectl delete svc -n "$NS" -l app=gateway-service --ignore-not-found
+          # 혹시 남은 LoadBalancer 타입 전부
+          kubectl get svc -A -o json | jq -r '.items[] | select(.spec.type=="LoadBalancer") | "\(.metadata.namespace) \(.metadata.name)"' \
+            | while read ns name; do kubectl delete svc -n "$ns" "$name" --ignore-not-found; done
+
+      - name: PVC 삭제 (EBS 볼륨 — 남기면 destroy 후 고아 볼륨 과금)
+        if: steps.kube.outputs.exists == 'true'
+        run: |
+          kubectl delete sts --all -n "$NS" --ignore-not-found --timeout=120s
+          kubectl delete sts --all -n monitoring --ignore-not-found --timeout=120s
+          kubectl delete pvc --all -A --timeout=180s
+
+      - name: NLB 제거 대기
+        if: steps.kube.outputs.exists == 'true'
+        run: |
+          for i in $(seq 1 30); do
+            n=$(aws elbv2 describe-load-balancers --query "length(LoadBalancers[?contains(LoadBalancerName, 'k8s-')])" --output text)   # LBC 가 만든 NLB 이름은 k8s-<ns>-<svc>-...
+            [ "$n" = "0" ] && { echo "NLB 모두 제거됨"; exit 0; }
+            echo "NLB $n 개 남음 — 대기 ($i/30)"; sleep 10
+          done
+          echo "::warning::NLB 가 5분 안에 제거되지 않음 — destroy 가 subnet/ENI 에서 막히면 콘솔에서 확인"
+
+      - name: terraform destroy cluster/
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -input=false
+          terraform destroy -input=false -auto-approve

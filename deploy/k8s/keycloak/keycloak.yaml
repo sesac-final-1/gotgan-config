@@ -1,0 +1,65 @@
+# Keycloak — 클러스터 내부 전용 (외부 미노출). 관리 콘솔은 kubectl port-forward svc/keycloak 8180:8080 -n sesac-gojigi
+# 담당 이경석 · 가이드라인 08장 · 15장 7절. realm-gotgan.json 은 ConfigMap keycloak-realm 으로 마운트:
+#   kubectl create configmap keycloak-realm --from-file=realm-gotgan.json -n sesac-gojigi  (bootstrap 워크플로가 매일 실행)
+# realm JSON 의 ${GOTGAN_BACKEND_CLIENT_SECRET} 은 import 시 같은 이름의 환경 변수(keycloak-secret) 로 치환된다
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: sesac-gojigi
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.8          # 로컬 docker-compose 와 같은 버전으로 고정
+          args: ["start", "--import-realm"]              # realm 이 이미 있으면 가져오기는 건너뜀
+          env:
+            - { name: KC_DB, value: mysql }
+            - { name: KC_DB_URL, value: "jdbc:mysql://mysql:3306/keycloakdb" }
+            - { name: KC_HOSTNAME, value: "http://keycloak:8080" }   # issuer 고정 — 게이트웨이 검증값과 일치
+            - { name: KC_HTTP_ENABLED, value: "true" }               # 클러스터 내부 HTTP
+            - { name: KC_HEALTH_ENABLED, value: "true" }
+            - { name: TZ, value: Asia/Seoul }
+          envFrom:
+            - secretRef: { name: keycloak-secret }       # KC_DB_USERNAME · KC_DB_PASSWORD · KC_BOOTSTRAP_ADMIN_* · GOTGAN_BACKEND_CLIENT_SECRET (secrets-sync 워크플로)
+          ports:
+            - { containerPort: 8080 }
+            - { containerPort: 9000, name: management }
+          resources:
+            requests: { cpu: 200m, memory: 1Gi }
+            limits: { memory: 1536Mi }
+          startupProbe:
+            httpGet: { path: /health/started, port: 9000 }
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 9000 }
+          livenessProbe:
+            httpGet: { path: /health/live, port: 9000 }
+          volumeMounts:
+            - { name: realm, mountPath: /opt/keycloak/data/import, readOnly: true }
+      volumes:
+        - name: realm
+          configMap: { name: keycloak-realm }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: sesac-gojigi
+spec:
+  type: ClusterIP
+  selector:
+    app: keycloak
+  ports:
+    - { port: 8080, targetPort: 8080 }

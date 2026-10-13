@@ -1,0 +1,64 @@
+# Redis 7 — Service + StatefulSet(1) + PVC 1Gi(ebs-sc), AOF(--appendonly yes) 로 파드 재시작에도 데이터 유지. requests 128Mi. 담당 구지훈
+# 용도: 장바구니 캐시 cart:{userId}(원본은 MySQL orderdb.cart_item, TTL 30일) · blacklist:{jti}(Could). 가이드라인 09장 · 10/13 결정 4
+# Redis 가 죽어도 order-service 는 Resilience4j(redisCart) 폴백으로 MySQL 을 읽는다 — 장애 격리 시연 ③
+# Sentinel · 복제본 · ElastiCache 는 20장 "실무에서는". 매일 22:00 destroy 되므로 PVC 는 하루 단위 (AOF 는 파드 재시작 대비)
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: sesac-gojigi
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - { port: 6379, targetPort: 6379 }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: sesac-gojigi
+  labels:
+    app: redis
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          args: ["redis-server", "--appendonly", "yes"]   # AOF — 매 초 fsync (기본 appendfsync everysec)
+          ports:
+            - { containerPort: 6379 }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 256Mi }
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 10
+          volumeMounts:
+            - { name: data, mountPath: /data }           # appendonlydir 이 여기에 쌓인다
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: ebs-sc
+        resources:
+          requests:
+            storage: 1Gi

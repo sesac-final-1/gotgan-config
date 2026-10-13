@@ -1,0 +1,63 @@
+{{- range $name, $svc := .Values.services }}
+---
+# 무중단 배포 · 자동 복구 설정의 근거: 가이드라인 15장 7절 · 13장 복원력 시연
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: {{ $svc.replicas | default $.Values.defaults.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0                     # 새 파드가 Ready 되기 전에는 기존 파드를 내리지 않음
+      maxSurge: 1                           # 한 번에 1개씩만 추가 (노드 메모리 여유 고려)
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "{{ $svc.port }}"
+    spec:
+      terminationGracePeriodSeconds: {{ $.Values.defaults.terminationGracePeriodSeconds }}
+      {{- if $svc.serviceAccount }}
+      serviceAccountName: {{ $name }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          image: "{{ $.Values.image.registry }}/{{ $svc.repository }}:{{ $svc.tag }}"
+          ports:
+            - containerPort: {{ $svc.port }}
+          envFrom:
+            - configMapRef:
+                name: app-config
+            {{- if $svc.secretName }}
+            - secretRef:
+                name: {{ $svc.secretName }}
+            {{- end }}
+          resources:
+            {{- include "app.resources" (dict "root" $ "svc" $svc) | nindent 12 }}
+          startupProbe:                     # JVM 기동 대기 — 최대 5s × 36 = 3분
+            httpGet: { path: /actuator/health/liveness, port: {{ $svc.port }} }
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:                   # Ready 전에는 Service 가 트래픽을 보내지 않음
+            httpGet: { path: /actuator/health/readiness, port: {{ $svc.port }} }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:                    # 멈춘 JVM 은 재시작 (자동 복구)
+            httpGet: { path: /actuator/health/liveness, port: {{ $svc.port }} }
+            periodSeconds: 10
+            failureThreshold: 3
+          lifecycle:
+            preStop:                        # 엔드포인트 제거가 kube-proxy · NLB 에 퍼질 시간
+              exec: { command: ["sh", "-c", "sleep 10"] }
+{{- end }}

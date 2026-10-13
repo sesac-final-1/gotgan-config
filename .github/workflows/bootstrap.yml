@@ -1,0 +1,105 @@
+# 클러스터 부트스트랩 — cluster/ apply 직후 (infra-schedule 이 호출) 또는 수동. 담당 구지훈 · 10/13 결정 3
+# 순서: kubeconfig → namespace · configmap → secrets-sync → db(MySQL · Redis) → keycloak(realm ConfigMap) → observability → ArgoCD → application.yaml → gateway NLB 주소 확인
+# 매일 08:00 빈 DB 에서 시작 — 데이터는 Flyway 시드(R__demo_seed.sql) · Keycloak 은 realm import + 시드 스크립트(이경석) 로 복원
+name: bootstrap
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      DUCKDNS_TOKEN: { required: false }   # EIP 는 상시 자원이라 평소엔 안 쓴다
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: bootstrap   # infra-schedule 과 다른 그룹 (workflow_call 교착 방지)
+  cancel-in-progress: false
+
+jobs:
+  secrets:
+    uses: ./.github/workflows/secrets-sync.yml
+    secrets: inherit
+
+  bootstrap:
+    needs: secrets
+    runs-on: ubuntu-latest
+    env:
+      NS: sesac-gojigi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: kubeconfig
+        run: aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_NAME }} --region ${{ vars.AWS_REGION }}
+
+      # ── 1. namespace · configmap (secrets-sync 는 위 job 에서 이미 끝남 — namespace 는 그쪽에서도 보장한다)
+      - name: namespace · app-config
+        run: |
+          kubectl apply -f deploy/k8s/00-namespace.yaml
+          kubectl apply -f deploy/k8s/01-configmap.yaml
+
+      # ── 2. DB (StorageClass → MySQL + init-schemas.sh ConfigMap → Redis)
+      - name: db
+        run: |
+          kubectl apply -f deploy/k8s/db/storageclass.yaml
+          kubectl create configmap mysql-init -n "$NS" --from-file=deploy/k8s/db/init-schemas.sh --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -f deploy/k8s/db/mysql.yaml
+          kubectl apply -f deploy/k8s/db/redis.yaml
+          kubectl rollout status statefulset/mysql -n "$NS" --timeout=300s
+          kubectl rollout status statefulset/redis -n "$NS" --timeout=120s
+
+      # ── 3. Keycloak (realm JSON 은 ConfigMap, ${GOTGAN_BACKEND_CLIENT_SECRET} 은 keycloak-secret 환경 변수로 치환)
+      - name: keycloak
+        run: |
+          kubectl create configmap keycloak-realm -n "$NS" --from-file=deploy/k8s/keycloak/realm-gotgan.json --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -f deploy/k8s/keycloak/keycloak.yaml
+          kubectl rollout status deployment/keycloak -n "$NS" --timeout=600s
+
+      # ── 4. 관측성 (monitoring namespace · Prometheus · Loki · Grafana · Zipkin · exporters)
+      - name: observability
+        run: |
+          kubectl apply -f deploy/observability/00-namespace.yaml
+          kubectl apply -f deploy/observability/   # 하위 폴더(dashboards · alerting)는 README 뿐 — 박지연이 ConfigMap 로 바꾸면 -R 로 변경
+
+      # ── 5. ArgoCD 설치 + Application (ArgoCD 가 deploy/helm 을 보고 서비스 9개 배포)
+      - name: argocd
+        run: |
+          kubectl get ns argocd >/dev/null 2>&1 || kubectl create ns argocd
+          kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+          kubectl rollout status deployment/argocd-server -n argocd --timeout=300s
+          kubectl apply -f deploy/argocd/application.yaml
+
+      # ── 6. gateway NLB 주소 — EIP 2개가 NLB 어노테이션으로 붙는다 (app/eip.tf, 상시 자원) → DuckDNS 는 평소 변경 없음
+      - name: gateway LoadBalancer 대기
+        id: lb
+        run: |
+          for i in $(seq 1 60); do
+            host=$(kubectl get svc -n "$NS" -l app=gateway-service -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            if [ -n "$host" ]; then
+              echo "gateway NLB: $host"
+              echo "hostname=$host" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning::gateway LoadBalancer 주소를 10분 안에 받지 못함 — ArgoCD 동기화 · LBC 로그 확인"
+
+      # ── 7. DuckDNS — EIP 는 상시(app/) 자원이라 주소가 바뀌지 않는다 → 보통 no-op. EIP 를 재생성한 날만 실제 갱신
+      - name: duckdns (EIP 바뀐 경우만)
+        if: steps.lb.outputs.hostname != ''
+        env:
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+          DUCKDNS_DOMAIN: ${{ vars.DUCKDNS_DOMAIN }}
+        run: |
+          EIP=$(aws ec2 describe-addresses --filters Name=tag:Project,Values=sesac-gojigi --query 'Addresses[0].PublicIp' --output text)   # TODO 구지훈: app/eip.tf 의 태그/Name 과 맞출 것
+          CURRENT=$(dig +short "${DUCKDNS_DOMAIN}.duckdns.org" | head -n1)
+          if [ "$EIP" = "$CURRENT" ]; then
+            echo "DuckDNS 이미 $EIP — 변경 없음"
+          elif [ -z "$DUCKDNS_TOKEN" ]; then
+            echo "::warning::EIP($EIP) ≠ DuckDNS($CURRENT) 인데 DUCKDNS_TOKEN 없음 — scripts/duckdns-update.sh 수동 실행"
+          else
+            DOMAIN="$DUCKDNS_DOMAIN" EIP="$EIP" bash scripts/duckdns-update.sh
+          fi

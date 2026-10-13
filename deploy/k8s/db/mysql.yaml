@@ -1,0 +1,5 @@
+# MySQL 8.4 — Headless Service + StatefulSet(1) + PVC(ebs-sc) + init-schemas.sh ConfigMap 마운트(/docker-entrypoint-initdb.d)
+# args: --default-time-zone=+09:00 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci (컨벤션 3-5 · 3-9)
+# 비밀번호는 K8s Secret mysql-secret 을 envFrom 으로 (MYSQL_ROOT_PASSWORD · USER/STORE/PRODUCT/ORDER/PAYMENT/REVIEW/SETTLEMENT/KEYCLOAK_DB_PASSWORD).
+# mysql-secret 은 secrets-sync 워크플로가 GitHub Secrets 에서 만든다 (docs/secrets.md). requests 1Gi · innodb_buffer_pool_size=256M. 담당 구지훈
+# 클러스터는 매일 22:00 destroy → 08:00 재생성이라 PVC 도 매일 새로 만들어진다 — 데이터는 Flyway 시드(R__demo_seed.sql) 로 복원

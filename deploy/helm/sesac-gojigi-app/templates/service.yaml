@@ -1,0 +1,21 @@
+{{- range $name, $svc := .Values.services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $name }}
+  {{- if and $svc.service $svc.service.annotations }}
+  annotations:
+    {{- toYaml $svc.service.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ if $svc.service }}{{ $svc.service.type | default "ClusterIP" }}{{ else }}ClusterIP{{ end }}   # 업무 서비스는 ClusterIP — 게이트웨이를 거치지 않으면 닿지 않는다
+  selector:
+    app: {{ $name }}
+  ports:
+    - port: {{ $svc.port }}
+      targetPort: {{ $svc.port }}
+{{- end }}

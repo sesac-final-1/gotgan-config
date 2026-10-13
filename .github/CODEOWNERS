@@ -1,0 +1,14 @@
+# 폴더별 자동 리뷰어 (컨벤션 1-4)
+/infra/                         @jihoon-devstu
+/deploy/k8s/                    @jihoon-devstu
+/deploy/k8s/keycloak/           @perish95
+/deploy/helm/                   @perish95
+/deploy/argocd/                 @perish95
+/deploy/observability/          @VoC-100
+/scripts/                       @jihoon-devstu
+/.github/                       @jihoon-devstu @perish95
+
+# 공유 파일 · 문서 — 전원
+/deploy/k8s/01-configmap.yaml   @jihoon-devstu @perish95 @VoC-100 @jongbeen97
+/deploy/helm/sesac-gojigi-app/values.yaml @jihoon-devstu @perish95 @VoC-100 @jongbeen97
+/docs/                          @jihoon-devstu @perish95 @VoC-100 @jongbeen97
