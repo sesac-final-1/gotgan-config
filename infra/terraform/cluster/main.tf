@@ -52,6 +52,19 @@ module "eks" {
     coredns    = { most_recent = true }
   }
 
+  # EKS 관리형 metrics-server 는 10251 포트 — 모듈 기본 규칙(443 · 4443 · 6443 · 8443 · 9443 · 10250)에 없어
+  # 제어 평면 → 파드 연결이 막히면 APIService 가 FailedDiscoveryCheck 로 kubectl top 불가
+  node_security_group_additional_rules = {
+    ingress_cluster_10251_metrics_server = {
+      description                   = "Cluster API to metrics-server (EKS addon secure-port 10251)"
+      protocol                      = "tcp"
+      from_port                     = 10251
+      to_port                       = 10251
+      type                          = "ingress"
+      source_cluster_security_group = true
+    }
+  }
+
   eks_managed_node_groups = {
     # ── 백 티어: gateway · 업무 서비스 · Keycloak · 관측성 · ArgoCD
     app = {
