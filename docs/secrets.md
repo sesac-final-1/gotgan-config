@@ -7,7 +7,7 @@
 
 | 이름 | 쓰는 곳 | K8s Secret → 키 | 생성 방법 | 담당 |
 |---|---|---|---|---|
-| `AWS_ROLE_ARN` | infra · infra-schedule · bootstrap · secrets-sync (OIDC) | — | Terraform `cicd/` output (`arn:aws:iam::<계정>:role/sesac-gojigi-github-actions`) | 구지훈 |
+| `AWS_ROLE_ARN` | infra · infra-schedule · bootstrap · secrets-sync (OIDC) | — | Terraform `cicd/` output (`arn:aws:iam::<계정>:role/sesac-gojigi-github-actions`) | 이경석 |
 | `MYSQL_ROOT_PASSWORD` | MySQL StatefulSet · init-schemas.sh | `mysql-secret` → `MYSQL_ROOT_PASSWORD` | 무작위 24자 (`openssl rand -base64 24`) | 구지훈 |
 | `USER_DB_PASSWORD` | init-schemas.sh · user-service | `mysql-secret` + `user-service-secret` → `DB_PASSWORD` | 무작위 24자 | 구지훈 |
 | `STORE_DB_PASSWORD` | 〃 store | `mysql-secret` + `store-service-secret` | 〃 | 구지훈 |
@@ -30,7 +30,7 @@
 
 | 이름 | 쓰는 곳 | 생성 방법 | 담당 |
 |---|---|---|---|
-| `AWS_ROLE_ARN` | backend.yml(ECR push) · serverless.yml(Lambda 배포) | config와 같은 역할 ARN (Terraform `cicd/`) | 구지훈 |
+| `AWS_ROLE_ARN` | backend.yml(ECR push) · serverless.yml(Lambda 배포) | config와 같은 역할 ARN (Terraform `cicd/`) | 이경석 |
 | `SONAR_TOKEN` | backend.yml `./gradlew sonar` (PR → main) | SonarQube Cloud → My Account → Security → Generate token | 구지훈 |
 | `SERVERLESS_ACCESS_KEY` | serverless.yml (`serverless deploy`) | app.serverless.com → Org → Access keys | 구지훈 |
 | `CONFIG_REPO_TOKEN` | backend.yml `bump-tag` — gotgan-config `values.yaml` 태그 커밋 | GitHub → Settings → Developer settings → **Fine-grained token**: 저장소 `sesac-final-1/gotgan-config`만, 권한 Contents: Read and write, 만료 2026-11-30 | 이경석 |

@@ -163,12 +163,12 @@
 - 자원 로컬 이름: snake_case, 타입 반복 금지 (`aws_s3_bucket.product_images` ○ / `aws_s3_bucket.product_images_bucket` ✗)
 - 변수 · output: snake_case + `description` 필수
 - 커밋 전 `terraform fmt -recursive` · `terraform validate`
-- apply/destroy는 스케줄 워크플로(`infra-schedule`, OIDC 역할 — `cluster/` 매일 08:00 · 22:00) 또는 구지훈. 다른 사람은 plan까지(`infra.yml`이 PR에 plan 코멘트)
+- apply/destroy는 스케줄 워크플로(`infra-schedule`, OIDC 역할 — `cluster/` 매일 08:00 · 22:00) 또는 구지훈. 다른 사람은 plan까지(`infra.yml`이 PR에 plan 코멘트). 예외: `cicd/`(GitHub OIDC · Actions 역할)는 이경석이 작성 · 로컬 apply — 워크플로가 쓸 역할을 만드는 폴더라 워크플로로 apply할 수 없음
 - Terraform에 비밀 값 금지 — 시크릿은 GitHub Secrets → `secrets-sync`(1-5). `kms.tf` · `secrets.tf` · `eso.tf` 없음
 - `.terraform.lock.hcl` 커밋, `*.tfstate` · `.terraform/` 커밋 금지
 - 버전: Terraform **1.16.5** 고정(`required_version = "~> 1.16.0"`, 워크플로 `terraform_version: '1.16.5'`) · aws provider `~> 5.0` · 모듈 vpc `~> 5` / eks `~> 20`. 상태 잠금은 `backend "s3" { use_lockfile = true }`(1.10+, DynamoDB 잠금 테이블 없음)
 - 잠금 파일은 Windows · CI(Linux) 공용 — 폴더를 처음 `init` 한 뒤와 provider 버전을 바꿀 때 `terraform providers lock -platform=windows_amd64 -platform=linux_amd64`
-- apply 순서 `global/s3` → `vpc` → `ecr` → `cicd` → `app` → `cluster`. `terraform_remote_state` 는 `cluster` → 상시 폴더 한 방향만(상시 폴더가 `cluster` 를 읽지 않는다). backend 블록은 변수를 못 쓰므로 상태 버킷 이름만 하드코딩 예외
+- apply 순서 `global/s3` → `vpc` → `ecr` → `app` → `cluster`. `cicd` 는 상태 의존이 없어 `global/s3` 이후 언제든 — `cluster` 는 Actions 역할을 remote state가 아니라 이름(`sesac-gojigi-github-actions`, `data "aws_iam_roles"`)으로 찾고 없으면 건너뜀. `terraform_remote_state` 는 `cluster` → 상시 폴더 한 방향만(상시 폴더가 `cluster` 를 읽지 않는다). backend 블록은 변수를 못 쓰므로 상태 버킷 이름만 하드코딩 예외
 
 ### 5-3. Kubernetes · Helm
 

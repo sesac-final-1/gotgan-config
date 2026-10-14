@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        folder: [vpc, ecr, cicd, app, cluster]   # apply 순서. global/s3 는 로컬 상태라 CI 에서 plan 하면 늘 "버킷 새로 생성" 으로 나와 제외
+        folder: [vpc, ecr, app, cluster, cicd]   # apply 순서(cicd 는 독립). global/s3 는 로컬 상태라 CI 에서 plan 하면 늘 "버킷 새로 생성" 으로 나와 제외
     defaults:
       run:
         working-directory: infra/terraform/${{ matrix.folder }}
