@@ -3,7 +3,7 @@
 namespace: sesac-gojigi
 
 image:
-  registry: <ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com   # TODO 구지훈: Terraform ecr/ output
+  registry: 694951014380.dkr.ecr.ap-northeast-2.amazonaws.com   # Terraform ecr/ output registry_id (구지훈)
 
 defaults:
   replicas: 1
@@ -21,10 +21,13 @@ services:
     replicas: 2                             # 입구는 2개 — 하나가 죽어도 접속 유지
     service:
       type: LoadBalancer
-      annotations:                          # TODO 구지훈: NLB · EIP 할당 ID · 퍼블릭 서브넷 (가이드라인 05장)
+      annotations:                          # NLB · EIP · 퍼블릭 서브넷 (가이드라인 05장, 구지훈 — 10/14 실클러스터 검증)
         service.beta.kubernetes.io/aws-load-balancer-type: external
         service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
         service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+        service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-023c11797072725df,subnet-0d52b05d6f680839c          # vpc output public_subnets [2a, 2c]
+        service.beta.kubernetes.io/aws-load-balancer-eip-allocations: eipalloc-00eaad35e9b548733,eipalloc-026aa7de15c62370c  # app output nlb_eip_allocation_ids — 서브넷과 같은 AZ 순서
+        service.beta.kubernetes.io/aws-load-balancer-attributes: load_balancing.cross_zone.enabled=true                     # 없으면 파드 없는 AZ 의 EIP 무응답
   # ── user (perish95)
   user-service:
     repository: sesac-gojigi-user
@@ -32,7 +35,7 @@ services:
     port: 8081
     secretName: user-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
-      roleArn: arn:aws:iam::<ACCOUNT_ID>:role/sesac-gojigi-user-irsa   # TODO 구지훈: Terraform cluster/irsa.tf (이름 고정 → ARN 불변)
+      roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-user-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
   # ── store (VoC-100)
   store-service:
     repository: sesac-gojigi-store
@@ -40,7 +43,7 @@ services:
     port: 8082
     secretName: store-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
-      roleArn: arn:aws:iam::<ACCOUNT_ID>:role/sesac-gojigi-store-irsa   # TODO 구지훈: Terraform cluster/irsa.tf (이름 고정 → ARN 불변)
+      roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-store-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
   # ── product (VoC-100)
   product-service:
     repository: sesac-gojigi-product
@@ -48,7 +51,7 @@ services:
     port: 8083
     secretName: product-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
-      roleArn: arn:aws:iam::<ACCOUNT_ID>:role/sesac-gojigi-product-irsa   # TODO 구지훈: Terraform cluster/irsa.tf (이름 고정 → ARN 불변)
+      roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-product-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
   # ── order (jongbeen97)
   order-service:
     repository: sesac-gojigi-order
@@ -56,7 +59,7 @@ services:
     port: 8084
     secretName: order-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
-      roleArn: arn:aws:iam::<ACCOUNT_ID>:role/sesac-gojigi-order-irsa   # TODO 구지훈: Terraform cluster/irsa.tf (이름 고정 → ARN 불변)
+      roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-order-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
   # ── settlement (jihoon-devstu)
   settlement-service:
     repository: sesac-gojigi-settlement
@@ -64,7 +67,7 @@ services:
     port: 8085
     secretName: settlement-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
-      roleArn: arn:aws:iam::<ACCOUNT_ID>:role/sesac-gojigi-settlement-irsa   # TODO 구지훈: Terraform cluster/irsa.tf (이름 고정 → ARN 불변)
+      roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-settlement-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
   # ── payment (jongbeen97)
   payment-service:
     repository: sesac-gojigi-payment
@@ -78,7 +81,7 @@ services:
     port: 8087
     secretName: review-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
-      roleArn: arn:aws:iam::<ACCOUNT_ID>:role/sesac-gojigi-review-irsa   # TODO 구지훈: Terraform cluster/irsa.tf (이름 고정 → ARN 불변)
+      roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-review-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
   # ── admin (jihoon-devstu)
   admin-service:
     repository: sesac-gojigi-admin
