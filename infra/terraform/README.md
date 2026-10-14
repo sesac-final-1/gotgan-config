@@ -1,17 +1,17 @@
 # infra/terraform (담당 구지훈)
 
-폴더 1개 = `terraform apply` 1번 = 상태 파일 1개. apply 순서: `global/s3` → `vpc` → `ecr` → `cicd` → `app` → `cluster`. 의존은 `cluster` → 상시 폴더 한 방향뿐 — 상시 폴더는 매일 사라지는 `cluster` 를 읽지 않는다.
+폴더 1개 = `terraform apply` 1번 = 상태 파일 1개. apply 순서: `global/s3` → `vpc` → `ecr` → `app` → `cluster`. 의존은 `cluster` → 상시 폴더 한 방향뿐 — 상시 폴더는 매일 사라지는 `cluster` 를 읽지 않는다. `cicd/` 는 다른 폴더와 상태 의존이 없어 `global/s3` 이후 언제든 (이경석 작성 · apply — `cluster` 는 Actions 역할을 이름 `sesac-gojigi-github-actions` 로 찾고, 없으면 건너뛴다).
 
 | 폴더 | 자원 | 수명 |
 |---|---|---|
 | `global/s3` | tfstate 버킷 (잠금은 S3 자체 `use_lockfile` — DynamoDB 테이블 없음) | 상시 |
 | `vpc` | VPC · 서브넷 · NAT · IGW | 상시 |
 | `ecr` | 서비스별 ECR 저장소 | 상시 |
-| `cicd` | GitHub OIDC 공급자 · Actions 역할 | 상시 |
+| `cicd` | GitHub OIDC 공급자 · Actions 역할 (**이경석** 작성 · apply) | 상시 |
 | `app` | S3 · SNS/SQS · DynamoDB · SES · SSM · EIP | 상시 |
-| `cluster` | EKS · 노드 그룹 · access entries(팀원 4명 + Actions 역할) · IRSA · LBC · EBS CSI · metrics-server | **매일 08:00 apply · 22:00 destroy** (`infra-schedule.yml`) |
+| `cluster` | EKS · 노드 그룹 · access entries(팀원 4명 + Actions 역할 — 있으면) · 서비스 IRSA(`irsa.tf`, grafana 는 박지연 `irsa_grafana.tf`) · LBC · EBS CSI · metrics-server | **매일 08:00 apply · 22:00 destroy** (`infra-schedule.yml`) |
 
-- apply/destroy 는 스케줄 워크플로(OIDC 역할 `AWS_ROLE_ARN`) 또는 구지훈. 다른 사람은 `terraform plan` 까지 (컨벤션 5-2). PR 에서는 `infra.yml` 이 fmt · validate · plan 을 돌린다
+- apply/destroy 는 스케줄 워크플로(OIDC 역할 `AWS_ROLE_ARN`) 또는 구지훈. 예외: `cicd/` 는 이경석이 로컬 apply (워크플로가 쓸 역할을 만드는 폴더). 다른 사람은 `terraform plan` 까지 (컨벤션 5-2). PR 에서는 `infra.yml` 이 fmt · validate · plan 을 돌린다
 - 시크릿은 GitHub Secrets 단일 소스 — Secrets Manager · KMS · ESO 없음. 클러스터 Secret 은 `secrets-sync` 워크플로가 만든다 (`docs/secrets.md`)
 - Terraform 은 팀 · CI 모두 **1.16.5** (`required_version = "~> 1.16.0"`, 워크플로 `terraform_version: '1.16.5'`)
 - 커밋 전 `terraform fmt -recursive` · `terraform validate`. `.terraform.lock.hcl` 커밋, `*.tfstate` · `.terraform/` 커밋 금지

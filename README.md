@@ -4,7 +4,7 @@
 
 | 폴더 | 내용 | 실행 주체 | 담당 |
 |---|---|---|---|
-| `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `cicd` → `app` → `cluster` (apply 순서) | `infra-schedule` 워크플로(OIDC) · 구지훈 | 구지훈 |
+| `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `app` → `cluster` (apply 순서). `cicd/` 는 독립(이경석) | `infra-schedule` 워크플로(OIDC) · 구지훈 (`cicd/` 는 이경석) | 구지훈 · `cicd/` 이경석 |
 | `deploy/k8s/` | 기본 계층 — namespace · configmap · `02-networkpolicy`(DB 티어) · MySQL · Redis · Keycloak | `bootstrap` 워크플로 | 구지훈 · 이경석(keycloak) |
 | `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · System Status 대시보드 (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
 | `deploy/helm/sesac-gojigi-app/` | 서비스 9개 Deployment · Service · ServiceAccount — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
