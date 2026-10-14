@@ -95,7 +95,7 @@ jobs:
           DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
           DUCKDNS_DOMAIN: ${{ vars.DUCKDNS_DOMAIN }}
         run: |
-          EIP=$(aws ec2 describe-addresses --filters Name=tag:Project,Values=sesac-gojigi --query 'Addresses[0].PublicIp' --output text)   # TODO 구지훈: app/eip.tf 의 태그/Name 과 맞출 것
+          EIP=$(aws ec2 describe-addresses --filters Name=tag:Name,Values=sesac-gojigi-nlb-eip-0 --query 'Addresses[0].PublicIp' --output text)   # app/eip.tf — DuckDNS 는 EIP 2개 중 -0 을 가리킨다 (가이드라인 05장)
           CURRENT=$(dig +short "${DUCKDNS_DOMAIN}.duckdns.org" | head -n1)
           if [ "$EIP" = "$CURRENT" ]; then
             echo "DuckDNS 이미 $EIP — 변경 없음"

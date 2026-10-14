@@ -1,5 +1,5 @@
 # 인프라 일일 스케줄 — 08:00 KST cluster/ apply → bootstrap · 22:00 KST cluster/ destroy (10/13 결정 3). 담당 구지훈
-# vpc · ecr · cicd · app(S3 · SNS/SQS · DynamoDB · IRSA · EIP · SSM)은 상시 유지 — 이 워크플로는 infra/terraform/cluster/ 만 다룬다
+# vpc · ecr · cicd · app(S3 · SNS/SQS · DynamoDB · SES · EIP · SSM)은 상시 유지 (IRSA 는 cluster/irsa.tf — 매일 함께 재생성) — 이 워크플로는 infra/terraform/cluster/ 만 다룬다
 # apply/destroy 는 이 워크플로(OIDC 역할) 또는 구지훈만 (컨벤션 5-2). 수동: Actions → infra-schedule → Run workflow → action
 name: infra-schedule
 on:
@@ -25,7 +25,7 @@ concurrency:
 
 env:
   TF_DIR: infra/terraform/cluster
-  TF_VERSION: '1.9.x'   # TODO 구지훈: provider.tf 의 required_version 과 맞출 것
+  TF_VERSION: '1.16.5'   # provider.tf required_version "~> 1.16.0" · 로컬과 같은 버전 (use_lockfile 은 1.10+)
 
 jobs:
   decide:
