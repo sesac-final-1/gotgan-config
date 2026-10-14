@@ -38,3 +38,25 @@ resource "aws_s3_bucket_public_access_block" "this" {
   block_public_policy     = each.key != "images"
   restrict_public_buckets = each.key != "images"
 }
+
+# 브라우저가 <img src> 로 바로 읽도록 두 prefix 만 공개 GET (10/14 결정). 업로드는 presigned PUT 만
+resource "aws_s3_bucket_policy" "images_public_read" {
+  bucket = aws_s3_bucket.this["images"].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "PublicReadProductAndReviewImages"
+      Effect    = "Allow"
+      Principal = "*"
+      Action    = "s3:GetObject"
+      Resource = [
+        "${aws_s3_bucket.this["images"].arn}/products/*",
+        "${aws_s3_bucket.this["images"].arn}/reviews/*",
+      ]
+    }]
+  })
+
+  # 퍼블릭 차단 설정이 먼저 풀려야 공개 정책이 들어간다
+  depends_on = [aws_s3_bucket_public_access_block.this]
+}
