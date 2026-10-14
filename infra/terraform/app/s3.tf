@@ -60,3 +60,18 @@ resource "aws_s3_bucket_policy" "images_public_read" {
   # 퍼블릭 차단 설정이 먼저 풀려야 공개 정책이 들어간다
   depends_on = [aws_s3_bucket_public_access_block.this]
 }
+
+# 브라우저가 presigned URL 로 직접 PUT 하는 버킷 — 상품 · 리뷰 이미지, 입점 서류
+resource "aws_s3_bucket_cors_configuration" "upload" {
+  for_each = toset(["images", "seller-docs"])
+
+  bucket = aws_s3_bucket.this[each.key].id
+
+  cors_rule {
+    allowed_methods = ["PUT", "HEAD"]
+    allowed_origins = var.cors_allowed_origins
+    allowed_headers = ["*"]    # presigned PUT 의 Content-Type 등
+    expose_headers  = ["ETag"] # 업로드 완료 확인
+    max_age_seconds = 3000
+  }
+}
