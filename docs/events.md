@@ -37,3 +37,6 @@
 - order-events → `sesac-gojigi-user-order-events` · `-review-order-events` · `-settlement-order-events` · `-notification-order-events`
 - settlement-events → `sesac-gojigi-report-settlement-events`
 - 모든 큐에 DLQ(`-dlq`, 최대 수신 3회)
+- 구독 필터: SNS 구독마다 **본문의 `eventType`** 으로 거른다(`filter_policy_scope = MessageBody`) — 발행 측은 MessageAttributes 를 달 필요 없이 봉투 JSON 만 publish. raw delivery 라 소비자는 봉투를 그대로 받는다
+- 큐 URL · 토픽 ARN 은 ConfigMap `app-config`(`{소비자}_{도메인}_EVENTS_QUEUE_URL` · `{도메인}_EVENTS_TOPIC_ARN`), Lambda 는 SSM `/sesac-gojigi/dev/sqs/...`
+- 구독 · 필터 정의: `infra/terraform/app/sns_sqs.tf` 의 `locals.subscriptions` — 이 표의 구독자를 바꾸면 그 파일도 함께 고친다
