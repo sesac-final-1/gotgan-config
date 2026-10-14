@@ -16,3 +16,23 @@ resource "aws_ecr_repository" "service" {
     scan_on_push = true # 기본 스캔(무료) — 취약점은 콘솔에서 확인
   }
 }
+
+# 저장소마다 최근 N개만 보관 — 매 머지마다 이미지가 쌓이므로 저장 비용 관리
+resource "aws_ecr_lifecycle_policy" "service" {
+  for_each = aws_ecr_repository.service
+
+  repository = each.value.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "최근 ${var.keep_image_count}개만 보관"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = var.keep_image_count
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
