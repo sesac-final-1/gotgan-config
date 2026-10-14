@@ -26,5 +26,21 @@ data:
   # ── order (데모용 단축, 가이드라인 10장)
   AUTO_CONFIRM_AFTER: 2m
   PAYMENT_TIMEOUT: 15m
-  # ── 이벤트 ARN · 큐 URL 은 Secret 이 아니라 여기 (비밀 아님). TODO 구지훈: Terraform app/ output 으로 채움
-  # STORE_EVENTS_TOPIC_ARN: arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:sesac-gojigi-store-events
+  # ── AWS 자원 (구지훈 — Terraform app/ output, 비밀 아님). 권한은 서비스별 IRSA(cluster/irsa.tf) 가 준다
+  AWS_REGION: ap-northeast-2
+  # SNS 토픽 — 발행: store · order · settlement 서비스 (app output topic_arns)
+  STORE_EVENTS_TOPIC_ARN: arn:aws:sns:ap-northeast-2:694951014380:sesac-gojigi-store-events
+  ORDER_EVENTS_TOPIC_ARN: arn:aws:sns:ap-northeast-2:694951014380:sesac-gojigi-order-events
+  SETTLEMENT_EVENTS_TOPIC_ARN: arn:aws:sns:ap-northeast-2:694951014380:sesac-gojigi-settlement-events
+  # SQS 구독 큐 URL — {소비자}_{도메인}_EVENTS_QUEUE_URL, 소비 서비스가 자기 것만 읽는다 (app output queue_urls)
+  USER_STORE_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-user-store-events
+  USER_ORDER_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-user-order-events
+  PRODUCT_STORE_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-product-store-events
+  REVIEW_ORDER_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-review-order-events
+  SETTLEMENT_STORE_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-settlement-store-events
+  SETTLEMENT_ORDER_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-settlement-order-events
+  # S3 버킷 — presigned PUT/GET 대상 (app output bucket_names). 이미지 조회 URL = IMAGES_BASE_URL/{products|reviews}/{key}
+  IMAGES_BUCKET: sesac-gojigi-images-4380
+  IMAGES_BASE_URL: https://sesac-gojigi-images-4380.s3.ap-northeast-2.amazonaws.com
+  SELLER_DOCS_BUCKET: sesac-gojigi-seller-docs-4380
+  REPORTS_BUCKET: sesac-gojigi-reports-4380

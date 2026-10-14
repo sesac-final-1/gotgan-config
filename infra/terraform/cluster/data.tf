@@ -18,3 +18,13 @@ data "terraform_remote_state" "vpc" {
 data "aws_iam_roles" "github_actions" {
   name_regex = "^${var.github_actions_role_name}$"
 }
+
+# irsa.tf 권한 대상 — S3 · SNS · SQS ARN (app/ 은 상시, cluster 를 읽지 않으므로 단방향)
+data "terraform_remote_state" "app" {
+  backend = "s3"
+  config = {
+    bucket = "sesac-gojigi-tfstate-4380"
+    key    = "app/terraform.tfstate"
+    region = var.aws_region
+  }
+}

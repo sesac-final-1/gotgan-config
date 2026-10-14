@@ -4,7 +4,7 @@
 # 사용: ./scripts/scale-nodes.sh down | up   (AWS 자격 증명 필요 — 구지훈 로컬)
 set -euo pipefail
 CLUSTER="${EKS_CLUSTER_NAME:-sesac-gojigi-eks-cluster}"
-NODEGROUP="${EKS_NODEGROUP_NAME:-sesac-gojigi-nodes}"   # TODO 구지훈: cluster/ output 의 노드 그룹 이름과 맞출 것
+NODEGROUP="${EKS_NODEGROUP_NAME:-sesac-gojigi-app}"   # cluster/ 노드 그룹 이름 고정 (output node_group_names). db 노드는 MySQL · Redis 라 건드리지 않는다
 case "${1:-}" in
   down) DESIRED=0 ;;
   up)   DESIRED=2 ;;
