@@ -29,7 +29,7 @@ spec:
         prometheus.io/port: "{{ $svc.port }}"
     spec:
       nodeSelector:
-        tier: app                           # 백 티어 노드 그룹(app, t3.large ×2) 에만. db 노드는 테인트 tier=db:NoSchedule 로 막혀 있음
+        tier: app                           # 백 티어 노드 그룹(app, t3.xlarge ×2) 에만. db 노드는 테인트 tier=db:NoSchedule 로 막혀 있음
       terminationGracePeriodSeconds: {{ $.Values.defaults.terminationGracePeriodSeconds }}
       {{- if $svc.serviceAccount }}
       serviceAccountName: {{ $name }}

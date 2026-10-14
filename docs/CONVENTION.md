@@ -68,6 +68,7 @@
 | (10/13) 시크릿 | **GitHub Secrets 단일 소스**(클러스터 · CI) · Vercel 환경 변수(프론트). Secrets Manager · KMS · ESO 없음. `secrets-sync` 워크플로가 K8s Secret 생성 | 1-5 · 5-3 |
 | (10/13) 인프라 일일 스케줄 | `infra/terraform/cluster/`는 `infra-schedule` 워크플로가 매일 KST 08:00 apply(→ `bootstrap`) · 22:00 destroy. 나머지 폴더는 상시. apply/destroy는 워크플로 또는 구지훈 | 5-2 |
 | (10/13) Redis 폴백 | 장바구니 원본은 MySQL `orderdb.cart_item`, Redis `cart:{userId}`는 캐시. Redis 호출은 서킷 인스턴스 `redisCart` + 폴백(MySQL) | 2-2 · 2-7 · 3-2 |
+| (10/13 3차) 3티어(db 노드 분리 · NetworkPolicy) | 프론트(Vercel) → 백(EKS `app` 노드 그룹 t3.xlarge ×2 — 10/14 t3.large에서 조정) → DB(EKS `db` 노드 그룹 t3.medium ×1, 테인트 `tier=db:NoSchedule`, MySQL · Redis만). `02-networkpolicy.yaml`로 DB 3306 · 6379는 `tier=backend` 파드만. blackbox exporter 없음. 파일 업로드만 presigned URL로 브라우저 → S3 직접(예외) | 5-3 |
 
 ---
 
@@ -175,7 +176,11 @@
 - 네임스페이스: 앱 `sesac-gojigi` · 모니터링 `monitoring` · `argocd`
 - Helm `values.yaml` 키는 camelCase, 서비스 키는 서비스 이름 (`services.order-service.tag`)
 - Secret 이름: `mysql-secret` · `{service}-secret` · `keycloak-secret` · `grafana-secret` · `alert-webhook-secret` — 파일로 커밋하지 않고 `secrets-sync` 워크플로가 생성. 서비스는 `envFrom.secretRef`로만 읽음
-- Redis는 AOF(`appendonly yes`) + PVC(`ebs-sc` 1Gi)
+- Redis는 AOF(`appendonly yes`) + PVC(`ebs-sc` 1Gi) — EBS 볼륨(gp3 디스크), ElastiCache 아님
+- 노드 그룹(3티어, 10/13 3차 · 10/14 사이징 조정): `app`(t3.xlarge ×2, 라벨 `tier=app`) · `db`(t3.medium ×1, 2a 고정, 라벨 + 테인트 `tier=db:NoSchedule`). 노드 라벨 값은 `app` · `db` 둘뿐
+- 파드 배치: 업무 서비스 · gateway · Keycloak · 관측성 · ArgoCD는 `nodeSelector: { tier: app }`(Helm `deployment.yaml` 기본). MySQL · Redis만 `nodeSelector: { tier: db }` + `tolerations: [{ key: tier, value: db, effect: NoSchedule }]`
+- 파드 라벨 `tier`: DB에 접속하는 파드(업무 서비스 · Keycloak · 디버그용 mysql 클라이언트)는 `tier: backend`, MySQL · Redis는 `tier: db`. `app:` 라벨과 별개로 둘 다 붙인다
+- NetworkPolicy(`deploy/k8s/02-networkpolicy.yaml`, bootstrap이 configmap 직후 적용): `tier=db` 파드의 3306 · 6379 ingress는 네임스페이스 `sesac-gojigi`의 `tier=backend` 파드만, `tier=db` 파드 egress는 kube-dns 53뿐. 정책 이름은 `db-ingress-from-backend` · `db-egress-deny-except-dns`. 다른 네임스페이스(monitoring 등)에서 DB에 직접 붙지 않는다
 - 이미지 태그: 커밋 SHA 7자리. `latest` 금지
 - 모든 컨테이너에 `resources.requests` 필수, 메모리 `limits` 필수
 
