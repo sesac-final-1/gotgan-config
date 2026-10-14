@@ -51,3 +51,38 @@ resource "aws_sqs_queue" "this" {
     maxReceiveCount     = 3
   })
 }
+
+# 자기 토픽만 이 큐에 넣을 수 있게
+resource "aws_sqs_queue_policy" "from_sns" {
+  for_each = local.subscriptions
+
+  queue_url = aws_sqs_queue.this[each.key].id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "AllowSnsTopic"
+      Effect    = "Allow"
+      Principal = { Service = "sns.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.this[each.key].arn
+      Condition = { ArnEquals = { "aws:SourceArn" = aws_sns_topic.events[each.value.topic].arn } }
+    }]
+  })
+}
+
+resource "aws_sns_topic_subscription" "this" {
+  for_each = local.subscriptions
+
+  topic_arn = aws_sns_topic.events[each.value.topic].arn
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.this[each.key].arn
+
+  # 소비자가 SNS 래퍼 없이 봉투 JSON(eventId · eventType · payload …) 을 그대로 받는다
+  raw_message_delivery = true
+
+  # 메시지 속성이 아니라 본문의 eventType 으로 거른다 — 발행 측이 속성을 따로 달 필요 없음
+  filter_policy_scope = "MessageBody"
+  filter_policy       = jsonencode({ eventType = each.value.events })
+
+  depends_on = [aws_sqs_queue_policy.from_sns]
+}
