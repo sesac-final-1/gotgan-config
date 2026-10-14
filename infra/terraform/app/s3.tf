@@ -75,3 +75,23 @@ resource "aws_s3_bucket_cors_configuration" "upload" {
     max_age_seconds = 3000
   }
 }
+
+# Lambda 로그 보관 — 90일 지나면 Glacier (가이드라인 11장 log-archive, 박지연 Lambda 가 적재)
+resource "aws_s3_bucket_lifecycle_configuration" "log_archive" {
+  bucket = aws_s3_bucket.this["log-archive"].id
+
+  rule {
+    id     = "glacier-after-${var.log_archive_glacier_days}d"
+    status = "Enabled"
+    filter {}
+
+    transition {
+      days          = var.log_archive_glacier_days
+      storage_class = "GLACIER"
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
