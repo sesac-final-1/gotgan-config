@@ -27,3 +27,27 @@ resource "aws_sns_topic" "events" {
 
   name = "sesac-gojigi-${each.key}-events"
 }
+
+# 3회 처리 실패한 메시지 보관 — 원인 확인 후 재처리(콘솔 redrive)
+resource "aws_sqs_queue" "dlq" {
+  for_each = local.subscriptions
+
+  name                      = "sesac-gojigi-${each.key}-dlq"
+  message_retention_seconds = 1209600 # 14일 (최대)
+  sqs_managed_sse_enabled   = true
+}
+
+resource "aws_sqs_queue" "this" {
+  for_each = local.subscriptions
+
+  name                       = "sesac-gojigi-${each.key}"
+  visibility_timeout_seconds = 60     # Lambda timeout(30s) 의 2배 · Spring 리스너 처리 여유
+  receive_wait_time_seconds  = 20     # 롱 폴링 — 빈 응답 요청 수(비용) 감소
+  message_retention_seconds  = 345600 # 4일
+  sqs_managed_sse_enabled    = true
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.dlq[each.key].arn
+    maxReceiveCount     = 3
+  })
+}
