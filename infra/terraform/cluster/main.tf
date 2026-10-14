@@ -65,6 +65,16 @@ module "eks" {
     }
   }
 
+  # 파드가 IMDS 로 노드 IAM 역할(CNI · ECR 권한)을 빌리지 못하게 hop limit 1 — 모듈 기본값 2 는 IRSA 없는 파드(payment · gateway · admin · Keycloak)에도
+  # 노드 권한을 준다(10/14 재현). aws-node(VPC CNI)는 hostNetwork 라 영향 없음, 파드는 IRSA 로만 AWS 권한
+  eks_managed_node_group_defaults = {
+    metadata_options = {
+      http_endpoint               = "enabled"
+      http_tokens                 = "required" # IMDSv2 만
+      http_put_response_hop_limit = 1
+    }
+  }
+
   eks_managed_node_groups = {
     # ── 백 티어: gateway · 업무 서비스 · Keycloak · 관측성 · ArgoCD
     app = {
