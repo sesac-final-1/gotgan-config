@@ -4,7 +4,7 @@
 
 | 폴더 | 내용 | 실행 주체 | 담당 |
 |---|---|---|---|
-| `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `cluster` → `cicd` → `app` (apply 순서) | `infra-schedule` 워크플로(OIDC) · 구지훈 | 구지훈 |
+| `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `cicd` → `app` → `cluster` (apply 순서) | `infra-schedule` 워크플로(OIDC) · 구지훈 | 구지훈 |
 | `deploy/k8s/` | 기본 계층 — namespace · configmap · `02-networkpolicy`(DB 티어) · MySQL · Redis · Keycloak | `bootstrap` 워크플로 | 구지훈 · 이경석(keycloak) |
 | `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · System Status 대시보드 (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
 | `deploy/helm/sesac-gojigi-app/` | 서비스 9개 Deployment · Service · ServiceAccount — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
@@ -28,7 +28,7 @@ KST 08:00  infra-schedule(apply)  → terraform apply infra/terraform/cluster
 KST 22:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
 ```
 
-- `vpc` · `ecr` · `cicd` · `app`(EIP · S3 · SNS/SQS · DynamoDB · IRSA · SSM)은 **상시 유지** — EIP가 남아 DuckDNS 주소는 바뀌지 않습니다.
+- `vpc` · `ecr` · `cicd` · `app`(EIP · S3 · SNS/SQS · DynamoDB · SES · SSM)은 **상시 유지** — EIP가 남아 DuckDNS 주소는 바뀌지 않습니다.
 - 클러스터 안의 데이터(MySQL · Keycloak 사용자 · Grafana 설정)는 매일 초기화됩니다. 시연 데이터는 Flyway 시드(`R__demo_seed.sql`) · realm import · 대시보드 JSON으로 복원됩니다.
 - 수동 실행: Actions → `infra-schedule` → Run workflow → `apply` / `destroy`.
 

@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: '1.9.x'   # TODO 구지훈: provider.tf 의 required_version 과 맞출 것
+          terraform_version: '1.16.5'   # provider.tf required_version "~> 1.16.0" · 로컬과 같은 버전
       - name: terraform fmt -check
         run: terraform fmt -check -recursive -diff infra/terraform
 
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        folder: [global/s3, vpc, ecr, cluster, cicd, app]
+        folder: [vpc, ecr, cicd, app, cluster]   # apply 순서. global/s3 는 로컬 상태라 CI 에서 plan 하면 늘 "버킷 새로 생성" 으로 나와 제외
     defaults:
       run:
         working-directory: infra/terraform/${{ matrix.folder }}
@@ -46,7 +46,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: '1.9.x'
+          terraform_version: '1.16.5'
       - name: terraform init
         run: terraform init -input=false
       - name: terraform validate
