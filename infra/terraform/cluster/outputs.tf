@@ -29,3 +29,8 @@ output "kubeconfig_command" {
   description = "팀원 각자 실행할 kubeconfig 명령"
   value       = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --region ${var.aws_region}"
 }
+
+output "node_group_names" {
+  description = "관리형 노드 그룹 이름 (고정) — scripts/scale-nodes.sh"
+  value       = { for k, ng in module.eks.eks_managed_node_groups : k => ng.node_group_id }
+}

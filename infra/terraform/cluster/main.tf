@@ -68,14 +68,16 @@ module "eks" {
   eks_managed_node_groups = {
     # ── 백 티어: gateway · 업무 서비스 · Keycloak · 관측성 · ArgoCD
     app = {
-      ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = ["t3.xlarge"] # 4 vCPU / 16GiB, 파드 58개 — 실사용 12~13Gi · 노드 1대로도 수용(N-1)
-      capacity_type  = "ON_DEMAND"
-      min_size       = 0 # scripts/scale-nodes.sh(수동 보조)로 0까지. 야간 절약은 22:00 destroy
-      max_size       = 3 # 장애 · 복구 시연 때 3대
-      desired_size   = 2
-      subnet_ids     = local.private_subnets # 2a · 2c
-      labels         = { tier = "app" }      # Helm Deployment nodeSelector
+      name            = "sesac-gojigi-app" # 이름 고정 — 기본값(app-{타임스탬프})은 매일 바뀌어 scripts/scale-nodes.sh 가 못 찾음
+      use_name_prefix = false
+      ami_type        = "AL2023_x86_64_STANDARD"
+      instance_types  = ["t3.xlarge"] # 4 vCPU / 16GiB, 파드 58개 — 실사용 12~13Gi · 노드 1대로도 수용(N-1)
+      capacity_type   = "ON_DEMAND"
+      min_size        = 0 # scripts/scale-nodes.sh(수동 보조)로 0까지. 야간 절약은 22:00 destroy
+      max_size        = 3 # 장애 · 복구 시연 때 3대
+      desired_size    = 2
+      subnet_ids      = local.private_subnets # 2a · 2c
+      labels          = { tier = "app" }      # Helm Deployment nodeSelector
 
       block_device_mappings = {
         xvda = {
@@ -92,14 +94,16 @@ module "eks" {
 
     # ── DB 티어: MySQL · Redis 만. EBS gp3 PVC 가 2a 에 묶이므로 노드도 2a 고정
     db = {
-      ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = ["t3.medium"] # 2 vCPU / 4GiB — MySQL 1Gi + Redis 128Mi + 시스템 ≈ 1.7Gi
-      capacity_type  = "ON_DEMAND"
-      min_size       = 0
-      max_size       = 1
-      desired_size   = 1
-      subnet_ids     = [local.private_subnets[0]] # private-a (2a)
-      labels         = { tier = "db" }
+      name            = "sesac-gojigi-db"
+      use_name_prefix = false
+      ami_type        = "AL2023_x86_64_STANDARD"
+      instance_types  = ["t3.medium"] # 2 vCPU / 4GiB — MySQL 1Gi + Redis 128Mi + 시스템 ≈ 1.7Gi
+      capacity_type   = "ON_DEMAND"
+      min_size        = 0
+      max_size        = 1
+      desired_size    = 1
+      subnet_ids      = [local.private_subnets[0]] # private-a (2a)
+      labels          = { tier = "db" }
       taints = { # toleration 이 있는 MySQL · Redis 외에는 스케줄되지 않음
         db = { key = "tier", value = "db", effect = "NO_SCHEDULE" }
       }
