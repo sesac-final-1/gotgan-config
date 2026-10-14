@@ -5,6 +5,8 @@
 *.tfvars
 !*.tfvars.example
 crash.log
+tfplan
+*.tfplan
 
 # 비밀 값 — GitHub Secrets 에만
 .env
