@@ -11,3 +11,113 @@
 # VPC CNI 애드온에 enableNetworkPolicy=true (deploy/k8s/02-networkpolicy.yaml 이 DB 티어 3306 · 6379 를 tier=backend 파드만 허용)
 # 애드온은 lbc.tf · ebs-csi-driver.tf · metrics-server.tf 뿐 (ESO 없음 — 시크릿은 secrets-sync 워크플로). IRSA 역할은 irsa.tf. 매일 08:00 apply · 22:00 destroy (infra-schedule.yml)
 # 담당 구지훈 · 가이드라인 04장(main.tf 예시 코드) · 스펙 03-4
+
+locals {
+  private_subnets = data.terraform_remote_state.vpc.outputs.private_subnets # [2a, 2c]
+
+  # 팀원 4명 + (있으면) Actions 역할 — 모두 같은 클러스터 관리자 권한
+  cluster_admin_arns = merge(
+    { for u in var.team_iam_users : u => "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${u}" },
+    { for arn in data.aws_iam_roles.github_actions.arns : "github-actions" => arn },
+  )
+}
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.0"
+
+  cluster_name                   = var.cluster_name
+  cluster_version                = var.cluster_version
+  cluster_endpoint_public_access = true # 팀원 각자 PC · Actions 러너에서 kubectl (API 443)
+
+  vpc_id     = data.terraform_remote_state.vpc.outputs.vpc_id
+  subnet_ids = local.private_subnets
+
+  # 매일 재생성 클러스터 — KMS 키(삭제 대기 7일+)와 제어 평면 로그 그룹을 만들지 않는다
+  create_kms_key              = false
+  cluster_encryption_config   = {}
+  create_cloudwatch_log_group = false
+  cluster_enabled_log_types   = []
+
+  # 기본 애드온. vpc-cni 는 노드보다 먼저 + NetworkPolicy 활성화 (deploy/k8s/02-networkpolicy.yaml)
+  cluster_addons = {
+    vpc-cni = {
+      most_recent    = true
+      before_compute = true
+      configuration_values = jsonencode({
+        enableNetworkPolicy = "true"
+      })
+    }
+    kube-proxy = { most_recent = true }
+    coredns    = { most_recent = true }
+  }
+
+  eks_managed_node_groups = {
+    # ── 백 티어: gateway · 업무 서비스 · Keycloak · 관측성 · ArgoCD
+    app = {
+      ami_type       = "AL2023_x86_64_STANDARD"
+      instance_types = ["t3.xlarge"] # 4 vCPU / 16GiB, 파드 58개 — 실사용 12~13Gi · 노드 1대로도 수용(N-1)
+      capacity_type  = "ON_DEMAND"
+      min_size       = 0 # scripts/scale-nodes.sh(수동 보조)로 0까지. 야간 절약은 22:00 destroy
+      max_size       = 3 # 장애 · 복구 시연 때 3대
+      desired_size   = 2
+      subnet_ids     = local.private_subnets # 2a · 2c
+      labels         = { tier = "app" }      # Helm Deployment nodeSelector
+
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 40 # JVM 이미지 9개 + Keycloak · 관측성 이미지 캐시
+            volume_type           = "gp3"
+            encrypted             = true
+            delete_on_termination = true
+          }
+        }
+      }
+    }
+
+    # ── DB 티어: MySQL · Redis 만. EBS gp3 PVC 가 2a 에 묶이므로 노드도 2a 고정
+    db = {
+      ami_type       = "AL2023_x86_64_STANDARD"
+      instance_types = ["t3.medium"] # 2 vCPU / 4GiB — MySQL 1Gi + Redis 128Mi + 시스템 ≈ 1.7Gi
+      capacity_type  = "ON_DEMAND"
+      min_size       = 0
+      max_size       = 1
+      desired_size   = 1
+      subnet_ids     = [local.private_subnets[0]] # private-a (2a)
+      labels         = { tier = "db" }
+      taints = { # toleration 이 있는 MySQL · Redis 외에는 스케줄되지 않음
+        db = { key = "tier", value = "db", effect = "NO_SCHEDULE" }
+      }
+
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 20
+            volume_type           = "gp3"
+            encrypted             = true
+            delete_on_termination = true
+          }
+        }
+      }
+    }
+  }
+
+  # 클러스터를 매일 만드는 주체는 Actions 역할 → 자동 관리자 등록을 끄고 전부 명시 (true + 중복 명시는 오류)
+  authentication_mode                      = "API"
+  enable_cluster_creator_admin_permissions = false
+
+  access_entries = {
+    for name, arn in local.cluster_admin_arns : name => {
+      principal_arn = arn
+      policy_associations = {
+        admin = {
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = { type = "cluster" }
+        }
+      }
+    }
+  }
+}
