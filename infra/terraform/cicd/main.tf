@@ -1,8 +1,8 @@
 # GitHub OIDC 공급자 · Actions 역할(ECR push · Serverless 배포 · SSM 읽기 · cluster/ apply · destroy) — 이경석 작성 · 구지훈 리뷰. apply 순서 4 (cluster 보다 먼저 — cluster 의 access_entries 가 Actions 역할을 이름으로 찾는다). output → GitHub Secret AWS_ROLE_ARN
 # 신뢰 정책 조건 token.actions.githubusercontent.com:sub — 하나라도 빠지면 그 워크플로가 AssumeRole 에서 실패 (목록: variables.tf github_oidc_subjects)
-#   repo:sesac-final-1/gotgan-config:ref:refs/heads/main   (infra-schedule 스케줄 · bootstrap · secrets-sync · workflow_dispatch)
-#   repo:sesac-final-1/gotgan-config:pull_request          (infra.yml PR plan)
-#   repo:sesac-final-1/gotgan-backend:ref:refs/heads/main  (backend.yml ECR push · serverless.yml — 둘 다 main push 에서만 AWS 를 쓰므로 * 대신 main 으로 좁힘)
+#   repo:sesac-final-1@341724939/gotgan-config@1416543587:ref:refs/heads/main   (infra-schedule 스케줄 · bootstrap · secrets-sync · workflow_dispatch)
+#   repo:sesac-final-1@341724939/gotgan-config@1416543587:pull_request          (infra.yml PR plan)
+#   repo:sesac-final-1@341724939/gotgan-backend@1416543417:ref:refs/heads/main  (backend.yml ECR push · serverless.yml — 둘 다 main push 에서만 AWS 를 쓰므로 * 대신 main 으로 좁힘)
 # 권한: infra-schedule 이 cluster/ 를 apply · destroy 한다 → EKS · EC2 · IAM(IRSA 역할 생성) · tfstate 버킷 읽기/쓰기까지 필요
 # 로컬 apply 전용 폴더 (워크플로가 쓸 역할을 만드는 폴더라 워크플로로 apply 하지 않는다)
 # 담당 구지훈 · 가이드라인 04장 · 스펙 03-4
