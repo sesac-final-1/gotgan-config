@@ -24,6 +24,8 @@
 | 이벤트 | 토픽 | 발행 | 구독 · 하는 일 | payload (담당자가 확정) |
 |---|---|---|---|---|
 | `StoreApproved` | store-events | store | user(SELLER 역할 · store_id) · settlement(스토어명 · 정산 계좌 스냅샷) · 알림 Lambda(승인 메일) | storeId · userId · storeName · sellerEmail · settlementAccount{bank, number, holder} |
+| `StoreApplicationRejected` | store-events | store | 알림 Lambda(입점 반려 메일) — 10/15 추가 | applicationId · storeName · sellerEmail · reason (재신청 제한 30일 안내용 decidedAt) |
+| `StoreApplicationSupplementRequested` | store-events | store | 알림 Lambda(보완요청 메일 — 7일 내 미보완 시 자동 반려 안내) — 10/15 추가 | applicationId · storeName · sellerEmail · requestedDocs[] · message · dueAt |
 | `StoreStatusChanged` | store-events | store | product(상품 노출 숨김) · settlement(지급 보류) | storeId · status |
 | `OrderPaid` | order-events | order | user(5% 포인트 적립) · 알림 Lambda(주문 확인 메일) | orderNo · buyerId · ordererEmail · payAmt · items[{orderItemId, earnedPoint}] |
 | `OrderItemShipped` | order-events | order | 알림 Lambda(배송 시작 메일) | orderItemId · orderNo · ordererEmail · courier · trackingNo |
