@@ -45,7 +45,8 @@ resource "helm_release" "lbc" {
   })]
 
   # 노드 · coredns 가 준비된 뒤 설치
-  # EKS 1.35 + metrics-server 애드온 환경에서 /openapi/v2 · v3 가 NotFound 를 돌려줘 Helm 의 스키마 검증이
+  # 근본 원인: EKS 1.35 기본 metrics-server v0.9.0 이 protobuf /openapi/v2 를 503 으로 만듦 → metrics-server.tf 에서 v0.8.1 고정(이슈 #11).
+  # 아래 설정은 같은 증상의 이전 우회책 — 안전장치로 유지. (당시 기록) /openapi 조회 실패로 Helm 의 스키마 검증이
   # "unable to build kubernetes objects ... the server is currently unable to handle the request" 로 실패한다 (10/14 재현).
   # 공식 차트라 스키마 검증 생략 위험이 작다 — 실제 적용은 API 서버가 검증한다
   disable_openapi_validation = true
