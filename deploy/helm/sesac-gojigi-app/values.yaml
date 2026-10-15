@@ -72,7 +72,7 @@ services:
   # ── payment (jihoon-devstu)
   payment-service:
     repository: sesac-gojigi-payment
-    tag: "0000000"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "674f9ed"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8086
     secretName: payment-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
   # ── review (perish95)
