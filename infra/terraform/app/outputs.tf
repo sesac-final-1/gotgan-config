@@ -21,7 +21,7 @@ output "bucket_arns" {
 }
 
 output "images_base_url" {
-  description = "이미지 공개 URL 앞부분 — {base}/products/{key} · {base}/reviews/{key}"
+  description = "이미지 공개 URL 앞부분 — {base}/products/{key} · {base}/reviews/{key} · {base}/stores/{key}"
   value       = "https://${aws_s3_bucket.this["images"].bucket_regional_domain_name}"
 }
 
