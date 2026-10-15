@@ -178,7 +178,8 @@ module "grafana_irsa" {
 | IMDS hop limit 1 | 기본값(2)이면 IRSA 없는 파드도 노드 IAM 역할(CNI · ECR 권한)을 씀 → 1로 차단. 파드 AWS 권한은 **IRSA로만** |
 | NLB cross-zone | 어노테이션이 없으면 파드 없는 AZ의 EIP는 무응답 |
 | metrics-server 10251 | EKS 관리형 metrics-server 포트 — 노드 SG에 허용 규칙 추가돼 있음(지우면 `kubectl top` 불가) |
-| LBC Helm | EKS 1.35 + metrics-server 환경에서 OpenAPI 조회 실패 → `disable_openapi_validation = true`, metrics-server 애드온 뒤에 설치 |
+| metrics-server 버전 | EKS 1.35 기본 애드온 v0.9.0 이 protobuf `/openapi/v2` 를 503 으로 만들어 ArgoCD 동기화(`Unknown`) · LBC Helm 설치가 실패 → **`v0.8.1-eksbuild.21` 고정**(이슈 #11 · PR #12). LBC 의 `disable_openapi_validation = true` 는 같은 증상의 이전 우회책으로 안전장치로 유지 |
+| gateway NLB 포트 | Helm Service 템플릿이 `port = targetPort = 8080` 이라 NLB 가 8080 으로 열림 → `vercel.json`(80번)과 불일치. gateway 만 NLB 80 → 파드 8080 으로 분리 필요 (Helm 담당 이경석, 10/15 확인) |
 | 노드 그룹 이름 | `sesac-gojigi-app` · `-db` 고정 (기본값은 매일 바뀜) |
 | KMS · 로그 그룹 | 매일 재생성이라 EKS KMS 키 · 제어 평면 로그를 만들지 않음 |
 | SNS 필터 | 새 구독 · 필터는 퍼지는 데 수 분 걸림 / SQS purge는 최대 60초 — 그 사이 보낸 메시지도 지워짐 |
