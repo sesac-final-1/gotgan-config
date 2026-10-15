@@ -33,6 +33,21 @@
 | `OrderItemCancelled` · `OrderItemReturned` | order-events | order | 알림 Lambda(취소/반품 완료 메일) | orderItemId · orderNo · ordererEmail · refundAmt |
 | `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda | settlementId · storeId · week · payoutAmt · sellerEmail |
 
+## 순서 규칙 (10/15 결정 — A안)
+
+SNS + SQS 표준 큐는 **도착 순서를 보장하지 않는다** (재시도된 메시지가 나중 메시지보다 늦게 처리될 수 있음).
+
+- **상태를 덮어쓰는 이벤트는 소비자가 `occurredAt` 을 비교해 옛 이벤트를 무시한다**
+  - 반영 대상 행에 "마지막으로 반영한 occurredAt" 컬럼을 두고, 비교 · 갱신을 UPDATE 한 문장으로:
+    `UPDATE … SET status = :status, {x}_changed_at = :occurredAt WHERE id = :id AND ({x}_changed_at IS NULL OR {x}_changed_at < :occurredAt)`
+  - 0행 갱신 = 옛 이벤트 → 무시(로그만), `processed_event` 에는 기록
+  - occurredAt 은 Asia/Seoul `LocalDateTime` 으로 변환해 DB `DATETIME(6)` 과 비교
+- **적용 대상**: `StoreStatusChanged` → product(`product.store_status_changed_at`, 박지연) · settlement(`settlement_store.store_status_changed_at`, 구지훈)
+- **적용하지 않는 이벤트**: 누적 · 한 번만 일어나는 이벤트(`OrderPaid` 포인트 적립, `OrderItemConfirmed` 정산 적재, `StoreApproved` 등)는 `processed_event` 중복 방지로 충분
+- 새로 "상태를 덮어쓰는" 이벤트를 추가하면 이 규칙을 같이 적용하고 위 대상 목록에 추가한다
+- 기준이 되는 행이 아직 없으면(예: `StoreApproved` 보다 `StoreStatusChanged` 가 먼저 도착) `processed_event` 를 남기지 않고 예외로 메시지를 큐에 돌려 재시도 (3회 실패 시 DLQ)
+- 대안 검토: FIFO(B안)는 토픽 · 큐 · 구독 전체 재생성 + 모든 구독자 영향이라 채택 안 함, 그대로 둠(C안)은 지급 보류 · 상품 노출이 틀어질 수 있어 채택 안 함
+
 ## 큐 (구독자별, 컨벤션 5-1)
 
 - store-events → `sesac-gojigi-user-store-events` · `-product-store-events` · `-settlement-store-events` · `-notification-store-events`
