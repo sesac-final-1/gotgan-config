@@ -7,6 +7,7 @@ on:
   workflow_call:
     secrets:
       DUCKDNS_TOKEN: { required: false }   # EIP 는 상시 자원이라 평소엔 안 쓴다
+      ARGOCD_ADMIN_PASSWORD: { required: false }   # ArgoCD admin 비밀번호 고정 — 없으면 초기 랜덤 비밀번호 그대로
 
 permissions:
   id-token: write
@@ -73,6 +74,22 @@ jobs:
           kubectl apply -n argocd --server-side --force-conflicts -f "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
           kubectl rollout status deployment/argocd-server -n argocd --timeout=300s
           kubectl apply -f deploy/argocd/application.yaml
+
+      # ── 5-1. ArgoCD admin 비밀번호 고정 — 매일 재설치돼도 같은 비밀번호 (GitHub Secret ARGOCD_ADMIN_PASSWORD, 공식 "선언적 admin 비밀번호" 방식)
+      #        argocd-secret 의 admin.password 에 bcrypt 해시를 넣고, 초기 랜덤 비밀번호 시크릿은 지운다. 시크릿이 없으면 건너뜀(초기 비밀번호 유지)
+      - name: argocd admin 비밀번호
+        env:
+          ARGOCD_ADMIN_PASSWORD: ${{ secrets.ARGOCD_ADMIN_PASSWORD }}
+        run: |
+          if [ -z "$ARGOCD_ADMIN_PASSWORD" ]; then
+            echo "::warning::ARGOCD_ADMIN_PASSWORD 없음 — 초기 비밀번호(argocd-initial-admin-secret) 유지"
+            exit 0
+          fi
+          command -v htpasswd >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq apache2-utils >/dev/null; }
+          HASH=$(htpasswd -nbBC 10 "" "$ARGOCD_ADMIN_PASSWORD" | tr -d ':\n' | sed 's/^\$2y/$2a/')
+          kubectl -n argocd patch secret argocd-secret --type merge \
+            -p "{\"stringData\": {\"admin.password\": \"$HASH\", \"admin.passwordMtime\": \"$(date -u +%FT%TZ)\"}}"
+          kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found
 
       # ── 6. gateway NLB 주소 — EIP 2개가 NLB 어노테이션으로 붙는다 (app/eip.tf, 상시 자원) → DuckDNS 는 평소 변경 없음
       - name: gateway LoadBalancer 대기
