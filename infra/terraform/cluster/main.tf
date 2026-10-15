@@ -1,5 +1,5 @@
 # EKS 모듈(~> 20) — 1.35 · 퍼블릭 엔드포인트 · OIDC 공급자. apply 순서 5 (app 다음 — app output 을 읽는다. cicd/ 와는 상태 의존 없음)
-# access_entries — 팀원 4명(IAM 사용자, variables.tf team_iam_users) + GitHub Actions 역할(이름 sesac-gojigi-github-actions 로 조회 — 있으면 추가, 없으면 생략) 모두 AmazonEKSClusterAdminPolicy(cluster 범위) 로 동일하게.
+# access_entries — 팀원 전원(IAM 사용자, variables.tf team_iam_users) + GitHub Actions 역할(이름 sesac-gojigi-github-actions 로 조회 — 있으면 추가, 없으면 생략) 모두 AmazonEKSClusterAdminPolicy(cluster 범위) 로 동일하게.
 #   enable_cluster_creator_admin_permissions = false — 매일 08:00 클러스터를 만드는 주체가 Actions 역할이라 true 면 그 역할만 관리자가 된다. 생성자를 access_entries 에도 적으면 중복 오류
 # 노드 그룹 2개 (3티어, 10/13 3차 · 10/14 사이징 조정):
 #   app = t3.xlarge ×2 (4 vCPU · 16GiB · 파드 58/노드, AL2023, min 0 · max 3 · desired 2, 프라이빗 2a · 2c, gp3 40GiB 암호화, 라벨 tier=app)
@@ -15,7 +15,7 @@
 locals {
   private_subnets = data.terraform_remote_state.vpc.outputs.private_subnets # [2a, 2c]
 
-  # 팀원 4명 + (있으면) Actions 역할 — 모두 같은 클러스터 관리자 권한
+  # 팀원 전원 + (있으면) Actions 역할 — 모두 같은 클러스터 관리자 권한
   cluster_admin_arns = merge(
     { for u in var.team_iam_users : u => "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${u}" },
     { for arn in data.aws_iam_roles.github_actions.arns : "github-actions" => arn },
