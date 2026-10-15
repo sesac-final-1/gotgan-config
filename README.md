@@ -40,7 +40,7 @@ KST 22:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC
 
 ```bash
 cd infra/terraform/vpc && terraform init && terraform plan     # apply는 워크플로 또는 구지훈만 (컨벤션 5-2)
-kubectl get pods -n sesac-gojigi                               # 팀원 4명 모두 access entries 로 접근 가능
+kubectl get pods -n sesac-gojigi                               # 팀원 전원 access entries 로 접근 가능
 kubectl -n sesac-gojigi port-forward svc/keycloak 8180:8080    # Keycloak 콘솔 (외부 미노출)
 kubectl -n monitoring port-forward svc/grafana 3000:3000       # Grafana
 ```

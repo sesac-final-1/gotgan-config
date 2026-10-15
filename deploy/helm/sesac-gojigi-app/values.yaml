@@ -52,7 +52,7 @@ services:
     secretName: product-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
       roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-product-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
-  # ── order (jongbeen97)
+  # ── order (perish95)
   order-service:
     repository: sesac-gojigi-order
     tag: "0000000"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
@@ -68,13 +68,13 @@ services:
     secretName: settlement-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
       roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-settlement-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
-  # ── payment (jongbeen97)
+  # ── payment (jihoon-devstu)
   payment-service:
     repository: sesac-gojigi-payment
     tag: "0000000"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8086
     secretName: payment-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
-  # ── review (jongbeen97)
+  # ── review (perish95)
   review-service:
     repository: sesac-gojigi-review
     tag: "0000000"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)

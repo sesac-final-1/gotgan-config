@@ -54,7 +54,7 @@
 | 애드온 | vpc-cni(**NetworkPolicy 활성화**) · coredns · kube-proxy · aws-ebs-csi-driver · metrics-server (모두 EKS 관리형) |
 | Helm | AWS Load Balancer Controller 3.5.0 (`kube-system`) |
 | IRSA | `sesac-gojigi-{user · store · product · order · review · settlement}-irsa` · `-lbc-irsa` · `-ebs-csi-irsa` — 이름 고정이라 ARN 불변 |
-| 접근 권한 | 팀원 4명(`sesac-a1` ~ `a4`) + Actions 역할(있으면 자동) → 모두 클러스터 관리자 |
+| 접근 권한 | 팀원 전원(`sesac-a1` ~ `a4`) + Actions 역할(있으면 자동) → 모두 클러스터 관리자 |
 
 ---
 

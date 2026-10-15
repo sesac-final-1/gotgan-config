@@ -9,6 +9,6 @@
 /.github/                       @jihoon-devstu @perish95
 
 # 공유 파일 · 문서 — 전원
-/deploy/k8s/01-configmap.yaml   @jihoon-devstu @perish95 @VoC-100 @jongbeen97
-/deploy/helm/sesac-gojigi-app/values.yaml @jihoon-devstu @perish95 @VoC-100 @jongbeen97
-/docs/                          @jihoon-devstu @perish95 @VoC-100 @jongbeen97
+/deploy/k8s/01-configmap.yaml   @jihoon-devstu @perish95 @VoC-100
+/deploy/helm/sesac-gojigi-app/values.yaml @jihoon-devstu @perish95 @VoC-100
+/docs/                          @jihoon-devstu @perish95 @VoC-100

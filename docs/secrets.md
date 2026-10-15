@@ -20,8 +20,8 @@
 | `KEYCLOAK_ADMIN_USERNAME` | Keycloak 초기 관리자 | `keycloak-secret` → `KC_BOOTSTRAP_ADMIN_USERNAME` | 팀이 정함 (예: `gotgan-admin`) | 이경석 |
 | `KEYCLOAK_ADMIN_PASSWORD` | 〃 | `keycloak-secret` → `KC_BOOTSTRAP_ADMIN_PASSWORD` | 무작위 24자 | 이경석 |
 | `KEYCLOAK_CLIENT_SECRET` | `gotgan-backend` 클라이언트 (realm import 자리표시자 `${GOTGAN_BACKEND_CLIENT_SECRET}`) · user-service | `keycloak-secret` → `GOTGAN_BACKEND_CLIENT_SECRET`, `user-service-secret` → `KEYCLOAK_CLIENT_SECRET` | 무작위 32자 | 이경석 |
-| `PORTONE_API_SECRET` | payment-service (포트원 V2 API) | `payment-service-secret` → `PORTONE_API_SECRET` | 포트원 콘솔 → 결제 연동 → API Secret (테스트 채널) | 이종빈 |
-| `PORTONE_WEBHOOK_SECRET` | payment-service 웹훅 서명 검증 | `payment-service-secret` → `PORTONE_WEBHOOK_SECRET` | 포트원 콘솔 → 웹훅 설정 | 이종빈 |
+| `PORTONE_API_SECRET` | payment-service (포트원 V2 API) | `payment-service-secret` → `PORTONE_API_SECRET` | 포트원 콘솔 → 결제 연동 → API Secret (테스트 채널) | 구지훈 |
+| `PORTONE_WEBHOOK_SECRET` | payment-service 웹훅 서명 검증 | `payment-service-secret` → `PORTONE_WEBHOOK_SECRET` | 포트원 콘솔 → 웹훅 설정 | 구지훈 |
 | `GRAFANA_ADMIN_PASSWORD` | Grafana 로그인 | `grafana-secret`(monitoring) → `admin-password` | 무작위 24자 | 박지연 |
 | `ALERT_WEBHOOK_URL` | Grafana Alerting → Discord/Slack | `alert-webhook-secret`(monitoring) → `url` | Discord 채널 → 연동 → 웹훅 URL | 박지연 |
 | `DUCKDNS_TOKEN` | `scripts/duckdns-update.sh` (EIP 변경 시만) | — | duckdns.org 로그인 화면의 token | 구지훈 |
@@ -39,8 +39,8 @@
 
 | 이름 | 용도 | 출처 | 담당 |
 |---|---|---|---|
-| `VITE_PORTONE_STORE_ID` | 포트원 브라우저 SDK | 포트원 콘솔 → 상점 ID | 이종빈 |
-| `VITE_PORTONE_CHANNEL_KEY` | 〃 테스트 채널 키 | 포트원 콘솔 → 결제 연동 → 채널 키 | 이종빈 |
+| `VITE_PORTONE_STORE_ID` | 포트원 브라우저 SDK | 포트원 콘솔 → 상점 ID | 구지훈 |
+| `VITE_PORTONE_CHANNEL_KEY` | 〃 테스트 채널 키 | 포트원 콘솔 → 결제 연동 → 채널 키 | 구지훈 |
 | `VITE_GRAFANA_URL` | 관리자 화면의 System Status 링크 | port-forward 주소 또는 Grafana 주소 | 박지연 |
 
 비밀이 아니므로 `.env.example`에 이름만 커밋, 값은 Vercel → Project → Settings → Environment Variables.
