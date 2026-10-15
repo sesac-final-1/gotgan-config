@@ -1,1 +1,143 @@
-# Loki — 로그 저장소 · 보존 7일 · PVC. 라벨은 app · namespace · level 만. 담당 박지연
+# Loki 3.7.8 — 로그 저장소. 업무 서비스가 Loki4j 로 직접 보낸(push) 로그를 디스크에 저장하고, Grafana 가 LogQL 로 검색한다. 담당 박지연 · 가이드라인 13장
+# - 받는 주소: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push (deploy/k8s/01-configmap.yaml 의 LOKI_URL, 구지훈) — Service 이름 · 포트를 바꾸면 그쪽도 함께
+# - 라벨은 app · namespace · level 3개만 (보내는 쪽 logback-spring.xml 이 정한다). userId · traceId · orderNo 는 로그 본문에 — 라벨이 늘면 묶음 수가 폭발한다
+#   Loki 3 가 app 값을 복사해 service_name 라벨을 자동으로 붙인다 (Grafana 로그 탐색 화면용). app 과 1:1 이라 묶음 수는 늘지 않으므로 그대로 둔다
+# - 들어오는 로그: logback 설정을 넣은 Spring 서비스 9개만. 수집기(Alloy · Promtail) 가 없으므로 Keycloak · MySQL · Redis · 관측 스택 로그는 kubectl logs 로 본다
+# - 실행 형태: 단일 바이너리(받기 · 저장 · 검색을 파드 1개가) + EBS 디스크. 분산 모드 · S3 저장은 가이드라인 13장 "실무와의 차이"
+# - 디스크: PVC 10Gi(ebs-sc) · 보존 7일(compactor 가 실제 삭제). 매일 22:00 PVC 가 삭제되므로 실제 보존은 하루. Loki 에는 용량 상한 설정이 없다
+# - 쿠버네티스 API 를 쓰지 않으므로(받기만 함) ServiceAccount · 권한 없음
+# - 설정(ConfigMap) 을 바꾸면 파드를 재시작해야 반영된다: kubectl -n monitoring rollout restart sts/loki
+#
+# 구성 (위에서부터):
+#   1. ConfigMap   — 설정 파일 loki.yaml (저장 방식 · 스키마 · 보존 기간)
+#   2. StatefulSet — Loki 컨테이너 1개 + 자기 디스크(PVC 10Gi)
+#   3. Service     — 고정 주소 loki.monitoring.svc:3100 (앱이 보내는 곳 · Grafana 데이터소스)
+#
+# 1. ConfigMap — loki.yaml. 파드 안 /etc/loki/loki.yaml 로 마운트된다
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-config
+  namespace: monitoring
+  labels:
+    app: loki
+    app.kubernetes.io/part-of: gotgan-observability
+data:
+  loki.yaml: |
+    auth_enabled: false               # 팀 하나 · 클러스터 내부 전용이라 테넌트(X-Scope-OrgID) 구분을 끈다
+
+    server:
+      http_listen_port: 3100
+
+    common:                           # 단일 바이너리용 공통 설정 — 복제 없음, 저장은 디스크(/loki)
+      path_prefix: /loki
+      replication_factor: 1
+      instance_addr: 127.0.0.1
+      ring:
+        kvstore:
+          store: inmemory
+      storage:
+        filesystem:
+          chunks_directory: /loki/chunks
+          rules_directory: /loki/rules
+
+    schema_config:                    # 저장 형식. Loki 3 권장값(tsdb · v13). from 은 이 형식을 쓰기 시작한 날짜 — 바꾸지 말 것
+      configs:
+        - from: "2026-10-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+
+    limits_config:
+      retention_period: 168h          # 7일 (가이드라인 13장)
+
+    compactor:                        # 보존 기간이 지난 로그를 실제로 지우는 담당. 이게 없으면 retention_period 를 적어도 지워지지 않는다
+      working_directory: /loki/compactor
+      retention_enabled: true
+      delete_request_store: filesystem
+
+    analytics:
+      reporting_enabled: false        # Grafana Labs 로 사용 통계를 보내지 않음
+---
+# 2. StatefulSet — Loki 본체. 파드 이름 loki-0 고정, 디스크는 volumeClaimTemplates 로 파드마다 하나
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: loki
+  namespace: monitoring
+  labels:
+    app: loki
+    app.kubernetes.io/part-of: gotgan-observability
+spec:
+  serviceName: loki
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels:
+        app: loki
+        app.kubernetes.io/part-of: gotgan-observability
+    spec:
+      nodeSelector:
+        tier: app                     # 백 티어 노드 그룹(app) 에만. db 노드는 테인트로 막혀 있음
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001              # 이미지 기본 사용자 loki
+        fsGroup: 10001                # 새 EBS 볼륨에 이 사용자가 쓸 수 있도록
+      containers:
+        - name: loki
+          image: grafana/loki:3.7.8
+          args:
+            - -config.file=/etc/loki/loki.yaml
+          ports:
+            - { name: http, containerPort: 3100 }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          livenessProbe:
+            tcpSocket: { port: http }  # 프로세스가 살아 있는지만. /ready 는 기동 직후 잠시 503 이라 liveness 로 쓰면 재시작이 반복될 수 있다
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet: { path: /ready, port: http }
+            initialDelaySeconds: 15
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: config, mountPath: /etc/loki }
+            - { name: data, mountPath: /loki }
+      volumes:
+        - name: config
+          configMap:
+            name: loki-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: ebs-sc      # gp3 · 암호화 · WaitForFirstConsumer (deploy/k8s/db/storageclass.yaml, 구지훈)
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+# 3. Service — 고정 주소 loki.monitoring.svc:3100. 외부 미노출(ClusterIP). 업무 서비스는 /loki/api/v1/push 로 보내고, Grafana 는 같은 주소로 조회한다
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+  namespace: monitoring
+  labels:
+    app: loki
+    app.kubernetes.io/part-of: gotgan-observability
+spec:
+  type: ClusterIP
+  selector:
+    app: loki
+  ports:
+    - { name: http, port: 3100, targetPort: http }
