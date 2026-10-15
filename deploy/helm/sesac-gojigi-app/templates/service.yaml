@@ -16,6 +16,7 @@ spec:
   selector:
     app: {{ $name }}
   ports:
-    - port: {{ $svc.port }}
+    {{- /* port = Service(외부 NLB) 포트 — service.port 가 있으면 그 값(gateway 80), 없으면 앱 포트. targetPort = 파드(앱) 포트 */}}
+    - port: {{ if and $svc.service $svc.service.port }}{{ $svc.service.port }}{{ else }}{{ $svc.port }}{{ end }}
       targetPort: {{ $svc.port }}
 {{- end }}
