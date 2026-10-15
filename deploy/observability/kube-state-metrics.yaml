@@ -8,8 +8,8 @@
 #   1. ServiceAccount     — 이 파드의 신분
 #   2. ClusterRole        — 5종 오브젝트 읽기 권한 (list · watch)
 #   3. ClusterRoleBinding — 1 에 2 를 부여
-#   4. Deployment         — kube-state-metrics 컨테이너 1개 (app 노드, Prometheus 수집 어노테이션)
-#   5. Service            — 고정 주소 kube-state-metrics.monitoring.svc:8080
+#   4. Deployment         — kube-state-metrics 컨테이너 1개 (app 노드)
+#   5. Service            — 고정 주소 kube-state-metrics.monitoring.svc:8080 (Prometheus 수집 경로)
 #
 # 1. ServiceAccount — 파드가 API 서버에 물어볼 때 쓰는 신분
 apiVersion: v1
@@ -73,10 +73,7 @@ spec:
       labels:
         app: kube-state-metrics
         app.kubernetes.io/part-of: gotgan-observability
-      annotations:                    # 업무 서비스(Helm deployment.yaml) 와 같은 방식 — Prometheus 가 이 어노테이션을 보고 수집 대상을 찾는다
-        prometheus.io/scrape: "true"
-        prometheus.io/path: /metrics
-        prometheus.io/port: "8080"
+      # prometheus.io/scrape 어노테이션을 붙이지 않는다 — Prometheus 가 별도 job(5번 Service 주소) 으로 수집. 붙이면 중복 수집되고 app 라벨이 틀린다
     spec:
       serviceAccountName: kube-state-metrics
       nodeSelector:
@@ -105,7 +102,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: ["ALL"] }
 ---
-# 5. Service — 고정 주소 kube-state-metrics.monitoring.svc:8080. 수집은 4 의 어노테이션으로 하고, 이 주소는 대시보드 작업 중 port-forward 로 지표를 직접 확인할 때 쓴다
+# 5. Service — 고정 주소 kube-state-metrics.monitoring.svc:8080. Prometheus 의 kube-state-metrics job 이 이 주소로 수집한다 (prometheus.yaml)
 apiVersion: v1
 kind: Service
 metadata:
