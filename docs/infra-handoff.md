@@ -39,7 +39,7 @@
 | | NAT 게이트웨이 1개 (2a) | 공인 IP `52.79.161.22` (외부 IP 허용 목록이 필요할 때) |
 | `ecr` | 저장소 9개 · 최근 10개 보관 | `694951014380.dkr.ecr.ap-northeast-2.amazonaws.com/sesac-gojigi-{gateway · user · store · product · order · settlement · payment · review · admin}` |
 | `app` | NLB용 EIP [2a, 2c] | `3.34.245.213`(eip-0, **DuckDNS 대상**) · `13.125.139.205` / `eipalloc-00eaad35e9b548733` · `eipalloc-026aa7de15c62370c` |
-| | S3 버킷 4개 | `sesac-gojigi-images-4380`(products/ · reviews/ 공개 읽기) · `-seller-docs-4380` · `-reports-4380` · `-log-archive-4380`(90일 후 Glacier) |
+| | S3 버킷 4개 | `sesac-gojigi-images-4380`(products/ · reviews/ · stores/ 공개 읽기) · `-seller-docs-4380` · `-reports-4380` · `-log-archive-4380`(90일 후 Glacier) |
 | | SNS 토픽 3 · SQS 큐 9 + DLQ 9 | `sesac-gojigi-{store · order · settlement}-events` / `sesac-gojigi-{소비자}-{도메인}-events` (+`-dlq`) |
 | | DynamoDB 2 | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` |
 | | SES 발신 주소 (샌드박스) | `wlsgksvheh@gmail.com` (Verified) |
@@ -157,7 +157,7 @@ module "grafana_irsa" {
 | 서비스 | AWS 권한 (IRSA) | ConfigMap 변수 |
 | --- | --- | --- |
 | user | SQS 수신 | `USER_STORE_EVENTS_QUEUE_URL` · `USER_ORDER_EVENTS_QUEUE_URL` |
-| store | SNS 발행 · S3 seller-docs Put/Get | `STORE_EVENTS_TOPIC_ARN` · `SELLER_DOCS_BUCKET` |
+| store | SNS 발행 · S3 seller-docs Put/Get · S3 images/stores/ Put | `STORE_EVENTS_TOPIC_ARN` · `SELLER_DOCS_BUCKET` · `IMAGES_BUCKET` |
 | product | SQS 수신 · S3 images/products/ Put | `PRODUCT_STORE_EVENTS_QUEUE_URL` · `IMAGES_BUCKET` |
 | order | SNS 발행 | `ORDER_EVENTS_TOPIC_ARN` |
 | review | SQS 수신 · S3 images/reviews/ Put | `REVIEW_ORDER_EVENTS_QUEUE_URL` · `IMAGES_BUCKET` |

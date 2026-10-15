@@ -17,6 +17,7 @@ locals {
     store = [
       { actions = ["sns:Publish"], resources = [local.app_topics["store"]] },
       { actions = ["s3:PutObject", "s3:GetObject"], resources = ["${local.app_buckets["seller-docs"]}/*"] }, # 입점 서류 presign
+      { actions = ["s3:PutObject"], resources = ["${local.app_buckets["images"]}/stores/*"] },               # 스토어 대표 이미지 presigned PUT (STR-06)
     ]
     product = [
       { actions = local.sqs_consume, resources = [local.app_queues["product-store-events"]] },
