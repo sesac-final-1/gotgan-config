@@ -1,1 +1,210 @@
-# Prometheus — 파드 어노테이션(prometheus.io/scrape) 발견 · 15초 수집 · RBAC · Deployment · PVC 10Gi · 보존 7일. 담당 박지연 · 가이드라인 13장
+# Prometheus v3.13.4 (LTS) — 지표를 15초마다 가져와(pull) 디스크에 시간 순서로 저장한다. Grafana 가 PromQL 로 조회. 담당 박지연 · 가이드라인 13장
+# - 수집 대상: ① 어노테이션 prometheus.io/scrape="true" 가 붙은 파드 (업무 서비스 Helm 템플릿) ② kube-state-metrics (Service 주소) ③ 각 노드 kubelet 의 cAdvisor (파드 CPU · 메모리)
+# - 디스크: PVC 10Gi(ebs-sc) · 보존 7일 + 용량 상한 8GB. 매일 22:00 PVC 가 삭제되므로 실제 보존은 하루 — 보존 설정은 클러스터를 며칠 켜 둘 때 디스크가 넘치지 않게 하는 안전장치
+# - StatefulSet 인 이유: EBS 는 한 노드에만 붙는다 → 옛 파드를 먼저 내리고 새 파드가 디스크를 넘겨받아야 한다. infra-schedule 도 monitoring 의 StatefulSet 을 지운 뒤 PVC 를 지운다
+# - 알림은 Grafana Alerting 이 맡으므로 Alertmanager · 규칙 파일 없음
+# - 설정(ConfigMap) 을 바꾸면 파드를 재시작해야 반영된다: kubectl -n monitoring rollout restart sts/prometheus
+#
+# 구성 (위에서부터):
+#   1. ServiceAccount     — 이 파드의 신분
+#   2. ClusterRole        — 파드 · 노드 목록 읽기(수집 대상 찾기) + 노드 cAdvisor 지표 읽기
+#   3. ClusterRoleBinding — 1 에 2 를 부여
+#   4. ConfigMap          — 설정 파일 prometheus.yml (수집 간격 · 수집 대상 규칙)
+#   5. StatefulSet        — Prometheus 컨테이너 1개 + 자기 디스크(PVC 10Gi)
+#   6. Service            — 고정 주소 prometheus.monitoring.svc:9090 (Grafana 데이터소스 · port-forward)
+#
+# 1. ServiceAccount — 파드가 API 서버에 물어볼 때 쓰는 신분
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+    app.kubernetes.io/part-of: gotgan-observability
+---
+# 2. ClusterRole — 여러 네임스페이스의 파드와 노드를 봐야 하므로 ClusterRole. 쓰기 권한 없음
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+    app.kubernetes.io/part-of: gotgan-observability
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes"]      # 수집 대상 찾기 (서비스 디스커버리)
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]        # API 서버를 거쳐 kubelet 의 /metrics/cadvisor 읽기
+    verbs: ["get"]
+---
+# 3. ClusterRoleBinding — 1 의 ServiceAccount 에 2 의 권한을 부여
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+    app.kubernetes.io/part-of: gotgan-observability
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring
+---
+# 4. ConfigMap — prometheus.yml. 파드 안 /etc/prometheus/prometheus.yml 로 마운트된다
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+  labels:
+    app: prometheus
+    app.kubernetes.io/part-of: gotgan-observability
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s            # 가이드라인 13장. 시연 리허설에서 반응이 느리면 10s 로
+
+    scrape_configs:
+      # ① 어노테이션이 붙은 파드 — 업무 서비스 · gateway. 자기 자신에 대한 지표를 내므로 파드의 app · pod 라벨을 붙인다
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [sesac-gojigi, monitoring]   # TODO 박지연(6단계 후): monitoring 에는 지금 어노테이션 파드가 없음 — Loki · Grafana 자기 지표 수집 여부를 정한 뒤 정리
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep              # scrape="true" 인 파드만
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            target_label: __metrics_path__   # 업무 서비스는 /actuator/prometheus
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            target_label: __address__        # 파드 IP + 어노테이션의 포트
+            regex: (.+);(\d+)
+            replacement: $1:$2
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app         # System Status 쿼리 up{app="gateway-service"} 가 이 라벨을 쓴다
+
+      # ② kube-state-metrics — 남(다른 파드 · Deployment)에 대한 지표를 내므로 ① 과 분리.
+      #    ① 처럼 app · pod 를 붙이면 모든 지표에 app="kube-state-metrics" 가 붙어 서비스별 필터에서 빠진다
+      - job_name: kube-state-metrics
+        honor_labels: true            # 지표 안의 namespace · pod(관찰 대상) 를 우선. 끄면 수집 대상 쪽 값(monitoring) 과 부딪혀 exported_namespace 로 밀려난다
+        static_configs:
+          - targets: [kube-state-metrics.monitoring.svc:8080]   # Service 주소 (kube-state-metrics.yaml 5번)
+
+      # ③ cAdvisor — 노드마다 kubelet 에 내장. 새 파드 없이 API 서버 프록시로 읽는다
+      - job_name: kubernetes-cadvisor
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        authorization:
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: __metrics_path__
+            regex: (.+)
+            replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: node
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            action: keep              # cAdvisor 는 지표가 아주 많다 → 클러스터 대시보드에 쓰는 CPU · 메모리 2개만 저장
+            regex: container_cpu_usage_seconds_total|container_memory_working_set_bytes
+---
+# 5. StatefulSet — Prometheus 본체. 파드 이름 prometheus-0 고정, 디스크는 volumeClaimTemplates 로 파드마다 하나
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+    app.kubernetes.io/part-of: gotgan-observability
+spec:
+  serviceName: prometheus
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        app.kubernetes.io/part-of: gotgan-observability
+    spec:
+      serviceAccountName: prometheus
+      nodeSelector:
+        tier: app                     # 백 티어 노드 그룹(app) 에만. db 노드는 테인트로 막혀 있음
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534              # 이미지 기본 사용자 nobody
+        fsGroup: 65534                # 새 EBS 볼륨에 이 사용자가 쓸 수 있도록
+      containers:
+        - name: prometheus
+          image: quay.io/prometheus/prometheus:v3.13.4
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time=7d
+            - --storage.tsdb.retention.size=8GB   # 10Gi 디스크가 차기 전에 오래된 데이터부터 삭제
+          ports:
+            - { name: http, containerPort: 9090 }
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { memory: 1Gi }
+          livenessProbe:
+            httpGet: { path: /-/healthy, port: http }
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet: { path: /-/ready, port: http }
+            initialDelaySeconds: 10
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: config, mountPath: /etc/prometheus }
+            - { name: data, mountPath: /prometheus }
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: ebs-sc      # gp3 · 암호화 · WaitForFirstConsumer (deploy/k8s/db/storageclass.yaml, 구지훈)
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+# 6. Service — 고정 주소 prometheus.monitoring.svc:9090. 외부 미노출(ClusterIP) — 접속은 kubectl -n monitoring port-forward svc/prometheus 9090
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+    app.kubernetes.io/part-of: gotgan-observability
+spec:
+  type: ClusterIP
+  selector:
+    app: prometheus
+  ports:
+    - { name: http, port: 9090, targetPort: http }
