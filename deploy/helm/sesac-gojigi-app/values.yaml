@@ -21,6 +21,7 @@ services:
     replicas: 2                             # 입구는 2개 — 하나가 죽어도 접속 유지
     service:
       type: LoadBalancer
+      port: 80                              # NLB 리스너 80 → 파드 8080 (vercel.json 이 http://gotgan-api.duckdns.org 80번으로 호출)
       annotations:                          # NLB · EIP · 퍼블릭 서브넷 (가이드라인 05장, 구지훈 — 10/14 실클러스터 검증)
         service.beta.kubernetes.io/aws-load-balancer-type: external
         service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
