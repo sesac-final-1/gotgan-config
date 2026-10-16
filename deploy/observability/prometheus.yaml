@@ -1,6 +1,6 @@
 # Prometheus v3.13.4 (LTS) — 지표를 15초마다 가져와(pull) 디스크에 시간 순서로 저장한다. Grafana 가 PromQL 로 조회. 담당 박지연 · 가이드라인 13장
 # - 수집 대상: ① 어노테이션 prometheus.io/scrape="true" 가 붙은 파드 (업무 서비스 Helm 템플릿) ② kube-state-metrics (Service 주소) ③ 각 노드 kubelet 의 cAdvisor (파드 CPU · 메모리)
-# - 디스크: PVC 10Gi(ebs-sc) · 보존 7일 + 용량 상한 8GB. 매일 22:00 PVC 가 삭제되므로 실제 보존은 하루 — 보존 설정은 클러스터를 며칠 켜 둘 때 디스크가 넘치지 않게 하는 안전장치
+# - 디스크: PVC 10Gi(ebs-sc) · 보존 7일 + 용량 상한 8GB. 매일 21:00 PVC 가 삭제되므로 실제 보존은 하루 — 보존 설정은 클러스터를 며칠 켜 둘 때 디스크가 넘치지 않게 하는 안전장치
 # - StatefulSet 인 이유: EBS 는 한 노드에만 붙는다 → 옛 파드를 먼저 내리고 새 파드가 디스크를 넘겨받아야 한다. infra-schedule 도 monitoring 의 StatefulSet 을 지운 뒤 PVC 를 지운다
 # - 알림은 Grafana Alerting 이 맡으므로 Alertmanager · 규칙 파일 없음
 # - 설정(ConfigMap) 을 바꾸면 파드를 재시작해야 반영된다: kubectl -n monitoring rollout restart sts/prometheus
@@ -164,8 +164,8 @@ spec:
           ports:
             - { name: http, containerPort: 9090 }
           resources:
-            requests: { cpu: 100m, memory: 512Mi }
-            limits: { memory: 1Gi }
+            requests: { cpu: 100m, memory: 512Mi, ephemeral-storage: 64Mi }
+            limits: { memory: 1Gi, ephemeral-storage: 128Mi }   # 임시 공간은 로그(EKS 회전 최대 약 50Mi) 뿐 — 지표 데이터는 PVC 라 포함되지 않는다
           livenessProbe:
             httpGet: { path: /-/healthy, port: http }
             initialDelaySeconds: 10

@@ -87,8 +87,8 @@ spec:
             - { name: http-metrics, containerPort: 8080 }   # 클러스터 오브젝트 지표 (/metrics)
             - { name: telemetry, containerPort: 8081 }      # kube-state-metrics 자기 자신의 지표 · readiness
           resources:
-            requests: { cpu: 50m, memory: 64Mi }
-            limits: { memory: 128Mi }   # 노드 3대 · 파드 약 35개 규모. 공식 권장(250Mi)은 대규모 기준
+            requests: { cpu: 50m, memory: 64Mi, ephemeral-storage: 64Mi }
+            limits: { memory: 128Mi, ephemeral-storage: 128Mi }   # 메모리: 노드 3대 · 파드 약 35개 규모(공식 권장 250Mi 는 대규모 기준). 임시 공간: 로그(EKS 회전 최대 약 50Mi) + 여유
           livenessProbe:
             httpGet: { path: /livez, port: http-metrics }
             initialDelaySeconds: 5
