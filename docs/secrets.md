@@ -1,7 +1,7 @@
 # 시크릿 · 변수 목록 (GitHub Secrets 단일 소스)
 
 > **이 파일에는 값이 없습니다.** 실제 값은 노션(팀 비공개 페이지 "곳간 시크릿")에만 둡니다. 코드 · YAML · 로그 · Git 히스토리 어디에도 값을 쓰지 않습니다(컨벤션 1-5).
-> 등록 위치: GitHub → 저장소 → Settings → Secrets and variables → Actions. 클러스터용 시크릿은 `secrets-sync` 워크플로가 GitHub Secrets를 읽어 K8s Secret으로 만듭니다(매일 08:00 bootstrap에 포함).
+> 등록 위치: GitHub → 저장소 → Settings → Secrets and variables → Actions. 클러스터용 시크릿은 `secrets-sync` 워크플로가 GitHub Secrets를 읽어 K8s Secret으로 만듭니다(매일 07:00 bootstrap에 포함).
 
 ## 1. gotgan-config (인프라 · 클러스터) — Secrets
 
@@ -61,6 +61,6 @@
 
 ## 6. 운영 규칙
 
-- 값을 바꾸면 노션 갱신 → GitHub Secret 갱신 → `secrets-sync` 수동 실행(또는 다음 날 08:00 bootstrap) → 해당 Deployment `rollout restart`
+- 값을 바꾸면 노션 갱신 → GitHub Secret 갱신 → `secrets-sync` 수동 실행(또는 다음 날 07:00 bootstrap) → 해당 Deployment `rollout restart`
 - 실수로 커밋했다면 즉시 팀 공유 → 키 폐기 · 재발급(히스토리 삭제만으로는 부족, 컨벤션 1-5)
 - `CONFIG_REPO_TOKEN`은 만료일이 있음 — 만료 전 재발급 (19장 위험 요소)
