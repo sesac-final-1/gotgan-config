@@ -1,7 +1,7 @@
 # 관측성 네임스페이스 — Prometheus · Loki · Grafana · Zipkin · kube-state-metrics 가 모두 여기에 뜬다. 담당 박지연 · 가이드라인 13장
 # - 업무 서비스(sesac-gojigi) 와 나눠 두면 kubectl get pods -n monitoring 으로 관측 스택만 보고, 권한 · 정리도 따로 할 수 있다
 # - secrets-sync 가 먼저 이 이름으로 namespace 를 보장하고 grafana-secret · alert-webhook-secret 을 넣는다 → 이름을 바꾸면 secrets-sync.yml(MON_NS) · infra-schedule.yml 도 함께 바꿀 것
-# - bootstrap 은 이 파일을 먼저 apply 한 뒤 폴더 전체를 apply 한다 (파일 이름 00- 은 사람이 읽는 순서 표시)
+# - bootstrap 은 이 파일을 먼저 apply 한 뒤 폴더 전체를 apply 한다. 00- 은 컨벤션(적용 순서가 있으면 {nn}-{종류}.yaml) — 폴더 apply 도 이름순이라 가장 먼저 적용된다
 apiVersion: v1
 kind: Namespace
 metadata:
