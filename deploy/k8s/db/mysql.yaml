@@ -46,6 +46,7 @@ spec:
       tolerations:
         - { key: tier, operator: Equal, value: db, effect: NoSchedule }
       terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false           # 쿠버네티스 API 를 부르지 않음 — 파드가 뚫려도 API 토큰이 없게 (Sonar kubernetes:S6865)
       containers:
         - name: mysql
           image: mysql:8.4
@@ -61,8 +62,10 @@ spec:
           ports:
             - { containerPort: 3306 }
           resources:
-            requests: { cpu: 250m, memory: 1Gi }
-            limits: { memory: 1536Mi }
+            # ephemeral-storage(노드 디스크 임시 공간): 데이터는 PVC 라 로그 + 디스크 임시 테이블(@@tmpdir=/tmp)만. 실측 0Mi(10/16, 시드 직후)
+            # 상한을 넘으면 이 파드만 재시작 — 노드 DiskPressure 로 다른 파드까지 쫓겨나는 것 방지 (Sonar S6870 · S6897)
+            requests: { cpu: 250m, memory: 1Gi, ephemeral-storage: 128Mi }
+            limits: { memory: 1536Mi, ephemeral-storage: 1Gi }
           startupProbe:                                  # 최초 기동 + init-schemas.sh 실행 시간 대기 (최대 5s × 60 = 5분)
             exec:
               command: ["sh", "-c", "mysqladmin ping -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
