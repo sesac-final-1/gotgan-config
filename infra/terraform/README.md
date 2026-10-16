@@ -9,7 +9,7 @@
 | `ecr` | 서비스별 ECR 저장소 | 상시 |
 | `cicd` | GitHub OIDC 공급자 · Actions 역할 (**이경석** 작성 · apply) | 상시 |
 | `app` | S3 · SNS/SQS · DynamoDB · SES · SSM · EIP | 상시 |
-| `cluster` | EKS · 노드 그룹 · access entries(팀원 전원 + Actions 역할 — 있으면) · 서비스 IRSA(`irsa.tf`, grafana 는 박지연 `irsa_grafana.tf`) · LBC · EBS CSI · metrics-server | **매일 08:00 apply · 22:00 destroy** (`infra-schedule.yml`) |
+| `cluster` | EKS · 노드 그룹 · access entries(팀원 전원 + Actions 역할 — 있으면) · 서비스 IRSA(`irsa.tf`, grafana 는 박지연 `irsa_grafana.tf`) · LBC · EBS CSI · metrics-server | **매일 07:00 apply · 21:00 destroy** (`infra-schedule.yml`) |
 
 - apply/destroy 는 스케줄 워크플로(OIDC 역할 `AWS_ROLE_ARN`) 또는 구지훈. 예외: `cicd/` 는 이경석이 로컬 apply (워크플로가 쓸 역할을 만드는 폴더). 다른 사람은 `terraform plan` 까지 (컨벤션 5-2). PR 에서는 `infra.yml` 이 fmt · validate · plan 을 돌린다
 - 시크릿은 GitHub Secrets 단일 소스 — Secrets Manager · KMS · ESO 없음. 클러스터 Secret 은 `secrets-sync` 워크플로가 만든다 (`docs/secrets.md`)

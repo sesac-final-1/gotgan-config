@@ -1,6 +1,6 @@
 #!/bin/bash
 # 노드 그룹 desired 0 ↔ 2 — **수동 보조 도구** (예: 낮에 잠깐 비용을 아끼고 싶을 때). 담당 구지훈 · 가이드라인 04장
-# 표준은 infra-schedule.yml (08:00 cluster/ apply · 22:00 destroy) 이며 이 스크립트는 그 사이에만 쓴다. 야간 비용 절감 목적의 "노드 0" 운영은 폐기됨 (10/13 결정 3)
+# 표준은 infra-schedule.yml (07:00 cluster/ apply · 21:00 destroy) 이며 이 스크립트는 그 사이에만 쓴다. 야간 비용 절감 목적의 "노드 0" 운영은 폐기됨 (10/13 결정 3)
 # 사용: ./scripts/scale-nodes.sh down | up   (AWS 자격 증명 필요 — 구지훈 로컬)
 set -euo pipefail
 CLUSTER="${EKS_CLUSTER_NAME:-sesac-gojigi-eks-cluster}"

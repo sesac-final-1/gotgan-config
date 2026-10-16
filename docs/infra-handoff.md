@@ -6,7 +6,7 @@
 ## 0. 요약
 
 - **상시 자원은 전부 생성됨** — VPC · ECR · EIP · S3 · SNS/SQS · DynamoDB · SES · SSM (terraform plan "No changes")
-- **클러스터(`cluster/`)는 코드 완료 · 실클러스터 검증 완료 · 현재 삭제 상태** — 매일 08:00 생성 · 22:00 삭제는 `infra-schedule` 워크플로 담당이며 **크론은 꺼져 있음**
+- **클러스터(`cluster/`)는 코드 완료 · 실클러스터 검증 완료 · 현재 삭제 상태** — 매일 07:00 생성 · 21:00 삭제는 `infra-schedule` 워크플로 담당이며 **크론은 꺼져 있음**
 - **막혀 있는 것 하나**: GitHub Actions 역할(`cicd/`, 이경석)이 아직 없어 워크플로가 AWS에 로그인하지 못함 → 4페이즈(일일 스케줄 실검증)는 그 뒤
 
 ---
@@ -79,7 +79,7 @@ aws ssm get-parameters-by-path --path /sesac-gojigi/dev --recursive     # 서버
 ```bash
 aws configure                    # 본인 IAM 사용자(sesac-aN) 키, region ap-northeast-2
 aws sts get-caller-identity      # 본인 확인
-# 클러스터가 있을 때(08:00~22:00) — 매일 새로 생기므로 아침마다 1번
+# 클러스터가 있을 때(07:00~21:00) — 매일 새로 생기므로 아침마다 1번
 aws eks update-kubeconfig --name sesac-gojigi-eks-cluster --region ap-northeast-2 --alias gotgan
 kubectl config use-context gotgan            # docker-desktop 과 헷갈리지 않게 이름을 gotgan 으로 고정
 kubectl -n sesac-gojigi port-forward svc/keycloak 8180:8080   # Keycloak 콘솔
@@ -87,17 +87,19 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 ```
 
 - 노드는 프라이빗 서브넷 · 22번 포트 닫힘 — 노드에 들어갈 일이 없습니다
-- 22:00 이후엔 클러스터가 없어서 `kubectl`이 연결되지 않는 것이 정상입니다. 컨텍스트를 `docker-desktop`으로 돌려 두세요
+- 21:00 이후엔 클러스터가 없어서 `kubectl`이 연결되지 않는 것이 정상입니다. 컨텍스트를 `docker-desktop`으로 돌려 두세요
 
 ---
 
 ## 5. 하루 수명주기 · 운영
 
 ```
-08:00  infra-schedule(apply) → terraform apply cluster/ (약 15분)
+07:00  infra-schedule(apply) → terraform apply cluster/ (약 15분)
        └→ bootstrap → namespace · configmap · networkpolicy → secrets-sync → db(MySQL · Redis) → keycloak → 관측성 → ArgoCD → 서비스 9개
-22:00  infra-schedule(destroy) → ArgoCD 앱 → LoadBalancer Service → PVC 삭제 → NLB 제거 대기 → terraform destroy cluster/
+21:00  infra-schedule(destroy) → ArgoCD 앱 → LoadBalancer Service → PVC 삭제 → NLB 제거 대기 → terraform destroy cluster/
 ```
+
+> 예약 시각이고, GitHub 스케줄은 1~4시간 늦게 시작될 수 있습니다(10/15 destroy 02:28 · 10/16 apply 09:54 실행). 그래서 10/16에 1시간씩 앞당겼습니다 — 실제 가동은 대략 08:00~22:00. 급하면 Actions → infra-schedule → Run workflow
 
 - 수동 실행: Actions → `infra-schedule` → Run workflow → `apply` / `destroy`
 - **destroy 전에 LoadBalancer Service · PVC를 먼저 지워야** 고아 NLB · EBS가 남지 않습니다(워크플로가 처리, 손으로 지울 때도 같은 순서)
@@ -145,7 +147,7 @@ module "grafana_irsa" {
 }
 ```
 
-- PR로 올리면 plan은 CI가, apply는 다음 08:00 스케줄(또는 구지훈)이 합니다
+- PR로 올리면 plan은 CI가, apply는 다음 07:00 스케줄(또는 구지훈)이 합니다
 - Prometheus · Loki 볼륨: `storageClassName: ebs-sc` (gp3 · 암호화 · `WaitForFirstConsumer`) · 노드 `tier=app`
 - `grafana-secret`(admin-password) · `alert-webhook-secret`(url)은 `secrets-sync`가 `monitoring` 네임스페이스에 만듭니다 — `grafana.yaml`에서 참조만 하면 됨
 - bootstrap은 `kubectl apply -f deploy/observability/`(하위 폴더 미포함) — dashboards · alerting을 ConfigMap으로 바꾸면 `-R`로 바꿔야 합니다
