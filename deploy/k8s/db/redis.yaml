@@ -43,6 +43,7 @@ spec:
         tier: db                      # db 노드 그룹(t3.medium, 2a) 에만
       tolerations:
         - { key: tier, operator: Equal, value: db, effect: NoSchedule }
+      automountServiceAccountToken: false           # 쿠버네티스 API 를 부르지 않음 (Sonar kubernetes:S6865)
       containers:
         - name: redis
           image: redis:7-alpine
@@ -50,8 +51,9 @@ spec:
           ports:
             - { containerPort: 6379 }
           resources:
-            requests: { cpu: 50m, memory: 128Mi }
-            limits: { memory: 256Mi }
+            # ephemeral-storage: AOF 는 PVC(/data) 라 로그만. 실측 0Mi(10/16) — 상한 넘으면 이 파드만 재시작 (Sonar S6870 · S6897)
+            requests: { cpu: 50m, memory: 128Mi, ephemeral-storage: 64Mi }
+            limits: { memory: 256Mi, ephemeral-storage: 256Mi }
           readinessProbe:
             exec:
               command: ["redis-cli", "ping"]
