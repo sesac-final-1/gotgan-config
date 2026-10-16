@@ -1,1 +1,81 @@
-# Zipkin — 트레이스 저장 · UI. 담당 박지연
+# Zipkin 3.6.1 (slim) — 트레이스 저장소. 업무 서비스가 보낸 span(요청이 서비스 하나를 지난 구간) 을 traceId 로 묶어 보관하고, Grafana · Zipkin 화면에서 요청 경로를 본다. 담당 박지연 · 가이드라인 13장
+# - 받는 주소: http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans (gotgan-backend 각 서비스 application-k8s.yml 의 ZIPKIN_ENDPOINT 기본값) — Service 이름 · 포트를 바꾸면 그쪽도 함께
+# - 저장: 메모리. 파드가 재시작되면 트레이스가 사라진다 — 매일 21:00 클러스터째 지워지고 시연은 방금 만든 트레이스만 보므로 충분. Elasticsearch 는 범위 밖(MoSCoW 제외)
+# - 메모리 상한: span 최대 10만 개(꽉 차면 오래된 것부터 삭제) · 자바 힙 256MB. 시연 하나(약 6만 span) 를 담는 크기
+# - slim 이미지: HTTP 수신 + 메모리 저장만 있는 경량판 (Kafka · Cassandra 등 미포함)
+# - 샘플링(몇 %의 요청을 기록할지) 은 보내는 쪽 설정 — backend application-k8s.yml management.tracing.sampling.probability (현재 1.0)
+# - 디스크 · 쿠버네티스 API 를 쓰지 않으므로 Deployment 이고 ServiceAccount · 권한 없음
+#
+# 구성 (위에서부터):
+#   1. Deployment — Zipkin 컨테이너 1개 (설정은 환경 변수)
+#   2. Service    — 고정 주소 zipkin.monitoring.svc:9411 (앱이 보내는 곳 · Grafana 데이터소스)
+#
+# 1. Deployment 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin
+  namespace: monitoring
+  labels:
+    app: zipkin
+    app.kubernetes.io/part-of: gotgan-observability
+spec:
+  replicas: 1                         # 메모리 저장이라 2개면 트레이스가 둘로 나뉘어 저장된다
+  selector:
+    matchLabels:
+      app: zipkin
+  template:
+    metadata:
+      labels:
+        app: zipkin
+        app.kubernetes.io/part-of: gotgan-observability
+    spec:
+      automountServiceAccountToken: false   # 쿠버네티스 API 를 쓰지 않으므로 API 토큰을 넣지 않는다 (SonarCloud S6865)
+      nodeSelector:
+        tier: app                     # 백 티어 노드 그룹(app) 에만. db 노드는 테인트로 막혀 있음
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000               # 이미지 기본 사용자 zipkin
+      containers:
+        - name: zipkin
+          image: openzipkin/zipkin-slim:3.6.1
+          env:
+            - { name: STORAGE_TYPE, value: mem }
+            - { name: MEM_MAX_SPANS, value: "100000" }   # 기본 50만 → 10만
+            - { name: JAVA_OPTS, value: "-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError" }   # 힙 고정. 메모리가 부족하면 버티지 말고 종료 → 쿠버네티스가 재시작
+          ports:
+            - { name: http, containerPort: 9411 }
+          resources:
+            requests: { cpu: 100m, memory: 384Mi, ephemeral-storage: 64Mi }   # 메모리: 빈 상태에서도 약 234Mi(kind 실측), span 10만 개가 차면 약 350~400Mi 예상
+            limits: { memory: 512Mi, ephemeral-storage: 256Mi }  # 메모리: 힙 256MB + JVM 자체 사용분. 임시 공간: 로그 최대 약 50Mi + /tmp(실측 약 3Mi) + 여유
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 30   # JVM 기동 대기
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 10
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }   # 루트 파일 시스템이 읽기 전용이라 JVM 임시 파일 자리만 따로
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# 2. Service — 고정 주소 zipkin.monitoring.svc:9411. 외부 미노출(ClusterIP). 업무 서비스는 /api/v2/spans 로 보내고, Grafana 는 같은 주소로 조회한다
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+  namespace: monitoring
+  labels:
+    app: zipkin
+    app.kubernetes.io/part-of: gotgan-observability
+spec:
+  type: ClusterIP
+  selector:
+    app: zipkin
+  ports:
+    - { name: http, port: 9411, targetPort: http }
