@@ -29,7 +29,7 @@
 | `StoreStatusChanged` | store-events | store | product(상품 노출 숨김) · settlement(지급 보류) | storeId · status |
 | `OrderPaid` | order-events | order | user(5% 포인트 적립) · 알림 Lambda(주문 확인 메일) | orderNo · buyerId · ordererEmail · payAmt · items[{orderItemId, earnedPoint}] |
 | `OrderItemShipped` | order-events | order | 알림 Lambda(배송 시작 메일) | orderItemId · orderNo · ordererEmail · courier · trackingNo |
-| `OrderItemConfirmed` | order-events | order | settlement(정산 적재) · review(리뷰 작성 자격) · user(누적 구매액 → 등급) | orderItemId · orderNo · buyerId · storeId · productId · categoryId · itemAmt · confirmedAt |
+| `OrderItemConfirmed` | order-events | order | settlement(정산 적재) · review(리뷰 작성 자격) · user(누적 구매액 → 등급) | orderItemId · orderNo · buyerId · storeId · productId · productName · categoryId(하위) · topCategoryId(상위 — 판매수수료 기준) · itemAmt · confirmedAt — productName · topCategoryId 는 10/16 추가(settlement 정산 상세 · 수수료율, settlement 는 product 를 동기 호출하지 않음) |
 | `OrderItemCancelled` · `OrderItemReturned` | order-events | order | 알림 Lambda(취소/반품 완료 메일) | orderItemId · orderNo · ordererEmail · refundAmt |
 | `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda | settlementId · storeId · week · payoutAmt · sellerEmail |
 
