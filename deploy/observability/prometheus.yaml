@@ -76,7 +76,7 @@ data:
         kubernetes_sd_configs:
           - role: pod
             namespaces:
-              names: [sesac-gojigi, monitoring]   # TODO 박지연(6단계 후): monitoring 에는 지금 어노테이션 파드가 없음 — Loki · Grafana 자기 지표 수집 여부를 정한 뒤 정리
+              names: [sesac-gojigi]   # 업무 서비스만. 관측 스택(monitoring) 의 생존 · 재시작은 kube-state-metrics 가 이미 수집하므로 자기 지표는 받지 않는다
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep              # scrape="true" 인 파드만
