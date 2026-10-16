@@ -121,6 +121,13 @@ jobs:
           kubectl delete sts --all -n "$NS" --ignore-not-found --timeout=120s
           kubectl delete sts --all -n monitoring --ignore-not-found --timeout=120s
           kubectl delete pvc --all -A --timeout=180s
+          # PV(EBS 볼륨) 삭제는 EBS CSI 가 비동기로 한다 — 다 지워질 때까지 기다린 뒤 destroy (먼저 CSI · 노드가 사라지면 고아 볼륨 과금)
+          # 10/16 관측성(Prometheus · Loki 10Gi)이 추가돼 PVC 4개(mysql · redis · prometheus · loki)
+          for i in $(seq 1 36); do
+            n=$(kubectl get pv --no-headers 2>/dev/null | wc -l)
+            [ "$n" = "0" ] && { echo "PV 모두 삭제됨"; break; }
+            echo "PV 삭제 대기 $n 개 ($i/36)"; sleep 5
+          done
 
       - name: NLB 제거 대기
         if: steps.kube.outputs.exists == 'true'
