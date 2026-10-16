@@ -16,7 +16,7 @@ services:
   # ── gateway (perish95)
   gateway-service:
     repository: sesac-gojigi-gateway
-    tag: "f103b57"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "6f03006"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8080
     replicas: 2                             # 입구는 2개 — 하나가 죽어도 접속 유지
     service:
