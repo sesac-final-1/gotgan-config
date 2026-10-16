@@ -90,6 +90,7 @@ spec:
         app.kubernetes.io/part-of: gotgan-observability
     spec:
       serviceAccountName: grafana
+      automountServiceAccountToken: false   # 쿠버네티스 API 를 쓰지 않으므로 API 토큰을 넣지 않는다 (SonarCloud S6865). 5주차 IRSA 는 AWS 용 토큰을 별도 경로로 넣으므로 무관할 것 — IRSA 적용 때 확인
       nodeSelector:
         tier: app                     # 백 티어 노드 그룹(app) 에만. db 노드는 테인트로 막혀 있음
       securityContext:
@@ -111,8 +112,8 @@ spec:
           ports:
             - { name: http, containerPort: 3000 }
           resources:
-            requests: { cpu: 100m, memory: 256Mi }   # 첫 기동(내부 DB 생성 · 플러그인 내려받기) 때 약 250Mi(kind 실측)
-            limits: { memory: 512Mi }  # 256Mi 에서는 첫 기동 중 OOMKilled → 받다 만 플러그인이 남아 서명 오류
+            requests: { cpu: 100m, memory: 256Mi, ephemeral-storage: 128Mi }   # 메모리: 첫 기동(내부 DB 생성 · 플러그인 내려받기) 때 약 250Mi(kind 실측)
+            limits: { memory: 512Mi, ephemeral-storage: 512Mi }  # 메모리: 256Mi 에서는 첫 기동 중 OOMKilled → 받다 만 플러그인이 남아 서명 오류. 임시 공간: 플러그인 · 내부 DB 약 53Mi(kind 실측) + 로그 최대 약 50Mi + 여유
           livenessProbe:
             httpGet: { path: /api/health, port: http }
             initialDelaySeconds: 30
