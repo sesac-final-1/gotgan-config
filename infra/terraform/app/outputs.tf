@@ -49,3 +49,13 @@ output "ssm_parameter_names" {
   description = "serverless.yml 이 읽는 SSM 파라미터 경로"
   value       = sort([for p in aws_ssm_parameter.this : p.name])
 }
+
+output "api_host" {
+  description = "API 공개 주소 — vercel.json 리라이트 목적지 https://{api_host} (도메인 미설정이면 null)"
+  value       = local.api_dns_enabled ? local.api_host : null
+}
+
+output "api_certificate_arn" {
+  description = "API 인증서 ARN — Helm values gateway Service 어노테이션 aws-load-balancer-ssl-cert (검증 완료 후 값)"
+  value       = local.api_dns_enabled ? aws_acm_certificate_validation.api[0].certificate_arn : null
+}
