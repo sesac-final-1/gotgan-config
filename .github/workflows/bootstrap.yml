@@ -61,6 +61,11 @@ jobs:
           kubectl apply -f deploy/k8s/keycloak/keycloak.yaml
           kubectl rollout status deployment/keycloak -n "$NS" --timeout=600s
 
+      # ── 3-1. Keycloak 시연 계정 — 관리자 1 · 판매자 2 · 구매자 3 (매일 빈 keycloakdb 라 매일 생성, 멱등)
+      #         파드 안 kcadm.sh 로 실행 — 비밀번호(SEED_*)는 keycloak-secret 환경 변수에서 읽어 로그 · 명령 인자에 남지 않는다
+      - name: keycloak 시드 계정
+        run: kubectl exec -i -n "$NS" deploy/keycloak -- bash -s < scripts/keycloak-seed.sh
+
       # ── 4. 관측성 (monitoring namespace · Prometheus · Loki · Grafana · Zipkin · kube-state-metrics — blackbox exporter 없음)
       - name: observability
         run: |

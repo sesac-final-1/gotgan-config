@@ -2,9 +2,24 @@
   "realm": "gotgan",
   "displayName": "곳간 GOTGAN",
   "enabled": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "editUsernameAllowed": false,
   "accessTokenLifespan": 1800,
   "ssoSessionIdleTimeout": 1209600,
   "ssoSessionMaxLifespan": 1209600,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "passwordPolicy": "length(8) and regexPattern(.*[A-Za-z].*) and specialChars(1) and notUsername",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
   "roles": {
     "realm": [
       {
@@ -18,8 +33,32 @@
       {
         "name": "ADMIN",
         "description": "스토어 관리자 — 시드 계정으로만"
+      },
+      {
+        "name": "offline_access",
+        "description": "${role_offline-access}"
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma_authorization}"
+      },
+      {
+        "name": "default-roles-gotgan",
+        "description": "새 사용자 기본 역할 — BUYER 포함",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "offline_access",
+            "uma_authorization",
+            "BUYER"
+          ]
+        }
       }
     ]
+  },
+  "defaultRole": {
+    "name": "default-roles-gotgan",
+    "composite": true
   },
   "clients": [
     {
@@ -73,5 +112,34 @@
         }
       ]
     }
-  ]
+  ],
+  "users": [
+    {
+      "username": "service-account-gotgan-backend",
+      "enabled": true,
+      "serviceAccountClientId": "gotgan-backend",
+      "realmRoles": [
+        "default-roles-gotgan"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-realm"
+        ]
+      }
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\": [{\"name\": \"username\", \"displayName\": \"${username}\", \"validations\": {\"length\": {\"min\": 3, \"max\": 255}, \"username-prohibited-characters\": {}, \"up-username-not-idn-homograph\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}, \"multivalued\": false}, {\"name\": \"email\", \"displayName\": \"${email}\", \"validations\": {\"email\": {}, \"length\": {\"max\": 255}}, \"required\": {\"roles\": [\"user\"]}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}, \"multivalued\": false}, {\"name\": \"firstName\", \"displayName\": \"${firstName}\", \"validations\": {\"length\": {\"max\": 255}, \"person-name-prohibited-characters\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}, \"multivalued\": false}, {\"name\": \"lastName\", \"displayName\": \"${lastName}\", \"validations\": {\"length\": {\"max\": 255}, \"person-name-prohibited-characters\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}, \"multivalued\": false}, {\"name\": \"user_id\", \"displayName\": \"userdb user_id\", \"validations\": {\"integer\": {\"min\": 1}}, \"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}, \"multivalued\": false}, {\"name\": \"store_id\", \"displayName\": \"store-service store_id (판매자만)\", \"validations\": {\"integer\": {\"min\": 1}}, \"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}, \"multivalued\": false}], \"groups\": [{\"name\": \"user-metadata\", \"displayHeader\": \"User metadata\", \"displayDescription\": \"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  }
 }
