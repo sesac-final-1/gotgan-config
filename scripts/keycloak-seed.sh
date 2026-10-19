@@ -54,12 +54,12 @@ seed_user() {
 
 echo "Keycloak 시드 계정 (realm $REALM)"
 #         이메일                 이름          비밀번호               user_id store_id 추가 역할 (BUYER 는 기본 역할로 자동)
-seed_user admin@gotgan.com       "곳간 관리자" "$SEED_ADMIN_PASSWORD" 1       -        ADMIN
-seed_user seller1@gotgan.com     "판매자1"     "$SEED_DEMO_PASSWORD"  2       1        SELLER
-seed_user seller2@gotgan.com     "판매자2"     "$SEED_DEMO_PASSWORD"  3       2        SELLER
-seed_user buyer1@gotgan.com      "구매자1"     "$SEED_DEMO_PASSWORD"  4       -
-seed_user buyer2@gotgan.com      "구매자2"     "$SEED_DEMO_PASSWORD"  5       -
-seed_user buyer3@gotgan.com      "구매자3"     "$SEED_DEMO_PASSWORD"  6       -
+seed_user wlsgksvheh+admin@gmail.com       "곳간 관리자" "$SEED_ADMIN_PASSWORD" 1       -        ADMIN
+seed_user wlsgksvheh+seller1@gmail.com     "판매자1"     "$SEED_DEMO_PASSWORD"  2       1        SELLER
+seed_user wlsgksvheh+seller2@gmail.com     "판매자2"     "$SEED_DEMO_PASSWORD"  3       2        SELLER
+seed_user wlsgksvheh+buyer1@gmail.com      "구매자1"     "$SEED_DEMO_PASSWORD"  4       -
+seed_user wlsgksvheh+buyer2@gmail.com      "구매자2"     "$SEED_DEMO_PASSWORD"  5       -
+seed_user wlsgksvheh+buyer3@gmail.com      "구매자3"     "$SEED_DEMO_PASSWORD"  6       -
 
 rm -f "$CONFIG"
 echo "완료"

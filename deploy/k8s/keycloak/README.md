@@ -37,12 +37,12 @@
 
 | 이메일 | 역할 (BUYER 는 기본 역할) | `user_id` | `store_id` | 비밀번호 |
 | --- | --- | --- | --- | --- |
-| `admin@gotgan.com` | ADMIN | 1 | – | `SEED_ADMIN_PASSWORD` |
-| `seller1@gotgan.com` | SELLER | 2 | 1 | `SEED_DEMO_PASSWORD` |
-| `seller2@gotgan.com` | SELLER | 3 | 2 | `SEED_DEMO_PASSWORD` |
-| `buyer1@gotgan.com` | – | 4 | – | `SEED_DEMO_PASSWORD` |
-| `buyer2@gotgan.com` | – | 5 | – | `SEED_DEMO_PASSWORD` |
-| `buyer3@gotgan.com` | – | 6 | – | `SEED_DEMO_PASSWORD` |
+| `wlsgksvheh+admin@gmail.com` | ADMIN | 1 | – | `SEED_ADMIN_PASSWORD` |
+| `wlsgksvheh+seller1@gmail.com` | SELLER | 2 | 1 | `SEED_DEMO_PASSWORD` |
+| `wlsgksvheh+seller2@gmail.com` | SELLER | 3 | 2 | `SEED_DEMO_PASSWORD` |
+| `wlsgksvheh+buyer1@gmail.com` | – | 4 | – | `SEED_DEMO_PASSWORD` |
+| `wlsgksvheh+buyer2@gmail.com` | – | 5 | – | `SEED_DEMO_PASSWORD` |
+| `wlsgksvheh+buyer3@gmail.com` | – | 6 | – | `SEED_DEMO_PASSWORD` |
 
 - **`user_id` · `store_id` 는 userdb · storedb 의 `R__demo_seed.sql` 과 같은 값이어야 한다** — gateway 가 토큰 `user_id` 로 `X-User-Id` 를 만든다 (userdb 시드: 이경석, storedb 시드: store 담당)
 - 실행: bootstrap 3-1 단계 `kubectl exec -i -n sesac-gojigi deploy/keycloak -- bash -s < scripts/keycloak-seed.sh` — 파드 안 `kcadm.sh` 와 환경 변수(`keycloak-secret`)를 쓴다. 로컬은 `docker compose exec -T keycloak bash -s < ../gotgan-config/scripts/keycloak-seed.sh`
