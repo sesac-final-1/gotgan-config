@@ -19,7 +19,7 @@ CONFIG=/tmp/kcadm-seed.config            # 파드의 홈 디렉터리는 쓰기 
 REALM=gotgan
 SERVER=${KC_SEED_SERVER:-http://localhost:8080}
 
-if [ -z "${SEED_ADMIN_PASSWORD:-}" ] || [ -z "${SEED_DEMO_PASSWORD:-}" ]; then
+if [[ -z "${SEED_ADMIN_PASSWORD:-}" || -z "${SEED_DEMO_PASSWORD:-}" ]]; then
   echo "SEED_ADMIN_PASSWORD · SEED_DEMO_PASSWORD 가 없어 시드 계정을 건너뜀" >&2
   exit 0
 fi
@@ -34,11 +34,11 @@ seed_user() {
   local email=$1 name=$2 password=$3 user_id=$4 store_id=$5
   shift 5
   local attrs="\"user_id\":[\"$user_id\"]"
-  [ "$store_id" != "-" ] && attrs="$attrs,\"store_id\":[\"$store_id\"]"
+  [[ "$store_id" != "-" ]] && attrs="$attrs,\"store_id\":[\"$store_id\"]"
 
   local id
   id=$(kc get users -r "$REALM" -q email="$email" -q exact=true --fields id --format csv --noquotes)
-  if [ -z "$id" ]; then
+  if [[ -z "$id" ]]; then
     id=$(echo "{\"email\":\"$email\",\"enabled\":true,\"emailVerified\":true,\"firstName\":\"$name\",\"attributes\":{$attrs}}" \
       | kc create users -r "$REALM" -f - -i)
     kc set-password -r "$REALM" --userid "$id" --new-password "$password"
