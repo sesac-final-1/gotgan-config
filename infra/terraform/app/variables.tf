@@ -27,5 +27,14 @@ variable "ses_sender_email" {
 variable "ses_recipient_emails" {
   description = "샌드박스 수신자로 추가 인증할 주소 (팀원 · 시연 계정). 발신 주소는 자동 포함"
   type        = list(string)
-  default     = []
+  # 시연 계정 6개 — Gmail + 별칭이라 전부 발신 주소와 같은 받은편지함으로 온다 (user · Keycloak · store · settlement 시드와 같은 주소)
+  # 별칭마다 SES 인증 메일이 따로 오므로 apply 후 링크를 한 번씩 눌러야 발송 가능. app/ 은 상시 폴더라 매일 재인증 없음
+  default = [
+    "wlsgksvheh+admin@gmail.com",
+    "wlsgksvheh+seller1@gmail.com",
+    "wlsgksvheh+seller2@gmail.com",
+    "wlsgksvheh+buyer1@gmail.com",
+    "wlsgksvheh+buyer2@gmail.com",
+    "wlsgksvheh+buyer3@gmail.com",
+  ]
 }
