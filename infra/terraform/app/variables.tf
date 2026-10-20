@@ -44,3 +44,9 @@ variable "domain_name" {
   type        = string
   default     = "gotgan.click" # 10/20 Route 53 등록
 }
+
+variable "alert_emails" {
+  description = "운영 알람(DLQ 등) 이메일 수신자 — SNS 이메일 구독이라 apply 후 확인 메일의 링크를 눌러야 받는다"
+  type        = list(string)
+  default     = ["wlsgksvheh@gmail.com"] # 발신 주소와 같은 받은편지함 (ses_sender_email)
+}
