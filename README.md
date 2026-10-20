@@ -9,7 +9,7 @@
 | `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · System Status 대시보드 (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
 | `deploy/helm/sesac-gojigi-app/` | 서비스 9개 Deployment · Service · ServiceAccount — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
 | `deploy/argocd/` | ArgoCD Application ("이 저장소의 helm 폴더를 감시하라") | `bootstrap` 워크플로 | 이경석 |
-| `scripts/` | scale-nodes · duckdns-update · build-and-push (수동 보조) | 사람 | 구지훈 |
+| `scripts/` | scale-nodes · build-and-push (수동 보조) | 사람 | 구지훈 |
 | `docs/` | ADR · 이벤트 목록 · 시크릿 목록(값 없음) · 인프라 · 로그 컨벤션 | 전원 | 전원 |
 | `.github/workflows/` | `infra`(plan) · `infra-schedule`(07:00 apply · 21:00 destroy) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 |
 
