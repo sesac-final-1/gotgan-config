@@ -1,12 +1,11 @@
 # 클러스터 부트스트랩 — cluster/ apply 직후 (infra-schedule 이 호출) 또는 수동. 담당 구지훈 · 10/13 결정 3
-# 순서: kubeconfig → namespace · configmap · networkpolicy(DB 티어) → secrets-sync → db(MySQL · Redis, db 노드) → keycloak(realm ConfigMap) → observability → ArgoCD → application.yaml → gateway NLB 주소 확인
+# 순서: kubeconfig → namespace · configmap · networkpolicy(DB 티어) → secrets-sync → db(MySQL · Redis, db 노드) → keycloak(realm ConfigMap) → observability → ArgoCD → application.yaml → gateway NLB 주소 · API HTTPS 확인
 # 매일 07:00 빈 DB 에서 시작 — 데이터는 Flyway 시드(R__demo_seed.sql) · Keycloak 은 realm import + 시드 스크립트(이경석) 로 복원
 name: bootstrap
 on:
   workflow_dispatch:
   workflow_call:
     secrets:
-      DUCKDNS_TOKEN: { required: false }   # EIP 는 상시 자원이라 평소엔 안 쓴다
       ARGOCD_ADMIN_PASSWORD: { required: false }   # ArgoCD admin 비밀번호 고정 — 없으면 초기 랜덤 비밀번호 그대로
 
 permissions:
@@ -96,7 +95,7 @@ jobs:
             -p "{\"stringData\": {\"admin.password\": \"$HASH\", \"admin.passwordMtime\": \"$(date -u +%FT%TZ)\"}}"
           kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found
 
-      # ── 6. gateway NLB 주소 — EIP 2개가 NLB 어노테이션으로 붙는다 (app/eip.tf, 상시 자원) → DuckDNS 는 평소 변경 없음
+      # ── 6. gateway NLB 주소 — EIP 2개가 NLB 어노테이션으로 붙는다 (app/eip.tf, 상시 자원) → api.gotgan.click 은 평소 변경 없음
       - name: gateway LoadBalancer 대기
         id: lb
         run: |
@@ -111,19 +110,13 @@ jobs:
           done
           echo "::warning::gateway LoadBalancer 주소를 10분 안에 받지 못함 — ArgoCD 동기화 · LBC 로그 확인"
 
-      # ── 7. DuckDNS — EIP 는 상시(app/) 자원이라 주소가 바뀌지 않는다 → 보통 no-op. EIP 를 재생성한 날만 실제 갱신
-      - name: duckdns (EIP 바뀐 경우만)
+      # ── 7. API 공개 주소 확인 — api.gotgan.click(Route 53 A → EIP 2개, app/dns.tf) · NLB 443 TLS(ACM). 상시 자원이라 DNS 변경 없음, 접속만 확인
+      - name: API HTTPS 확인
         if: steps.lb.outputs.hostname != ''
-        env:
-          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
-          DUCKDNS_DOMAIN: ${{ vars.DUCKDNS_DOMAIN }}
         run: |
-          EIP=$(aws ec2 describe-addresses --filters Name=tag:Name,Values=sesac-gojigi-nlb-eip-0 --query 'Addresses[0].PublicIp' --output text)   # app/eip.tf — DuckDNS 는 EIP 2개 중 -0 을 가리킨다 (가이드라인 05장)
-          CURRENT=$(dig +short "${DUCKDNS_DOMAIN}.duckdns.org" | head -n1)
-          if [ "$EIP" = "$CURRENT" ]; then
-            echo "DuckDNS 이미 $EIP — 변경 없음"
-          elif [ -z "$DUCKDNS_TOKEN" ]; then
-            echo "::warning::EIP($EIP) ≠ DuckDNS($CURRENT) 인데 DUCKDNS_TOKEN 없음 — scripts/duckdns-update.sh 수동 실행"
-          else
-            DOMAIN="$DUCKDNS_DOMAIN" EIP="$EIP" bash scripts/duckdns-update.sh
-          fi
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://api.gotgan.click/actuator/health || true)
+            if [ "$code" = "200" ]; then echo "https://api.gotgan.click → 200"; exit 0; fi
+            sleep 10
+          done
+          echo "::warning::https://api.gotgan.click health 가 5분 안에 200 이 아님 (마지막 $code) — NLB 443 리스너 · 인증서 어노테이션 · gateway 파드 확인"

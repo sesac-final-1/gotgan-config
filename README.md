@@ -9,7 +9,7 @@
 | `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · System Status 대시보드 (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
 | `deploy/helm/sesac-gojigi-app/` | 서비스 9개 Deployment · Service · ServiceAccount — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
 | `deploy/argocd/` | ArgoCD Application ("이 저장소의 helm 폴더를 감시하라") | `bootstrap` 워크플로 | 이경석 |
-| `scripts/` | scale-nodes · duckdns-update · build-and-push (수동 보조) | 사람 | 구지훈 |
+| `scripts/` | scale-nodes · build-and-push (수동 보조) | 사람 | 구지훈 |
 | `docs/` | ADR · 이벤트 목록 · 시크릿 목록(값 없음) · 인프라 · 로그 컨벤션 | 전원 | 전원 |
 | `.github/workflows/` | `infra`(plan) · `infra-schedule`(07:00 apply · 21:00 destroy) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 |
 
@@ -28,7 +28,7 @@ KST 07:00  infra-schedule(apply)  → terraform apply infra/terraform/cluster
 KST 21:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
 ```
 
-- `vpc` · `ecr` · `cicd` · `app`(EIP · S3 · SNS/SQS · DynamoDB · SES · SSM)은 **상시 유지** — EIP가 남아 DuckDNS 주소는 바뀌지 않습니다.
+- `vpc` · `ecr` · `cicd` · `app`(EIP · S3 · SNS/SQS · DynamoDB · SES · SSM)은 **상시 유지** — EIP · Route 53 레코드 · ACM 인증서가 남아 API 주소(`https://api.gotgan.click`)는 바뀌지 않습니다.
 - 클러스터 안의 데이터(MySQL · Keycloak 사용자 · Grafana 설정)는 매일 초기화됩니다. 시연 데이터는 Flyway 시드(`R__demo_seed.sql`) · realm import · 대시보드 JSON으로 복원됩니다.
 - 수동 실행: Actions → `infra-schedule` → Run workflow → `apply` / `destroy`.
 

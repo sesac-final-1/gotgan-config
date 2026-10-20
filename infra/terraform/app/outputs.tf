@@ -1,4 +1,4 @@
-# 다른 폴더 · 사람이 쓸 값 — terraform_remote_state 로 읽힌다. S3 · SQS · SNS ARN → cluster/irsa.tf · EIP allocation ID → Helm values(gateway NLB) · 공인 IP → DuckDNS
+# 다른 폴더 · 사람이 쓸 값 — terraform_remote_state 로 읽힌다. S3 · SQS · SNS ARN → cluster/irsa.tf · EIP allocation ID → Helm values(gateway NLB) · 공인 IP → Route 53 A 레코드(dns.tf)
 
 output "nlb_eip_allocation_ids" {
   description = "NLB 용 EIP allocation ID [2a, 2c] — Helm values gateway Service 어노테이션 aws-load-balancer-eip-allocations"
@@ -6,7 +6,7 @@ output "nlb_eip_allocation_ids" {
 }
 
 output "nlb_eip_public_ips" {
-  description = "NLB 용 공인 IP [2a, 2c] — [0] 을 DuckDNS(gotgan-api) 에 등록"
+  description = "NLB 용 공인 IP [2a, 2c] — api.gotgan.click A 레코드가 둘 다 가리킴 (dns.tf)"
   value       = aws_eip.nlb[*].public_ip
 }
 
