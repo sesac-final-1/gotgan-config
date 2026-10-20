@@ -17,5 +17,5 @@
 - 커밋 전 `terraform fmt -recursive` · `terraform validate`. `.terraform.lock.hcl` 커밋, `*.tfstate` · `.terraform/` 커밋 금지
 - `.terraform.lock.hcl` 은 폴더의 `provider.tf` 를 쓰고 처음 `init` 한 뒤(그리고 provider 버전을 바꿀 때마다) `terraform providers lock -platform=windows_amd64 -platform=linux_amd64` 로 두 플랫폼 해시를 채워 커밋 — Windows · CI(Linux) 가 같은 잠금 파일을 쓴다
 - 모든 자원 태그 `Project=sesac-gojigi`. AWS Budgets · Cost Explorer 는 쓰지 않음 — 교육 조직의 연계 계정이라 관리(payer) 계정에서만 열린다 (CLI · 콘솔 모두 AccessDenied)
-- 삭제 순서(`infra-schedule.yml` destroy 잡이 수행): ArgoCD 앱 · Service(LoadBalancer) · PVC 먼저 → NLB 제거 대기 → cluster destroy. EIP 는 `app/` 소유라 남는다 → 다음 날 NLB 어노테이션으로 다시 붙어 DuckDNS 변경 없음
+- 삭제 순서(`infra-schedule.yml` destroy 잡이 수행): ArgoCD 앱 · Service(LoadBalancer) · PVC 먼저 → NLB 제거 대기 → cluster destroy. EIP 는 `app/` 소유라 남는다 → 다음 날 NLB 어노테이션으로 다시 붙어 `api.gotgan.click` DNS 변경 없음
 - 각 `*.tf` 의 헤더 주석에 그 파일이 만들 자원을 적어 두었다 (가이드라인 04장 · 15장 8절)

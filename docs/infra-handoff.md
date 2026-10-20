@@ -38,7 +38,8 @@
 | | 프라이빗 서브넷 [2a, 2c] | `subnet-0e6a2e34b63b63be9` · `subnet-0acb72a4bc47ecae4` |
 | | NAT 게이트웨이 1개 (2a) | 공인 IP `52.79.161.22` (외부 IP 허용 목록이 필요할 때) |
 | `ecr` | 저장소 9개 · 최근 10개 보관 | `694951014380.dkr.ecr.ap-northeast-2.amazonaws.com/sesac-gojigi-{gateway · user · store · product · order · settlement · payment · review · admin}` |
-| `app` | NLB용 EIP [2a, 2c] | `3.34.245.213`(eip-0, **DuckDNS 대상**) · `13.125.139.205` / `eipalloc-00eaad35e9b548733` · `eipalloc-026aa7de15c62370c` |
+| `app` | NLB용 EIP [2a, 2c] | `3.34.245.213`(eip-0) · `13.125.139.205` / `eipalloc-00eaad35e9b548733` · `eipalloc-026aa7de15c62370c` |
+| | Route 53 · ACM (`dns.tf`) | 호스팅 영역 `gotgan.click`(10/20 등록) · `api.gotgan.click` A → EIP 2개 · ACM 인증서(gateway NLB 443 TLS) |
 | | S3 버킷 4개 | `sesac-gojigi-images-4380`(products/ · reviews/ · stores/ 공개 읽기) · `-seller-docs-4380` · `-reports-4380` · `-log-archive-4380`(90일 후 Glacier) |
 | | SNS 토픽 3 · SQS 큐 9 + DLQ 9 | `sesac-gojigi-{store · order · settlement}-events` / `sesac-gojigi-{소비자}-{도메인}-events` (+`-dlq`) |
 | | DynamoDB 2 | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` |
@@ -196,7 +197,7 @@ module "grafana_irsa" {
 | 작업 | 선행 조건 |
 | --- | --- |
 | 4페이즈 — `infra-schedule` apply/destroy 실행, bootstrap 전 과정(MySQL 스키마 8 · Redis AOF · NetworkPolicy 실동작 · NLB+EIP · 고아 자원 0) 확인 후 **크론 켜기** | 이경석 `cicd/` apply · `AWS_ROLE_ARN` |
-| DuckDNS `gotgan-api` → `3.34.245.213` 등록 | DuckDNS 토큰 |
+| DuckDNS 제거 — `bootstrap.yml` 7단계 · `scripts/duckdns-update.sh` · `DUCKDNS_TOKEN` · `DUCKDNS_DOMAIN` (API 주소는 `api.gotgan.click` 으로 대체) | 이경석 bootstrap 단계 삭제 |
 | 2주차 말 걷는 뼈대(목업 서비스 1개: NLB → gateway → 응답 · 로그 · 자동 배포) | 4페이즈 · CI/CD · 로깅 연결 |
 | SES 수신자(시연 계정) 추가 | 시연 계정 이메일 확정 |
 | 서버리스 `order-notification` · `settlement-report` 구현 · 배포 | 4~5주차 |

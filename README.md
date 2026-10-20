@@ -28,7 +28,7 @@ KST 07:00  infra-schedule(apply)  → terraform apply infra/terraform/cluster
 KST 21:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
 ```
 
-- `vpc` · `ecr` · `cicd` · `app`(EIP · S3 · SNS/SQS · DynamoDB · SES · SSM)은 **상시 유지** — EIP가 남아 DuckDNS 주소는 바뀌지 않습니다.
+- `vpc` · `ecr` · `cicd` · `app`(EIP · S3 · SNS/SQS · DynamoDB · SES · SSM)은 **상시 유지** — EIP · Route 53 레코드 · ACM 인증서가 남아 API 주소(`https://api.gotgan.click`)는 바뀌지 않습니다.
 - 클러스터 안의 데이터(MySQL · Keycloak 사용자 · Grafana 설정)는 매일 초기화됩니다. 시연 데이터는 Flyway 시드(`R__demo_seed.sql`) · realm import · 대시보드 JSON으로 복원됩니다.
 - 수동 실행: Actions → `infra-schedule` → Run workflow → `apply` / `destroy`.
 

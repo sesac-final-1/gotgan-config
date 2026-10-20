@@ -40,7 +40,7 @@ variable "ses_recipient_emails" {
 }
 
 variable "domain_name" {
-  description = "API 공개 도메인 (Route 53 에서 등록한 도메인, 예: gotgan.click) — 비어 있으면 DNS · 인증서를 만들지 않는다 (dns.tf)"
+  description = "API 공개 도메인 (Route 53 에서 등록한 도메인) — 비어 있으면 DNS · 인증서를 만들지 않는다 (dns.tf)"
   type        = string
-  default     = ""
+  default     = "gotgan.click" # 10/20 Route 53 등록
 }
