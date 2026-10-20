@@ -1,9 +1,40 @@
 # DLQ 감시 — 3회 처리 실패한 메시지가 DLQ 에 1건이라도 들어오면 알람 → SNS sesac-gojigi-alerts → 이메일 (장애 대비 점검 10/20, 담당 구지훈)
 # 이전에는 DLQ 에 쌓여도 아무도 몰랐다. 재처리 절차: gotgan-backend docs/api/settlement.md 6절 (원인 수정 → start-message-move-task)
-# 비용: 알람 1개 월 $0.10 × 구독 큐 수(9) — 이메일 구독은 apply 후 받은 확인 메일의 링크를 눌러야 발송된다
+# 비용: 알람 1개 월 $0.10 × 구독 큐 수(9) + KMS 키 월 $1 — 이메일 구독은 apply 후 받은 확인 메일의 링크를 눌러야 발송된다
+
+# 알림 토픽 암호화 키 — CloudWatch 알람은 AWS 관리형 키(aws/sns)로 암호화된 토픽에 발행할 수 없어서 고객 관리형 키에 cloudwatch 권한을 준다 (Sonar terraform:S6327)
+resource "aws_kms_key" "alerts" {
+  description         = "sesac-gojigi-alerts SNS 토픽 암호화 (CloudWatch 알람 발행 허용)"
+  enable_key_rotation = true
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AccountAdmin"
+        Effect    = "Allow"
+        Principal = { AWS = "arn:aws:iam::${local.account_id}:root" }
+        Action    = "kms:*"
+        Resource  = "*"
+      },
+      {
+        Sid       = "CloudWatchAlarmsPublish"
+        Effect    = "Allow"
+        Principal = { Service = "cloudwatch.amazonaws.com" }
+        Action    = ["kms:Decrypt", "kms:GenerateDataKey*"]
+        Resource  = "*"
+      },
+    ]
+  })
+}
+
+resource "aws_kms_alias" "alerts" {
+  name          = "alias/sesac-gojigi-alerts"
+  target_key_id = aws_kms_key.alerts.key_id
+}
 
 resource "aws_sns_topic" "alerts" {
-  name = "sesac-gojigi-alerts"
+  name              = "sesac-gojigi-alerts"
+  kms_master_key_id = aws_kms_key.alerts.arn
 }
 
 resource "aws_sns_topic_subscription" "alerts_email" {
