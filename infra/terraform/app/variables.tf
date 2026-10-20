@@ -7,9 +7,9 @@ variable "aws_region" {
 }
 
 variable "cors_allowed_origins" {
-  description = "presigned PUT 업로드를 허용할 브라우저 출처 — 운영(Vercel) · 미리보기(*.vercel.app) · 로컬 Vite"
+  description = "presigned PUT 업로드를 허용할 브라우저 출처 — 운영(Vercel gotgan-ashy — gotgan.vercel.app 은 다른 프로젝트) · 미리보기(*.vercel.app) · 로컬 Vite"
   type        = list(string)
-  default     = ["https://gotgan.vercel.app", "https://*.vercel.app", "http://localhost:5173"]
+  default     = ["https://gotgan-ashy.vercel.app", "https://*.vercel.app", "http://localhost:5173"]
 }
 
 variable "log_archive_glacier_days" {

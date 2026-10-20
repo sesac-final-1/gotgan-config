@@ -197,7 +197,6 @@ module "grafana_irsa" {
 | 작업 | 선행 조건 |
 | --- | --- |
 | 4페이즈 — `infra-schedule` apply/destroy 실행, bootstrap 전 과정(MySQL 스키마 8 · Redis AOF · NetworkPolicy 실동작 · NLB+EIP · 고아 자원 0) 확인 후 **크론 켜기** | 이경석 `cicd/` apply · `AWS_ROLE_ARN` |
-| DuckDNS 제거 — `bootstrap.yml` 7단계 · `scripts/duckdns-update.sh` · `DUCKDNS_TOKEN` · `DUCKDNS_DOMAIN` (API 주소는 `api.gotgan.click` 으로 대체) | 이경석 bootstrap 단계 삭제 |
 | 2주차 말 걷는 뼈대(목업 서비스 1개: NLB → gateway → 응답 · 로그 · 자동 배포) | 4페이즈 · CI/CD · 로깅 연결 |
 | SES 수신자(시연 계정) 추가 | 시연 계정 이메일 확정 |
 | 서버리스 `order-notification` · `settlement-report` 구현 · 배포 | 4~5주차 |
