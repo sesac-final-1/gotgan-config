@@ -26,7 +26,6 @@
 | `PORTONE_WEBHOOK_SECRET` | payment-service 웹훅 서명 검증 | `payment-service-secret` → `PORTONE_WEBHOOK_SECRET` | 포트원 콘솔 → 웹훅 설정 | 구지훈 |
 | `GRAFANA_ADMIN_PASSWORD` | Grafana 로그인 | `grafana-secret`(monitoring) → `admin-password` | 무작위 24자 | 박지연 |
 | `ALERT_WEBHOOK_URL` | Grafana Alerting → Discord/Slack | `alert-webhook-secret`(monitoring) → `url` | Discord 채널 → 연동 → 웹훅 URL | 박지연 |
-| `DUCKDNS_TOKEN` | **폐기 예정** — API 주소가 `api.gotgan.click`(Route 53)으로 바뀜. bootstrap DuckDNS 단계 삭제 후 Secret 삭제 | — | — | 구지훈 |
 
 ## 2. gotgan-backend (CI) — Secrets
 
@@ -54,7 +53,6 @@
 | `AWS_ACCOUNT_ID` | 12자리 계정 ID | ECR 주소 · IRSA ARN |
 | `AWS_REGION` | `ap-northeast-2` | 모든 워크플로 |
 | `EKS_CLUSTER_NAME` | `sesac-gojigi-eks-cluster` | bootstrap · secrets-sync · destroy |
-| `DUCKDNS_DOMAIN` | `gotgan-api` | **폐기 예정** (`DUCKDNS_TOKEN` 과 함께 삭제) |
 
 ## 5. 로컬 개발 (커밋 금지)
 
