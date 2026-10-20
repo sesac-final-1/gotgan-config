@@ -21,7 +21,7 @@ services:
     replicas: 2                             # 입구는 2개 — 하나가 죽어도 접속 유지
     service:
       type: LoadBalancer
-      port: 80                              # NLB 리스너 80 → 파드 8080 (vercel.json 이 http://gotgan-api.duckdns.org 80번으로 호출)
+      port: 443                             # NLB 리스너 443(TLS 종료) → 파드 8080 — vercel.json 이 https://api.gotgan.click 로 호출. NLB 는 HTTP→HTTPS 리다이렉트 불가라 80 은 열지 않음
       annotations:                          # NLB · EIP · 퍼블릭 서브넷 (가이드라인 05장, 구지훈 — 10/14 실클러스터 검증)
         service.beta.kubernetes.io/aws-load-balancer-type: external
         service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
@@ -29,6 +29,8 @@ services:
         service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-023c11797072725df,subnet-0d52b05d6f680839c          # vpc output public_subnets [2a, 2c]
         service.beta.kubernetes.io/aws-load-balancer-eip-allocations: eipalloc-00eaad35e9b548733,eipalloc-026aa7de15c62370c  # app output nlb_eip_allocation_ids — 서브넷과 같은 AZ 순서
         service.beta.kubernetes.io/aws-load-balancer-attributes: load_balancing.cross_zone.enabled=true                     # 없으면 파드 없는 AZ 의 EIP 무응답
+        service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:ap-northeast-2:694951014380:certificate/b3d463f9-b838-4e95-b9f5-403d0da2e6a9   # app output api_certificate_arn (api.gotgan.click, ACM 자동 갱신)
+        service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"                                                      # 443 리스너를 TLS 로
   # ── user (perish95)
   user-service:
     repository: sesac-gojigi-user
