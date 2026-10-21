@@ -1,5 +1,5 @@
 #!/bin/bash
-# Keycloak 시연 계정 시드 — realm gotgan 에 관리자 · 판매자 · 구매자 계정을 만든다. 담당 이경석 · 가이드라인 08장 · 12장
+# Keycloak 시연 계정 시드 — realm gotgan 에 관리자 · 판매자 · 구매자 계정을 만든다 (+ master realm 관리 콘솔 주소). 담당 이경석 · 가이드라인 08장 · 12장
 # 클러스터는 매일 빈 keycloakdb 에서 시작하므로 bootstrap 이 매일 실행한다 (realm 설정은 realm-gotgan.json import, 사용자는 이 스크립트)
 #
 # Keycloak 파드 안에서 실행된다 — 파일을 표준 입력으로 넘기면 파드의 kcadm.sh 와 환경 변수(keycloak-secret)를 그대로 쓴다:
@@ -19,15 +19,23 @@ CONFIG=/tmp/kcadm-seed.config            # 파드의 홈 디렉터리는 쓰기 
 REALM=gotgan
 SERVER=${KC_SEED_SERVER:-http://localhost:8080}
 
-if [[ -z "${SEED_ADMIN_PASSWORD:-}" || -z "${SEED_DEMO_PASSWORD:-}" ]]; then
-  echo "SEED_ADMIN_PASSWORD · SEED_DEMO_PASSWORD 가 없어 시드 계정을 건너뜀" >&2
-  exit 0
-fi
-
 kc() { "$KCADM" "$@" --config "$CONFIG"; }
 
 "$KCADM" config credentials --config "$CONFIG" --server "$SERVER" --realm master \
   --user "$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$KC_BOOTSTRAP_ADMIN_PASSWORD" >/dev/null
+
+# master realm 주소를 관리 콘솔 주소로 — KC_HOSTNAME(공개 주소)을 따르면 콘솔의 3p-cookie iframe 이
+# gateway 가 막는 https://api.gotgan.click/realms/master 를 불러 콘솔이 멈춘다. KC_HOSTNAME_ADMIN 이 없는 로컬 compose 는 건너뜀
+if [[ -n "${KC_HOSTNAME_ADMIN:-}" ]]; then
+  kc update realms/master -s "attributes.frontendUrl=$KC_HOSTNAME_ADMIN"
+  echo "master realm frontendUrl = $KC_HOSTNAME_ADMIN"
+fi
+
+if [[ -z "${SEED_ADMIN_PASSWORD:-}" || -z "${SEED_DEMO_PASSWORD:-}" ]]; then
+  echo "SEED_ADMIN_PASSWORD · SEED_DEMO_PASSWORD 가 없어 시드 계정을 건너뜀" >&2
+  rm -f "$CONFIG"
+  exit 0
+fi
 
 # seed_user 이메일 이름 비밀번호 user_id store_id(없으면 -) 추가역할...
 seed_user() {

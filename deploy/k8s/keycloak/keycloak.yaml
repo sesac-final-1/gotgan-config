@@ -1,4 +1,4 @@
-# Keycloak — 클러스터 내부 전용 (외부 미노출). 관리 콘솔은 kubectl port-forward svc/keycloak 8180:8080 -n sesac-gojigi
+# Keycloak — 클러스터 내부 전용 (외부 미노출). 관리 콘솔은 kubectl port-forward svc/keycloak 8080:8080 -n sesac-gojigi (로컬 8080 고정 — KC_HOSTNAME_ADMIN)
 # 담당 이경석 · 가이드라인 08장 · 15장 7절. realm-gotgan.json 은 ConfigMap keycloak-realm 으로 마운트:
 #   kubectl create configmap keycloak-realm --from-file=realm-gotgan.json -n sesac-gojigi  (bootstrap 워크플로가 매일 실행)
 # realm JSON 의 ${GOTGAN_BACKEND_CLIENT_SECRET} 은 import 시 같은 이름의 환경 변수(keycloak-secret) 로 치환된다
