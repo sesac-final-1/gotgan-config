@@ -22,6 +22,9 @@
 | `KEYCLOAK_CLIENT_SECRET` | `gotgan-backend` 클라이언트 (realm import 자리표시자 `${GOTGAN_BACKEND_CLIENT_SECRET}`) · user-service | `keycloak-secret` → `GOTGAN_BACKEND_CLIENT_SECRET`, `user-service-secret` → `KEYCLOAK_CLIENT_SECRET` | 무작위 32자 | 이경석 |
 | `SEED_ADMIN_PASSWORD` | Keycloak 시드 — 곳간 관리자 `wlsgksvheh+admin@gmail.com` (ADMIN) 비밀번호 · `scripts/keycloak-seed.sh` (bootstrap 3-1) | `keycloak-secret` → `SEED_ADMIN_PASSWORD` | 팀이 정함 — 비밀번호 정책: 8자 이상 · 영문 · 특수문자 (없으면 시드 건너뜀) | 이경석 |
 | `SEED_DEMO_PASSWORD` | Keycloak 시드 — 시연 계정 `wlsgksvheh+seller1·2` · `wlsgksvheh+buyer1·2·3@gmail.com` 공용 비밀번호 | `keycloak-secret` → `SEED_DEMO_PASSWORD` | 〃 | 이경석 |
+| `GOOGLE_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` | 소셜 로그인 — realm IdP `google` 자리표시자 | `keycloak-secret` → 같은 이름 (realm import 때 치환) | Google Cloud 콘솔 → API 및 서비스 → 사용자 인증 정보 → OAuth 클라이언트 ID (keycloak README 소셜 로그인) | 이경석 |
+| `KAKAO_CLIENT_ID` · `KAKAO_CLIENT_SECRET` | 소셜 로그인 — realm IdP `kakao` (OIDC) | 〃 | Kakao Developers → 앱 키(REST API 키) · 카카오 로그인 → 보안(Client Secret) | 이경석 |
+| `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET` | 소셜 로그인 — realm IdP `naver` (OAuth 2.0) | 〃 | NAVER Developers → 애플리케이션 → Client ID · Client Secret | 이경석 |
 | `PORTONE_API_SECRET` | payment-service (포트원 V2 API) | `payment-service-secret` → `PORTONE_API_SECRET` | 포트원 콘솔 → 결제 연동 → API Secret (테스트 채널) | 구지훈 |
 | `PORTONE_WEBHOOK_SECRET` | payment-service 웹훅 서명 검증 | `payment-service-secret` → `PORTONE_WEBHOOK_SECRET` | 포트원 콘솔 → 웹훅 설정 | 구지훈 |
 | `GRAFANA_ADMIN_PASSWORD` | Grafana 로그인 | `grafana-secret`(monitoring) → `admin-password` | 무작위 24자 | 박지연 |
