@@ -31,7 +31,7 @@
 | `OrderItemShipped` | order-events | order | 알림 Lambda(배송 시작 메일) | orderItemId · orderNo · ordererEmail · courier · trackingNo |
 | `OrderItemConfirmed` | order-events | order | settlement(정산 적재) · review(리뷰 작성 자격) · user(누적 구매액 → 등급) | orderItemId · orderNo · buyerId · storeId · productId · productName · categoryId(하위) · topCategoryId(상위 — 판매수수료 기준) · itemAmt · confirmedAt — productName · topCategoryId 는 10/16 추가(settlement 정산 상세 · 수수료율, settlement 는 product 를 동기 호출하지 않음) |
 | `OrderItemCancelled` · `OrderItemReturned` | order-events | order | 알림 Lambda(취소/반품 완료 메일) | orderItemId · orderNo · ordererEmail · refundAmt |
-| `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda | settlementId · storeId · week · payoutAmt · sellerEmail |
+| `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda | settlementId · storeId · week · payoutAmt · sellerEmail · storeName · weekStart · weekEnd · paidAt · salesAmt · commissionAmt · paymentFeeAmt · items[{orderNo · productName · confirmedAt · itemAmt · commissionRate · commissionAmt · paymentFeeAmt · payoutAmt}] — 명세서 내용을 모두 담음(10/21 방식 B, backend #57). 뒤 필드는 추가분 |
 
 ## 순서 규칙 (10/15 결정 — A안)
 
