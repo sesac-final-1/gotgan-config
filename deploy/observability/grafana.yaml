@@ -113,7 +113,7 @@ spec:
             - { name: http, containerPort: 3000 }
           resources:
             requests: { cpu: 100m, memory: 256Mi, ephemeral-storage: 128Mi }   # 메모리: 첫 기동(내부 DB 생성 · 플러그인 내려받기) 때 약 250Mi(kind 실측)
-            limits: { memory: 512Mi, ephemeral-storage: 512Mi }  # 메모리: 256Mi 에서는 첫 기동 중 OOMKilled → 받다 만 플러그인이 남아 서명 오류. 임시 공간: 플러그인 · 내부 DB 약 53Mi(kind 실측) + 로그 최대 약 50Mi + 여유
+            limits: { memory: 1Gi, ephemeral-storage: 512Mi }  # 메모리: 256Mi 에서는 첫 기동 중 OOMKilled → 받다 만 플러그인이 남아 서명 오류. 512Mi 에서는 EKS 조회 중 OOMKilled 2회(평소 약 220Mi, 6시간 up 조회에도 발생) → 1Gi. 임시 공간: 플러그인 · 내부 DB 약 53Mi(kind 실측) + 로그 최대 약 50Mi + 여유
           livenessProbe:
             httpGet: { path: /api/health, port: http }
             initialDelaySeconds: 30
