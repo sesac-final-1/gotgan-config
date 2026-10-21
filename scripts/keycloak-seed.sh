@@ -20,14 +20,19 @@ REALM=gotgan
 SERVER=${KC_SEED_SERVER:-http://localhost:8080}
 
 kc() { "$KCADM" "$@" --config "$CONFIG"; }
+login() {
+  "$KCADM" config credentials --config "$CONFIG" --server "$SERVER" --realm master \
+    --user "$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$KC_BOOTSTRAP_ADMIN_PASSWORD" >/dev/null
+}
 
-"$KCADM" config credentials --config "$CONFIG" --server "$SERVER" --realm master \
-  --user "$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$KC_BOOTSTRAP_ADMIN_PASSWORD" >/dev/null
+login
 
 # master realm 주소를 관리 콘솔 주소로 — KC_HOSTNAME(공개 주소)을 따르면 콘솔의 3p-cookie iframe 이
 # gateway 가 막는 https://api.gotgan.click/realms/master 를 불러 콘솔이 멈춘다. KC_HOSTNAME_ADMIN 이 없는 로컬 compose 는 건너뜀
+# 주소가 바뀌면 master 토큰 iss 도 바뀌어 지금 kcadm 토큰은 401 — 다시 로그인한다
 if [[ -n "${KC_HOSTNAME_ADMIN:-}" ]]; then
   kc update realms/master -s "attributes.frontendUrl=$KC_HOSTNAME_ADMIN"
+  login
   echo "master realm frontendUrl = $KC_HOSTNAME_ADMIN"
 fi
 
