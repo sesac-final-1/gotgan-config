@@ -10,7 +10,12 @@ data:
   TZ: Asia/Seoul                                         # JVM 시간대 — DB · JDBC 와 함께 세 곳 모두 Asia/Seoul
   DB_HOST: mysql.sesac-gojigi.svc.cluster.local
   REDIS_HOST: redis.sesac-gojigi.svc.cluster.local
-  KEYCLOAK_URI: http://keycloak:8080                    # issuer = http://keycloak:8080/realms/gotgan
+  KEYCLOAK_URI: http://keycloak:8080                    # 서버 간 호출(토큰 · Admin API · gateway 의 JWKS) — 내부 주소
+  # ── 소셜 로그인 (이경석) — Keycloak 공개 주소 = KC_HOSTNAME (deploy/k8s/keycloak/keycloak.yaml)
+  KEYCLOAK_ISSUER: https://api.gotgan.click/realms/gotgan                         # gateway 가 검증하는 토큰 iss
+  KEYCLOAK_PUBLIC_URL: https://api.gotgan.click                                   # user-service — 브라우저를 보낼 Keycloak 로그인 주소
+  SOCIAL_CALLBACK_URL: https://gotgan-ashy.vercel.app/api/auth/social/callback    # Keycloak → 우리 콜백 (realm redirectUris 와 같게, vercel 리라이트로 쿠키가 프론트 도메인에)
+  SOCIAL_RESULT_URL: https://gotgan-ashy.vercel.app/auth/callback                 # 로그인 후 프론트 페이지
   # ── 서비스 주소 (CoreDNS 이름 — 게이트웨이 라우트 · 서비스 간 호출)
   USER_SERVICE_URI: http://user-service:8081
   STORE_SERVICE_URI: http://store-service:8082

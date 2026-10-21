@@ -51,20 +51,55 @@
 - 이미 떠 있는 클러스터에 시크릿을 새로 넣었다면 Keycloak 파드 환경 변수 갱신이 필요 (`kubectl rollout restart deployment/keycloak -n sesac-gojigi`). 매일 생성되는 클러스터는 secrets-sync 가 먼저 돌아 자동 반영
 - 검증 (Keycloak 26.8 임시 컨테이너, 2026-10-19): 1회차 6개 생성 · 2회차 전부 "이미 있음" · 시드 비밀번호 없으면 건너뜀 · 6개 계정 로그인 토큰의 `user_id` · `store_id` · 역할 확인
 
-## 소셜 로그인 (카카오 · 네이버 · 구글) — 준비 전, 추가 시 고려사항
+## 소셜 로그인 (카카오 · 네이버 · 구글)
 
-현재 realm 은 자체 계정(이메일 · 비밀번호, Direct Grant)만 쓴다 — `identityProviders` 없음, Standard Flow 끔. 소셜은 아래를 **추가**하는 방식이라 지금 구조(토큰 클레임 · gateway · 다른 서비스 · 쿠키 방식)는 바뀌지 않는다.
+user-service 가 대리(BFF)로 처리한다 — 브라우저는 Keycloak 로그인 · 제공자 화면만 직접 거치고, 토큰은 user-service 가 받는다.
+로그인 이후(토큰 클레임 `user_id` · `roles`, gateway, Refresh 쿠키)는 자체 로그인과 같다.
 
-| 영역 | 추가 작업 |
+```
+프론트 → GET /api/auth/social/{google|kakao|naver}            (user-service — state · PKCE 쿠키, 302)
+       → https://api.gotgan.click/realms/gotgan/protocol/openid-connect/auth?kc_idp_hint=…   (gateway → Keycloak)
+       → 제공자 로그인 → https://api.gotgan.click/realms/gotgan/broker/{alias}/endpoint
+       → (첫 로그인: 같은 이메일 자체 계정이면 비밀번호 확인 후 연결 · 이메일 없으면 입력 화면)
+       → https://gotgan-ashy.vercel.app/api/auth/social/callback?code=…   (vercel 리라이트 → gateway → user-service)
+            code → 토큰(PKCE) · 첫 소셜 로그인이면 users 행 생성 → Keycloak user_id 저장 → 토큰 재발급
+       → Refresh 쿠키 + 302 https://gotgan-ashy.vercel.app/auth/callback   (실패면 ?error=코드)
+프론트 /auth/callback → POST /api/auth/refresh 로 Access Token
+```
+
+| 항목 | 설정 |
 | --- | --- |
-| Keycloak realm | Identity Provider 3개 등록(구글 기본 제공, 카카오 · 네이버는 OIDC 설정 또는 확장) · 소셜 경로용 Standard Flow(리다이렉트) |
-| user-service | 소셜 시작 · 콜백 API — 콜백에서 code → 토큰 교환 후 지금과 같이 RT 쿠키 · AT body |
-| 프론트 | 소셜 버튼 · 콜백 페이지 (로그인 이후 흐름은 동일) |
-| 시크릿 | 제공자별 client ID · secret 3쌍 (GitHub Secrets → Keycloak) |
+| 공개 주소 | `KC_HOSTNAME=https://api.gotgan.click` — 로그인 화면 · 토큰 `iss`. gateway 가 `/realms/gotgan/**` · `/resources/**` 만 Keycloak 으로 보낸다 (관리 콘솔 · master realm 은 열지 않음) |
+| 서버 간 호출 | `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` — user-service 토큰 · Admin API, gateway JWKS 는 내부 `http://keycloak:8080` 그대로 |
+| 관리 콘솔 | `KC_HOSTNAME_ADMIN=http://localhost:8080` — `kubectl port-forward svc/keycloak 8080:8080` 후 `http://localhost:8080/admin` (keycloak:8080 hosts 우회 불필요) |
+| gateway 검증 | `KEYCLOAK_ISSUER=https://api.gotgan.click/realms/gotgan` (iss) · `jwk-set-uri` 는 내부 주소 — **KC_HOSTNAME 과 같은 날 배포** (한쪽만 바뀌면 모든 토큰 401) |
+| 클라이언트 `gotgan-backend` | Standard Flow 켬 · PKCE S256 필수 · redirectUris = 프론트 콜백 · localhost(개발) |
+| IdP `google` | Keycloak 기본 제공자 |
+| IdP `kakao` | OIDC (`kauth.kakao.com`) · 닉네임 → firstName 매퍼 · scope `openid account_email profile_nickname` |
+| IdP `naver` | 범용 OAuth 2.0 (Keycloak 26.8 `oauth2`) · userinfo 가 `{"response":{...}}` 라 `userIDClaim=response.id` · `emailClaim=response.email` · `fullNameClaim=response.name` |
+| client ID · secret | realm JSON `${GOOGLE_CLIENT_ID:unset}` 등 자리표시자 → `keycloak-secret` (GitHub Secrets → secrets-sync). 비어 있으면 그 제공자만 로그인 실패 |
+| 첫 로그인 흐름 | 기본 `first broker login` — 같은 이메일 자체 계정은 **비밀번호 확인 후 연결**, 이메일 없는 카카오 계정은 **입력 화면**(Review Profile) |
 
-미리 정할 것:
+결정 (2026-10-21): ① 같은 이메일은 비밀번호 확인 후 연결 ② 카카오 이메일이 없으면 Keycloak 화면에서 입력 ③ 탈퇴한 이메일은 소셜로도 재가입 불가(`?error=AUTH_EMAIL_DUPLICATE`) ④ 가입 경로(`signup_provider`)는 처음 만든 경로 — 자체 계정에 소셜을 연결해도 LOCAL 유지
 
-1. **첫 소셜 로그인 때 `user_id` 채우기** — Keycloak 이 계정을 먼저 만들어 첫 토큰에 `user_id` 가 없다(gateway 401). 콜백에서 user-service 가 `users` 행 생성(`User.fromSocialLogin`) → Keycloak 속성 `user_id` 저장 → 토큰 재발급
-2. **이메일 없는 소셜 계정** — 현재 이메일 = username, userdb `email` NOT NULL. 카카오는 이메일이 선택 동의라 비어 올 수 있음 → 이메일 동의 필수(카카오 비즈 앱) / 추가 입력 / 필수 완화 중 결정
-3. **같은 이메일의 자체 계정과 소셜 계정** — 자동 연결 · 확인 후 연결 · 별도 계정 중 결정 (Keycloak First Broker Login 흐름)
-4. 비밀번호 정책 · Brute Force 는 소셜 계정에 적용되지 않음 (제공자가 인증)
+### 검증 (Keycloak 26.8.1 + gateway + user-service, 가짜 카카오 OIDC · 네이버 OAuth2, 2026-10-21)
+
+카카오 첫 로그인(회원 생성 · user_id 저장 · 재발급 토큰 user_id) · 재로그인(새 행 없음) · 네이버(중첩 userinfo) · 이메일 없는 카카오(입력 화면) · 자체 계정 이메일(비밀번호 확인 후 연결, 기존 user_id) · state 위조(`?error=AUTH_SOCIAL_LOGIN_FAILED`) · 토큰 `iss` 공개 주소로 gateway 검증 · `/admin` · `/realms/master` 비공개 · 바뀐 hostname 에서 시드 스크립트 동작. 구글은 실제 키가 있어야 해서 realm import(자리표시자 치환)까지만 확인
+
+### 제공자 개발자 콘솔 등록 (이경석)
+
+세 곳 모두 **리다이렉트(콜백) URI 는 Keycloak broker 주소**다 — 우리 user-service 주소가 아니다.
+
+| 제공자 | 등록 | 리다이렉트 URI | GitHub Secrets |
+| --- | --- | --- | --- |
+| 구글 | Google Cloud 콘솔 → OAuth 동의 화면(외부, 테스트 사용자 등록 또는 게시) → 사용자 인증 정보 → OAuth 클라이언트 ID(웹 애플리케이션) | `https://api.gotgan.click/realms/gotgan/broker/google/endpoint` | `GOOGLE_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` |
+| 카카오 | Kakao Developers → 애플리케이션 추가 → 카카오 로그인 활성화 · **OpenID Connect 활성화** · 동의항목(닉네임 필수, 카카오계정(이메일) 선택) · 보안 → Client Secret 생성 · 사용 | `https://api.gotgan.click/realms/gotgan/broker/kakao/endpoint` | `KAKAO_CLIENT_ID`(REST API 키) · `KAKAO_CLIENT_SECRET` |
+| 네이버 | NAVER Developers → 애플리케이션 등록 → 네이버 로그인 · 제공 정보(이메일 · 이름 필수) · 서비스 URL `https://gotgan-ashy.vercel.app` · 개발 중이면 멤버 관리에 테스트 아이디 등록 | `https://api.gotgan.click/realms/gotgan/broker/naver/endpoint` | `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET` |
+
+등록 후: GitHub Secrets 6개 → 다음 bootstrap(매일 07:00)에 secrets-sync · realm import 로 반영. 이미 떠 있는 클러스터면 secrets-sync 수동 실행 후 realm 을 다시 import 해야 한다 (realm 이 있으면 import 를 건너뜀).
+
+미리 알아둘 것:
+
+- 이메일 없는 카카오 계정 — 입력한 이메일은 인증하지 않는다 (SMTP 없음). 이메일 필수 동의는 카카오 비즈 앱 심사 필요
+- 비밀번호 정책 · Brute Force 는 소셜 계정에 적용되지 않음 (제공자가 인증)
+- 소셜 계정은 `users.phone` 이 비어 있다 — 주문 전 입력 받기 (order 담당)

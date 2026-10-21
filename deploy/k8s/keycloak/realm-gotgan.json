@@ -68,9 +68,20 @@
       "protocol": "openid-connect",
       "publicClient": false,
       "secret": "${GOTGAN_BACKEND_CLIENT_SECRET}",
-      "standardFlowEnabled": false,
+      "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true,
+      "redirectUris": [
+        "https://gotgan-ashy.vercel.app/api/auth/social/callback",
+        "https://api.gotgan.click/api/auth/social/callback",
+        "http://localhost:8081/api/auth/social/callback",
+        "http://localhost:18080/api/auth/social/callback",
+        "http://localhost:5173/api/auth/social/callback"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
       "protocolMappers": [
         {
           "name": "user_id",
@@ -111,6 +122,86 @@
           }
         }
       ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "linkOnly": false,
+      "hideOnLogin": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID:unset}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET:unset}",
+        "defaultScope": "openid profile email",
+        "syncMode": "IMPORT"
+      }
+    },
+    {
+      "alias": "kakao",
+      "displayName": "카카오",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "linkOnly": false,
+      "hideOnLogin": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${KAKAO_CLIENT_ID:unset}",
+        "clientSecret": "${KAKAO_CLIENT_SECRET:unset}",
+        "clientAuthMethod": "client_secret_post",
+        "authorizationUrl": "https://kauth.kakao.com/oauth/authorize",
+        "tokenUrl": "https://kauth.kakao.com/oauth/token",
+        "userInfoUrl": "https://kapi.kakao.com/v1/oidc/userinfo",
+        "issuer": "https://kauth.kakao.com",
+        "jwksUrl": "https://kauth.kakao.com/.well-known/jwks.json",
+        "useJwksUrl": "true",
+        "validateSignature": "true",
+        "defaultScope": "openid account_email profile_nickname",
+        "syncMode": "IMPORT"
+      }
+    },
+    {
+      "alias": "naver",
+      "displayName": "네이버",
+      "providerId": "oauth2",
+      "enabled": true,
+      "trustEmail": false,
+      "storeToken": false,
+      "linkOnly": false,
+      "hideOnLogin": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${NAVER_CLIENT_ID:unset}",
+        "clientSecret": "${NAVER_CLIENT_SECRET:unset}",
+        "clientAuthMethod": "client_secret_post",
+        "authorizationUrl": "https://nid.naver.com/oauth2.0/authorize",
+        "tokenUrl": "https://nid.naver.com/oauth2.0/token",
+        "userInfoUrl": "https://openapi.naver.com/v1/nid/me",
+        "userIDClaim": "response.id",
+        "userNameClaim": "response.email",
+        "emailClaim": "response.email",
+        "fullNameClaim": "response.name",
+        "syncMode": "IMPORT"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "kakao-nickname",
+      "identityProviderAlias": "kakao",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "syncMode": "IMPORT",
+        "claim": "nickname",
+        "user.attribute": "firstName"
+      }
     }
   ],
   "users": [
