@@ -2,7 +2,7 @@
 
 - `realm-gotgan.json`: 콘솔에서 export 한 realm 을 커밋하되 **gotgan-backend 의 client secret 값은 넣지 않는다**. JSON 에는 자리표시자 `"secret": "${GOTGAN_BACKEND_CLIENT_SECRET}"` 만 있고, Keycloak 이 `--import-realm` 할 때 같은 이름의 환경 변수로 치환한다. 그 환경 변수는 K8s Secret `keycloak-secret`(envFrom) 에서 오고, `keycloak-secret` 은 GitHub Secret `KEYCLOAK_CLIENT_SECRET` 을 `secrets-sync` 워크플로가 만든다. user-service 는 같은 값을 `user-service-secret` 의 `KEYCLOAK_CLIENT_SECRET` 으로 받는다 (목록: `docs/secrets.md`).
 - 시연 계정(ADMIN 포함)은 JSON 이 아니라 `scripts/keycloak-seed.sh` 로 만든다 (비밀 값 커밋 금지 — 아래 "시드 계정"). 클러스터는 매일 빈 DB 에서 다시 뜨므로 realm import + 시드 스크립트가 매일 실행된다.
-- 클러스터: `bootstrap` 워크플로가 `kubectl create configmap keycloak-realm --from-file=realm-gotgan.json` → `keycloak.yaml` 적용. 관리 콘솔은 `kubectl port-forward svc/keycloak 8180:8080 -n sesac-gojigi`
+- 클러스터: `bootstrap` 워크플로가 `kubectl create configmap keycloak-realm --from-file=realm-gotgan.json` → `keycloak.yaml` 적용. 관리 콘솔은 `kubectl port-forward svc/keycloak 8080:8080 -n sesac-gojigi` → http://localhost:8080/admin (로컬 포트는 8080 고정 — `KC_HOSTNAME_ADMIN`)
 - 로컬: docker compose 가 `start-dev --import-realm` 으로 같은 파일을 읽는다 → http://localhost:8180 (admin / admin). `GOTGAN_BACKEND_CLIENT_SECRET` 은 compose 기본값(`local-client-secret`) 으로 치환된다
 - ⚠️ `--import-realm` 은 **realm 이 이미 있으면 건너뛴다**. JSON 을 바꾼 뒤 로컬에 반영하려면 keycloakdb 를 비우거나(compose 볼륨 삭제) 콘솔에서 realm 을 지우고 재기동. 클러스터는 매일 새 DB 라 다음 생성 때 자동 반영
 
@@ -71,7 +71,7 @@ user-service 가 대리(BFF)로 처리한다 — 브라우저는 Keycloak 로그
 | --- | --- |
 | 공개 주소 | `KC_HOSTNAME=https://api.gotgan.click` — 로그인 화면 · 토큰 `iss`. gateway 가 `/realms/gotgan/**` · `/resources/**` 만 Keycloak 으로 보낸다 (관리 콘솔 · master realm 은 열지 않음) |
 | 서버 간 호출 | `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` — user-service 토큰 · Admin API, gateway JWKS 는 내부 `http://keycloak:8080` 그대로 |
-| 관리 콘솔 | `KC_HOSTNAME_ADMIN=http://localhost:8080` — `kubectl port-forward svc/keycloak 8080:8080` 후 `http://localhost:8080/admin` (keycloak:8080 hosts 우회 불필요) |
+| 관리 콘솔 | `KC_HOSTNAME_ADMIN=http://localhost:8080` — `kubectl port-forward svc/keycloak 8080:8080` 후 `http://localhost:8080/admin` (keycloak:8080 hosts 우회 불필요). master realm 은 `frontendUrl` 도 이 주소 — 시드 스크립트가 매일 설정 (없으면 콘솔의 3p-cookie iframe 이 막힌 공개 주소 `/realms/master` 를 불러 "Timeout when waiting for 3rd party check iframe message" 로 멈춤) |
 | gateway 검증 | `KEYCLOAK_ISSUER=https://api.gotgan.click/realms/gotgan` (iss) · `jwk-set-uri` 는 내부 주소 — **KC_HOSTNAME 과 같은 날 배포** (한쪽만 바뀌면 모든 토큰 401) |
 | 클라이언트 `gotgan-backend` | Standard Flow 켬 · PKCE S256 필수 · redirectUris = 프론트 콜백 · localhost(개발) |
 | IdP `google` | Keycloak 기본 제공자 |
