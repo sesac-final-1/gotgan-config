@@ -58,7 +58,7 @@ services:
   # ── order (perish95)
   order-service:
     repository: sesac-gojigi-order
-    tag: "262d593"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "5e6a1c2"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8084
     secretName: order-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
