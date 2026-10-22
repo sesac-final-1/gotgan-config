@@ -89,5 +89,5 @@ services:
   # ── admin (jihoon-devstu)
   admin-service:
     repository: sesac-gojigi-admin
-    tag: "766d87b"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "262d593"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8088
