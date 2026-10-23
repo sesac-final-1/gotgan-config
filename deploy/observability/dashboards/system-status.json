@@ -1,0 +1,300 @@
+{
+  "id": null,
+  "uid": "system-status",
+  "title": "System Status",
+  "description": "헬스 체크 대시보드 — 서비스별 가용 상태 · 생존 · Ready · 롤링 배포 · 5xx. 데이터는 Prometheus up · kube-state-metrics · Micrometer 만 (가이드라인 13장, SYS-01). 시연 때 ?kiosk",
+  "tags": ["gotgan", "observability"],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 41,
+  "version": 1,
+  "time": { "from": "now-30m", "to": "now" },
+  "refresh": "5s",
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "입구 생존 (gateway)",
+      "description": "gateway 파드 2개 중 가장 낮은 up. 둘 다 살아 있으면 UP, 하나라도 죽으면 DOWN — 외부 프로브(blackbox) 없이 수집 대상 생존으로 판단",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "min(up{namespace=\"sesac-gojigi\", app=\"gateway-service\"})",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "UP" }, "0": { "text": "DOWN" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "파드 재시작 (10분)",
+      "description": "최근 10분 컨테이너 재시작 합계. 0 초록 · 1 이상 노랑 · 3 이상 빨강. 같은 컨테이너가 다시 뜰 때(OOMKilled · liveness 실패)만 늘고, kubectl delete pod 로 새 파드가 생기면 늘지 않는다",
+      "gridPos": { "x": 0, "y": 4, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"sesac-gojigi\"}[10m]))",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "서비스별 가용 상태",
+      "description": "가용(Ready) 레플리카 / 원하는 레플리카. 1 = UP(초록), 0~1 = 일부만 살아 있음 · 롤링 중(노랑), 0 = DOWN(빨강). 분모 clamp_min(…, 1) — 레플리카를 0 으로 줄여도 No data 가 아니라 빨강. sum by — kube-state-metrics 재시작 때 타일이 겹치지 않게",
+      "gridPos": { "x": 4, "y": 0, "w": 20, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (deployment) (kube_deployment_status_replicas_available{namespace=\"sesac-gojigi\"}) / clamp_min(sum by (deployment) (kube_deployment_spec_replicas{namespace=\"sesac-gojigi\"}), 1)",
+          "legendFormat": "{{deployment}}",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (statefulset) (kube_statefulset_status_replicas_ready{namespace=\"sesac-gojigi\"}) / clamp_min(sum by (statefulset) (kube_statefulset_replicas{namespace=\"sesac-gojigi\"}), 1)",
+          "legendFormat": "{{statefulset}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "UP" }, "0": { "text": "DOWN" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "type": "state-timeline",
+      "title": "수집 대상 생존 (up)",
+      "description": "파드별 Prometheus 수집 성공 여부. 죽었다 살아나는 구간이 빨강 → 초록 띠로 보인다. keycloak · mysql · redis 는 수집 대상이 아님(가용 상태 · 파드 Ready 패널에서 확인)",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 10 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "up{namespace=\"sesac-gojigi\"}",
+          "legendFormat": "{{pod}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "UP" }, "0": { "text": "DOWN" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "alignValue": "left",
+        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      }
+    },
+    {
+      "id": 5,
+      "type": "state-timeline",
+      "title": "파드 Ready",
+      "description": "파드별 Ready 여부(kube-state-metrics). 롤링 배포 때 새 파드가 Ready 가 된 뒤 옛 파드가 빠지는 순서가 보인다",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 10 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "kube_pod_status_ready{namespace=\"sesac-gojigi\", condition=\"true\"}",
+          "legendFormat": "{{pod}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "UP" }, "0": { "text": "DOWN" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "alignValue": "left",
+        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "롤링 배포 (ReplicaSet Ready 파드 수)",
+      "description": "ReplicaSet 별 Ready 파드 수. 배포 때 옛 ReplicaSet ↓ · 새 ReplicaSet ↑ 가 교차한다. 지난 배포의 ReplicaSet 은 0 으로 남는다",
+      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "kube_replicaset_status_ready_replicas{namespace=\"sesac-gojigi\"}",
+          "legendFormat": "{{replicaset}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "decimals": 0,
+          "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 0, "showPoints": "never", "lineInterpolation": "stepAfter" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "서비스별 5xx (초당)",
+      "description": "서비스별 초당 5xx 응답 수. 배포 · 장애 중 0 유지 확인. 5xx 가 한 번도 없으면 시리즈가 없어 No data 가 되므로, 요청이 있던 서비스는 요청 수 × 0 으로 0 선을 그린다(요청을 한 번이라도 받은 서비스만 보임)",
+      "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", status=~\"5..\"}[1m])) or sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\"}[1m])) * 0",
+          "legendFormat": "{{app}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "reqps",
+          "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    }
+  ]
+}
