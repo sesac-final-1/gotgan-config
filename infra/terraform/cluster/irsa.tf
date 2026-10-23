@@ -17,6 +17,7 @@ locals {
     store = [
       { actions = ["sns:Publish"], resources = [local.app_topics["store"]] },
       { actions = ["s3:PutObject", "s3:GetObject"], resources = ["${local.app_buckets["seller-docs"]}/*"] }, # 입점 서류 presign
+      { actions = ["s3:ListBucket"], resources = [local.app_buckets["seller-docs"]] },                       # 없는 서류 HeadObject 가 403 대신 404 가 되게 (S3 는 ListBucket 없으면 존재 여부를 숨김)
       { actions = ["s3:PutObject"], resources = ["${local.app_buckets["images"]}/stores/*"] },               # 스토어 대표 이미지 presigned PUT (STR-06)
     ]
     product = [
