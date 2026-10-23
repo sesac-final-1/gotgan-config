@@ -18,14 +18,14 @@
       "id": 1,
       "type": "stat",
       "title": "입구 생존 (gateway)",
-      "description": "gateway 파드 2개 중 가장 낮은 up. 둘 다 살아 있으면 UP, 하나라도 죽으면 DOWN — 외부 프로브(blackbox) 없이 수집 대상 생존으로 판단",
+      "description": "살아 있는 gateway 파드 수(up == 1). 2 = UP(초록), 1 = 하나만 살아 있음(노랑 — 요청은 계속 처리), 0 = DOWN(빨강). or vector(0) — 둘 다 없으면 count 결과가 비어 No data 가 되므로 0 으로. 외부 프로브(blackbox) 없이 수집 대상 생존으로 판단",
       "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "min(up{namespace=\"sesac-gojigi\", app=\"gateway-service\"})",
+          "expr": "count(up{namespace=\"sesac-gojigi\", app=\"gateway-service\"} == 1) or vector(0)",
           "instant": false,
           "range": true
         }
@@ -37,12 +37,12 @@
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
-              { "color": "yellow", "value": 0.01 },
-              { "color": "green", "value": 1 }
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 2 }
             ]
           },
           "mappings": [
-            { "type": "value", "options": { "1": { "text": "UP" }, "0": { "text": "DOWN" } } }
+            { "type": "value", "options": { "2": { "text": "UP" }, "1": { "text": "1/2" }, "0": { "text": "DOWN" } } }
           ]
         },
         "overrides": []
