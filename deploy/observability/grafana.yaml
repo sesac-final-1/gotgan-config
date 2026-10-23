@@ -89,7 +89,7 @@ data:
         type: file
         disableDeletion: true         # 화면에서 지우지 못하게 — 원본은 git
         allowUiUpdates: true          # 화면에서 고쳐 볼 수는 있음. 저장해도 재시작 때 사라지므로 JSON 으로 내보내 커밋
-        updateIntervalSeconds: 60     # ConfigMap 이 바뀌면 재시작 없이 1분 안에 반영
+        updateIntervalSeconds: 60     # 새 대시보드 파일은 1분 안에 반영. 기존 파일 수정은 감지 못 함(ConfigMap 이 심볼릭 링크라 파일 시각이 그대로, 10/23 확인) → rollout restart
         options:
           path: /etc/grafana/dashboards
 ---
