@@ -1,0 +1,553 @@
+{
+  "id": null,
+  "uid": "logs",
+  "title": "Logs",
+  "description": "로그 대시보드 — 서비스($app) · 레벨 · 검색어 · traceId · userId 로 골라 보기. 지표(요청 수 · 5xx · 지연)는 services.json, 여기는 무슨 일이 왜 났는지. 로그는 사실상 하루치 · Loki 메모리가 작아 기본 1시간(최대 6시간 권장). 10/22 노션 「[로깅 관련 내용 공유] 간헐실패 및 대쉬보드」 4절",
+  "tags": [
+    "gotgan",
+    "observability"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 41,
+  "version": 1,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "",
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "app",
+        "label": "서비스",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": "label_values({namespace=\"sesac-gojigi\"}, app)",
+        "definition": "label_values({namespace=\"sesac-gojigi\"}, app)",
+        "description": "고른 시간 범위에 로그를 남긴 서비스만 목록에 나온다. All 은 항상 전체",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": []
+      },
+      {
+        "name": "level",
+        "label": "레벨 (로그 목록)",
+        "type": "custom",
+        "query": "INFO,WARN,ERROR",
+        "description": "로그 목록 패널에만 적용. 라벨에서 읽지 않고 직접 적음 — ERROR 가 아직 없어도 고를 수 있게",
+        "multi": true,
+        "includeAll": false,
+        "current": {
+          "selected": true,
+          "text": [
+            "WARN",
+            "ERROR"
+          ],
+          "value": [
+            "WARN",
+            "ERROR"
+          ]
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "INFO",
+            "value": "INFO"
+          },
+          {
+            "selected": true,
+            "text": "WARN",
+            "value": "WARN"
+          },
+          {
+            "selected": true,
+            "text": "ERROR",
+            "value": "ERROR"
+          }
+        ]
+      },
+      {
+        "name": "search",
+        "label": "검색어",
+        "type": "textbox",
+        "query": "",
+        "description": "로그 목록에서 이 글자가 들어간 줄만 (대소문자 구분). 빈 값 = 전체",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "traceId",
+        "label": "traceId",
+        "type": "textbox",
+        "query": "",
+        "description": "로그 목록에서 이 traceId 의 줄만. 빈 값 = 전체",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "userId",
+        "label": "userId",
+        "type": "textbox",
+        "query": "",
+        "description": "\"사용자 한 명의 요청\" 패널 전용. 빈 값이면 그 패널은 No data",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "레벨별 로그량",
+      "description": "레벨별 로그 줄 수. 라벨만 세므로 가볍다",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (level) (count_over_time({namespace=\"sesac-gojigi\", app=~\"$app\"} [$__auto]))",
+          "legendFormat": "{{level}}",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 0,
+          "min": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "INFO"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "WARN"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ERROR"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "서비스별 ERROR 수",
+      "description": "ERROR 로그를 낸 서비스. ERROR 가 없으면 No data(정상)",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (app) (count_over_time({namespace=\"sesac-gojigi\", app=~\"$app\", level=\"ERROR\"} [$__auto]))",
+          "legendFormat": "{{app}}",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 0,
+          "min": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "WARN · ERROR 많이 낸 곳 Top 10",
+      "description": "서비스 · 로거별 WARN · ERROR 수(선택한 시간 범위 전체). 메시지로 묶으면 주문번호 등이 섞여 값이 폭발하므로 logger_name 으로 묶는다",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(10, sum by (app, logger_name) (count_over_time({namespace=\"sesac-gojigi\", app=~\"$app\", level=~\"WARN|ERROR\"} | json logger_name [$__range])))",
+          "queryType": "instant"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "app": "서비스",
+              "logger_name": "로거",
+              "Value": "건수",
+              "Value #A": "건수"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "건수",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "서비스"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "건수"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "응답 오류 코드 Top 10",
+      "description": "common-web 예외 처리기 로그(business exception - code=...)에서 뽑은 업무 오류 코드 분포",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(10, sum by (app, code) (count_over_time({namespace=\"sesac-gojigi\", app=~\"$app\", level=\"WARN\"} |= \"business exception\" | regexp \"code=(?P<code>[A-Z_]+)\" [$__range])))",
+          "queryType": "instant"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "app": "서비스",
+              "code": "오류 코드",
+              "Value": "건수",
+              "Value #A": "건수"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "건수",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "서비스"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "건수"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 5,
+      "type": "logs",
+      "title": "로그 목록",
+      "description": "서비스 · 레벨 · 검색어 · traceId 로 거른 로그. traceId 를 누르면 Zipkin 트레이스로 이동",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 14
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{namespace=\"sesac-gojigi\", app=~\"$app\", level=~\"$level\"} |= \"$search\" |= \"$traceId\"",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 6,
+      "type": "logs",
+      "title": "사용자 한 명의 요청",
+      "description": "위쪽 userId 칸에 사용자 번호를 넣으면 그 사용자의 요청 로그만. 빈 값이면 No data(의도)",
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{namespace=\"sesac-gojigi\", app=~\"$app\"} |= \"\\\"userId\\\":\\\"$userId\\\"\"",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    }
+  ]
+}
