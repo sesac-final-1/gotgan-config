@@ -35,6 +35,7 @@ locals {
       { actions = local.sqs_consume, resources = [local.app_queues["settlement-store-events"], local.app_queues["settlement-order-events"]] },
       { actions = ["sns:Publish"], resources = [local.app_topics["settlement"]] },
       { actions = ["s3:GetObject"], resources = ["${local.app_buckets["reports"]}/*"] }, # 명세서 presigned 링크
+      { actions = ["s3:ListBucket"], resources = [local.app_buckets["reports"]] },       # CSV 생성 전 HeadObject 가 403 대신 404 → 409 SETTLE_REPORT_NOT_READY
     ]
   }
 }
