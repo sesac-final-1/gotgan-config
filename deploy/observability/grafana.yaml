@@ -3,13 +3,15 @@
 # - 로그 ↔ 트레이스 연결: Loki 로그 본문의 traceId → Zipkin 링크, Zipkin 구간 → 같은 traceId 의 Loki 로그
 #   traceId 정규식은 backend logback-spring.xml 의 JSON 형식("traceId":"...") 에 맞춘 것 — 로그 형식을 바꾸면 여기도 함께
 # - 디스크 없음(Deployment): 설정 · 대시보드는 모두 파일(git) 로 관리한다. 화면에서 손으로 만든 대시보드는 파드 재시작 때 사라지므로 JSON 으로 내보내 커밋할 것
+# - 대시보드: dashboards/*.json → bootstrap 이 grafana-dashboards ConfigMap 으로 만든다(--from-file) → 2-1 provider 가 등록
 # - 로그인: grafana-secret(admin-user · admin-password, secrets-sync 가 생성) 의 관리자 계정 하나. 익명 접근 · 가입 없음
 # - 외부 미노출 — 접속은 kubectl -n monitoring port-forward svc/grafana 3000 → http://localhost:3000
-# - 아직 없는 것: 대시보드 · 알림(2~4주차, dashboards/ · alerting/ 폴더) · CloudWatch 데이터소스(5주차, IRSA 필요)
+# - 아직 없는 것: 알림(4주차, alerting/ 폴더) · CloudWatch 데이터소스(5주차, IRSA 필요)
 #
 # 구성 (위에서부터):
 #   1. ServiceAccount — 이름 grafana. 지금은 권한 없음 — 5주차 CloudWatch IRSA(monitoring:grafana) 가 이 이름을 가리킨다
 #   2. ConfigMap      — 데이터소스 3개 등록 파일 (Prometheus · Loki · Zipkin) + 서로 연결
+#   2-1. ConfigMap    — 대시보드 provider (어느 폴더의 JSON 을 대시보드로 올릴지)
 #   3. Deployment     — Grafana 컨테이너 1개
 #   4. Service        — 고정 주소 grafana.monitoring.svc:3000 (port-forward 접속)
 #
@@ -69,6 +71,28 @@ data:
             customQuery: true         # Zipkin 구간에는 service.name 속성이 없어 태그 매핑(tags) 으로는 링크가 생기지 않는다 → traceId 로만 찾는다
             query: '{namespace="sesac-gojigi"} |= "$${__span.traceId}"'
 ---
+# 2-1. ConfigMap — 대시보드 provider. 파드 안 /etc/grafana/provisioning/dashboards/ 로 마운트된다
+#      대시보드 JSON 자체는 이 파일에 없다 — bootstrap 이 dashboards/ 폴더로 만드는 grafana-dashboards ConfigMap 이 /etc/grafana/dashboards 로 마운트된다
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+  labels:
+    app: grafana
+    app.kubernetes.io/part-of: gotgan-observability
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: gotgan
+        type: file
+        disableDeletion: true         # 화면에서 지우지 못하게 — 원본은 git
+        allowUiUpdates: true          # 화면에서 고쳐 볼 수는 있음. 저장해도 재시작 때 사라지므로 JSON 으로 내보내 커밋
+        updateIntervalSeconds: 60     # 새 대시보드 파일은 1분 안에 반영. 기존 파일 수정은 감지 못 함(ConfigMap 이 심볼릭 링크라 파일 시각이 그대로, 10/23 확인) → rollout restart
+        options:
+          path: /etc/grafana/dashboards
+---
 # 3. Deployment — 실제 컨테이너. 죽으면 쿠버네티스가 다시 띄운다 (설정은 파일에서 다시 읽으므로 잃는 것 없음)
 apiVersion: apps/v1
 kind: Deployment
@@ -109,6 +133,7 @@ spec:
                 secretKeyRef: { name: grafana-secret, key: admin-password }
             - { name: GF_ANALYTICS_REPORTING_ENABLED, value: "false" }   # Grafana Labs 로 사용 통계를 보내지 않음
             - { name: GF_ANALYTICS_CHECK_FOR_UPDATES, value: "false" }
+            - { name: GF_PLUGINS_PREINSTALL_DISABLED, value: "true" }   # 켜질 때 플러그인 자동 설치 · 업데이트 끔 — 읽기 전용 파일시스템이라 업데이트가 실패하며 prometheus · zipkin 등록이 풀림(10/23 EKS 확인). 쓰는 데이터소스 플러그인은 이미지에 포함
           ports:
             - { name: http, containerPort: 3000 }
           resources:
@@ -126,12 +151,21 @@ spec:
             capabilities: { drop: ["ALL"] }
           volumeMounts:
             - { name: datasources, mountPath: /etc/grafana/provisioning/datasources }
+            - { name: dashboard-provider, mountPath: /etc/grafana/provisioning/dashboards }
+            - { name: dashboards, mountPath: /etc/grafana/dashboards }
             - { name: data, mountPath: /var/lib/grafana }   # Grafana 내부 DB(SQLite) · 세션 — 파드와 함께 사라지는 빈 폴더
             - { name: tmp, mountPath: /tmp }
       volumes:
         - name: datasources
           configMap:
             name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
+            optional: true            # bootstrap 이 만들기 전 · 손으로 apply 할 때도 Grafana 는 뜨게 (대시보드만 없음)
         - name: data
           emptyDir: {}
         - name: tmp
