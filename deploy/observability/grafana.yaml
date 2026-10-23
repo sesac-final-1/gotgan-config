@@ -133,6 +133,7 @@ spec:
                 secretKeyRef: { name: grafana-secret, key: admin-password }
             - { name: GF_ANALYTICS_REPORTING_ENABLED, value: "false" }   # Grafana Labs 로 사용 통계를 보내지 않음
             - { name: GF_ANALYTICS_CHECK_FOR_UPDATES, value: "false" }
+            - { name: GF_PLUGINS_PREINSTALL_DISABLED, value: "true" }   # 켜질 때 플러그인 자동 설치 · 업데이트 끔 — 읽기 전용 파일시스템이라 업데이트가 실패하며 prometheus · zipkin 등록이 풀림(10/23 EKS 확인). 쓰는 데이터소스 플러그인은 이미지에 포함
           ports:
             - { name: http, containerPort: 3000 }
           resources:
