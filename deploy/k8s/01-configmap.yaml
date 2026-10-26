@@ -31,6 +31,7 @@ data:
   # ── order (데모용 단축, 가이드라인 10장)
   AUTO_CONFIRM_AFTER: 2m
   PAYMENT_TIMEOUT: 15m
+  AUTO_DELIVER_AFTER: 1m                                 # 발송 후 자동 배송완료 (DLV-04, 운영 기본 1h — backend #99)
   # ── AWS 자원 (구지훈 — Terraform app/ output, 비밀 아님). 권한은 서비스별 IRSA(cluster/irsa.tf) 가 준다
   AWS_REGION: ap-northeast-2
   # SNS 토픽 — 발행: store · order · settlement 서비스 (app output topic_arns)
