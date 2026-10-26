@@ -4,7 +4,7 @@
 # *_DB_PASSWORD 는 K8s Secret mysql-secret(← GitHub Secrets, secrets-sync 워크플로) 에서 mysql 컨테이너 환경 변수로 주입된다.
 # MySQL 시간대는 StatefulSet / docker-compose 의 --default-time-zone=+09:00 으로 고정 (JDBC · JVM 도 Asia/Seoul)
 set -e
-for svc in user store product order payment review settlement keycloak; do
+for svc in user store product order payment review settlement admin keycloak; do
   pw_var="$(echo "$svc" | tr a-z A-Z)_DB_PASSWORD"
   mysql -uroot -p"$MYSQL_ROOT_PASSWORD" <<SQL
 CREATE DATABASE IF NOT EXISTS ${svc}db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -12,4 +12,4 @@ CREATE USER IF NOT EXISTS '${svc}'@'%' IDENTIFIED BY '${!pw_var}';
 GRANT ALL PRIVILEGES ON ${svc}db.* TO '${svc}'@'%';
 SQL
 done
-# gateway · admin 은 DB 없음. keycloakdb 는 Keycloak 이 관리 (우리 Flyway · 컨벤션 대상 아님)
+# gateway 는 DB 없음. admindb 는 신고 · 조치 이력만 (ADR-0001 예외, 10/26). keycloakdb 는 Keycloak 이 관리 (우리 Flyway · 컨벤션 대상 아님)
