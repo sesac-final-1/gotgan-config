@@ -50,3 +50,9 @@ variable "alert_emails" {
   type        = list(string)
   default     = ["wlsgksvheh@gmail.com"] # 발신 주소와 같은 받은편지함 (ses_sender_email)
 }
+
+variable "infra_schedule_repo" {
+  description = "클러스터 일일 스케줄 워크플로(infra-schedule.yml)가 있는 저장소 — Lambda infra-dispatch 가 workflow_dispatch 를 보낸다"
+  type        = string
+  default     = "sesac-final-1/gotgan-config"
+}
