@@ -74,7 +74,7 @@ services:
   # ── payment (jihoon-devstu)
   payment-service:
     repository: sesac-gojigi-payment
-    tag: "95ee483"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "72da435"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8086
     replicas: 2                             # 결제 경로 — 파드 하나가 죽거나 재시작해도 결제 확인 · 웹훅 · 취소가 끊기지 않게 (10/21 장애 대비 12번). 취소 복구 스케줄러는 ShedLock 이라 한 파드만
     secretName: payment-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
