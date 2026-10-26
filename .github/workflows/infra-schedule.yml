@@ -1,13 +1,11 @@
-# 인프라 일일 스케줄 — 07:00 KST cluster/ apply → bootstrap · 21:00 KST cluster/ destroy (10/13 결정 3 · 10/16 1시간 앞당김). 담당 구지훈
-# GitHub 스케줄은 정각 혼잡으로 1~4시간 늦게 시작될 수 있다 (10/15 destroy 02:28 · 10/16 apply 09:54 실행) → 예약을 1시간씩 앞당겨 실제 가동을 대략 08:00~22:00 에 맞춤
+# 인프라 일일 스케줄 — 08:00 KST cluster/ apply → bootstrap · 22:00 KST cluster/ destroy (10/13 결정 3). 담당 구지훈
+# 시각은 AWS EventBridge Scheduler(Asia/Seoul)가 맞춘다 → Lambda infra-dispatch 가 이 워크플로를 workflow_dispatch 로 실행 (infra/terraform/app/scheduler.tf, 10/26).
+# GitHub schedule 은 정각 혼잡으로 1.5~4시간 늦어(10/23~26 destroy 21:00 → 00:10~01:22) 뺐다 — dispatch 는 신호 후 3~5초 안에 시작
 # vpc · ecr · cicd · app(S3 · SNS/SQS · DynamoDB · SES · EIP · SSM)은 상시 유지 (IRSA 는 cluster/irsa.tf — 매일 함께 재생성) — 이 워크플로는 infra/terraform/cluster/ 만 다룬다
 # apply/destroy 는 이 워크플로(OIDC 역할) 또는 구지훈만 (컨벤션 5-2). 수동: Actions → infra-schedule → Run workflow → action
 name: infra-schedule
 on:
-  schedule:
-    - cron: '0 22 * * *'   # UTC 22:00 = KST 07:00 → apply
-    - cron: '0 12 * * *'   # UTC 12:00 = KST 21:00 → destroy
-  workflow_dispatch:
+  workflow_dispatch:   # 매일 08:00 · 22:00 은 EventBridge Scheduler → Lambda infra-dispatch 가 보낸다
     inputs:
       action:
         description: 'apply | destroy'
@@ -36,17 +34,9 @@ jobs:
     steps:
       - id: pick
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "0 22 * * *" ]; then
-            echo "action=apply" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "0 12 * * *" ]; then
-            echo "action=destroy" >> "$GITHUB_OUTPUT"
-          else
-            echo "알 수 없는 트리거: ${{ github.event.schedule }}"; exit 1
-          fi
+          echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"   # 스케줄러 Lambda · 수동 실행 모두 workflow_dispatch
 
-  # ── 07:00 apply: cluster/ → bootstrap (workflow_call)
+  # ── 08:00 apply: cluster/ → bootstrap (workflow_call)
   apply:
     needs: decide
     if: needs.decide.outputs.action == 'apply'
@@ -75,7 +65,7 @@ jobs:
     uses: ./.github/workflows/bootstrap.yml
     secrets: inherit
 
-  # ── 21:00 destroy: ArgoCD 앱 → LoadBalancer Service → PVC → NLB 제거 대기 → terraform destroy cluster/
+  # ── 22:00 destroy: ArgoCD 앱 → LoadBalancer Service → PVC → NLB 제거 대기 → terraform destroy cluster/
   destroy:
     needs: decide
     if: needs.decide.outputs.action == 'destroy'

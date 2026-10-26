@@ -11,25 +11,26 @@
 | `deploy/argocd/` | ArgoCD Application ("이 저장소의 helm 폴더를 감시하라") | `bootstrap` 워크플로 | 이경석 |
 | `scripts/` | scale-nodes · build-and-push (수동 보조) | 사람 | 구지훈 |
 | `docs/` | ADR · 이벤트 목록 · 시크릿 목록(값 없음) · 인프라 · 로그 컨벤션 | 전원 | 전원 |
-| `.github/workflows/` | `infra`(plan) · `infra-schedule`(07:00 apply · 21:00 destroy) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 |
+| `.github/workflows/` | `infra`(plan) · `infra-schedule`(08:00 apply · 22:00 destroy — EventBridge Scheduler → Lambda 가 실행) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 |
 
 ## 전체 아키텍처
 
 ![곳간 아키텍처 구조도](docs/aws-architecture.svg)
 
-**3티어**입니다 — 프론트 티어(Vercel) → 백 티어(EKS `app` 노드 그룹 t3.xlarge ×2: gateway · 업무 서비스 · Keycloak · 관측성 · ArgoCD) → DB 티어(EKS `db` 노드 그룹 t3.medium ×1: MySQL · Redis만, NetworkPolicy로 백 티어 파드만 3306 · 6379 접근). 프론트가 백 티어를 거치지 않는 유일한 예외는 파일 업로드(백엔드가 발급한 presigned URL로 브라우저 → S3 PUT). 주황 점선 프레임(EKS 클러스터 · 노드 · 파드 · EBS 볼륨)이 매일 07:00 생성 · 21:00 삭제되는 부분이고, 나머지(VPC · EIP · ECR · S3 · SNS/SQS · DynamoDB · IAM)는 상시입니다. 네트워크 · 서브넷 · 보안 그룹 상세는 [가이드라인 04장](https://gotganguide.vercel.app/guideline#s4).
+**3티어**입니다 — 프론트 티어(Vercel) → 백 티어(EKS `app` 노드 그룹 t3.xlarge ×2: gateway · 업무 서비스 · Keycloak · 관측성 · ArgoCD) → DB 티어(EKS `db` 노드 그룹 t3.medium ×1: MySQL · Redis만, NetworkPolicy로 백 티어 파드만 3306 · 6379 접근). 프론트가 백 티어를 거치지 않는 유일한 예외는 파일 업로드(백엔드가 발급한 presigned URL로 브라우저 → S3 PUT). 주황 점선 프레임(EKS 클러스터 · 노드 · 파드 · EBS 볼륨)이 매일 08:00 생성 · 22:00 삭제되는 부분이고, 나머지(VPC · EIP · ECR · S3 · SNS/SQS · DynamoDB · IAM)는 상시입니다. 네트워크 · 서브넷 · 보안 그룹 상세는 [가이드라인 04장](https://gotganguide.vercel.app/guideline#s4).
 
 ## 매일 돌아가는 것
 
 ```
-KST 07:00  infra-schedule(apply)  → terraform apply infra/terraform/cluster
+KST 08:00  infra-schedule(apply)  → terraform apply infra/terraform/cluster
            └→ bootstrap           → k8s 기본 계층(namespace · configmap · networkpolicy) → secrets-sync(GitHub Secrets → K8s Secret) → MySQL · Redis(db 노드) · Keycloak
                                     → observability → ArgoCD 설치 + Application → 서비스 9개 배포 (약 20분)
-KST 21:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
+KST 22:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
 ```
 
 - `vpc` · `ecr` · `cicd` · `app`(EIP · S3 · SNS/SQS · DynamoDB · SES · SSM)은 **상시 유지** — EIP · Route 53 레코드 · ACM 인증서가 남아 API 주소(`https://api.gotgan.click`)는 바뀌지 않습니다.
 - 클러스터 안의 데이터(MySQL · Keycloak 사용자 · Grafana 설정)는 매일 초기화됩니다. 시연 데이터는 Flyway 시드(`R__demo_seed.sql`) · realm import · 대시보드 JSON으로 복원됩니다.
+- 시각은 **EventBridge Scheduler(Asia/Seoul) → Lambda `sesac-gojigi-infra-dispatch` → workflow_dispatch** 가 맞춥니다(`infra/terraform/app/scheduler.tf`, 10/26 — GitHub 예약은 1.5~4시간 늦어 뺌). 08:00 시작이라 사용 가능은 약 08:30.
 - 수동 실행: Actions → `infra-schedule` → Run workflow → `apply` / `destroy`.
 
 ## 시크릿

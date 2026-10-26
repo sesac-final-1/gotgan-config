@@ -7,6 +7,8 @@
 crash.log
 tfplan
 *.tfplan
+# app/scheduler.tf 가 만드는 Lambda zip (archive_file)
+.build/
 
 # 비밀 값 — GitHub Secrets 에만
 .env

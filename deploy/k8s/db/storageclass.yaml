@@ -1,6 +1,6 @@
 # StorageClass ebs-sc — gp3 · 암호화 · WaitForFirstConsumer (EBS CSI). 담당 구지훈 · 가이드라인 06장
 # WaitForFirstConsumer: 파드가 뜰 노드(AZ)가 정해진 뒤 볼륨을 만든다 → db 노드(2a)의 MySQL · Redis 볼륨이 2a 에 생김
-# reclaimPolicy Delete: PVC 를 지우면 EBS 볼륨도 삭제 — 21:00 destroy 전에 PVC 를 지워 고아 볼륨을 남기지 않는다 (infra-schedule.yml)
+# reclaimPolicy Delete: PVC 를 지우면 EBS 볼륨도 삭제 — 22:00 destroy 전에 PVC 를 지워 고아 볼륨을 남기지 않는다 (infra-schedule.yml)
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
