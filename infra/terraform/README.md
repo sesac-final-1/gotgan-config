@@ -8,11 +8,11 @@
 | `vpc` | VPC · 서브넷 · NAT · IGW | 상시 |
 | `ecr` | 서비스별 ECR 저장소 | 상시 |
 | `cicd` | GitHub OIDC 공급자 · Actions 역할 (**이경석** 작성 · apply) | 상시 |
-| `app` | S3 · SNS/SQS · DynamoDB · SES · SSM · EIP | 상시 |
-| `cluster` | EKS · 노드 그룹 · access entries(팀원 전원 + Actions 역할 — 있으면) · 서비스 IRSA(`irsa.tf`, grafana 는 박지연 `irsa_grafana.tf`) · LBC · EBS CSI · metrics-server | **매일 07:00 apply · 21:00 destroy** (`infra-schedule.yml`) |
+| `app` | S3 · SNS/SQS · DynamoDB · SES · SSM · EIP · 클러스터 일일 스케줄러(EventBridge Scheduler · Lambda infra-dispatch) | 상시 |
+| `cluster` | EKS · 노드 그룹 · access entries(팀원 전원 + Actions 역할 — 있으면) · 서비스 IRSA(`irsa.tf`, grafana 는 박지연 `irsa_grafana.tf`) · LBC · EBS CSI · metrics-server | **매일 08:00 apply · 22:00 destroy** (`infra-schedule.yml` — `app/scheduler.tf` 의 EventBridge Scheduler → Lambda 가 실행) |
 
 - apply/destroy 는 스케줄 워크플로(OIDC 역할 `AWS_ROLE_ARN`) 또는 구지훈. 예외: `cicd/` 는 이경석이 로컬 apply (워크플로가 쓸 역할을 만드는 폴더). 다른 사람은 `terraform plan` 까지 (컨벤션 5-2). PR 에서는 `infra.yml` 이 fmt · validate · plan 을 돌린다
-- 시크릿은 GitHub Secrets 단일 소스 — Secrets Manager · KMS · ESO 없음. 클러스터 Secret 은 `secrets-sync` 워크플로가 만든다 (`docs/secrets.md`)
+- 시크릿은 GitHub Secrets 단일 소스 — Secrets Manager · KMS · ESO 없음. 클러스터 Secret 은 `secrets-sync` 워크플로가 만든다 (`docs/secrets.md`). **예외 1건**: 스케줄러 Lambda 의 GitHub 토큰은 SSM SecureString(AWS 관리형 키) `/sesac-gojigi/dev/github/infra-dispatch-token` — Terraform 이 값을 만들지 않고 구지훈이 CLI 로 등록 (`docs/secrets.md` 7절)
 - Terraform 은 팀 · CI 모두 **1.16.5** (`required_version = "~> 1.16.0"`, 워크플로 `terraform_version: '1.16.5'`)
 - 커밋 전 `terraform fmt -recursive` · `terraform validate`. `.terraform.lock.hcl` 커밋, `*.tfstate` · `.terraform/` 커밋 금지
 - `.terraform.lock.hcl` 은 폴더의 `provider.tf` 를 쓰고 처음 `init` 한 뒤(그리고 provider 버전을 바꿀 때마다) `terraform providers lock -platform=windows_amd64 -platform=linux_amd64` 로 두 플랫폼 해시를 채워 커밋 — Windows · CI(Linux) 가 같은 잠금 파일을 쓴다

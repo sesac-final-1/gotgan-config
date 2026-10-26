@@ -1,6 +1,6 @@
 # 클러스터 부트스트랩 — cluster/ apply 직후 (infra-schedule 이 호출) 또는 수동. 담당 구지훈 · 10/13 결정 3
 # 순서: kubeconfig → namespace · configmap · networkpolicy(DB 티어) → secrets-sync → db(MySQL · Redis, db 노드) → keycloak(realm ConfigMap) → observability → ArgoCD → application.yaml → gateway NLB 주소 · API HTTPS 확인
-# 매일 07:00 빈 DB 에서 시작 — 데이터는 Flyway 시드(R__demo_seed.sql) · Keycloak 은 realm import + 시드 스크립트(이경석) 로 복원
+# 매일 08:00 빈 DB 에서 시작 — 데이터는 Flyway 시드(R__demo_seed.sql) · Keycloak 은 realm import + 시드 스크립트(이경석) 로 복원
 name: bootstrap
 on:
   workflow_dispatch:

@@ -3,7 +3,7 @@
 # 메모리: maxmemory 200mb + noeviction (10/20) — 상한(256Mi)에 닿아 파드가 OOMKill 되는 대신 쓰기만 오류로 거절.
 #   noeviction 이라 blocked:user 키가 축출되지 않는다. 쓰기 실패 대비는 사용처에 있음(user 탈퇴 유지 · order MySQL 폴백 · gateway 읽기는 계속)
 # Redis 가 죽어도 order-service 는 Resilience4j(redisCart) 폴백으로 MySQL 을 읽는다 — 장애 격리 시연 ③
-# Sentinel · 복제본 · ElastiCache 는 20장 "실무에서는". 매일 21:00 destroy 되므로 PVC 는 하루 단위 (AOF 는 파드 재시작 대비)
+# Sentinel · 복제본 · ElastiCache 는 20장 "실무에서는". 매일 22:00 destroy 되므로 PVC 는 하루 단위 (AOF 는 파드 재시작 대비)
 # PVC 는 EBS 볼륨(gp3 디스크) — ElastiCache 아님. DB 티어(10/13 3차): nodeSelector tier=db + toleration 으로 db 노드(t3.medium, 2a) 에만,
 #   파드 라벨 tier=db → 02-networkpolicy.yaml 이 6379 를 tier=backend 파드만 열고 egress 는 DNS 뿐
 apiVersion: v1
