@@ -169,7 +169,7 @@ module "grafana_irsa" {
 
 - AWS SDK는 **키 없이** 사용 (IRSA가 자격 증명 주입, 리전 `AWS_REGION`). 권한 밖 호출은 `AccessDenied`
 - 발행: 봉투 JSON만 publish (MessageAttributes 불필요 — 본문 `eventType`으로 구독 필터) / 소비: raw delivery, 3회 실패 시 `-dlq`
-- 이미지: DB에는 key만, 표시 URL = `IMAGES_BASE_URL` + `/products/{key}` · `/reviews/{key}`
+- 이미지: DB에는 key만 — 키에 폴더가 포함됨(`products/{storeId}/{UUID}.{확장자}` · `reviews/…` · `stores/…`). 표시 URL = `IMAGES_BASE_URL` + `/` + key (product.md 공통 표 · 10/21 박지연 답변 J3)
 - 이벤트 · 구독자 변경은 [`events.md`](events.md)에 먼저 등록 → 구지훈이 `app/sns_sqs.tf` 구독 필터 반영
 
 ---
