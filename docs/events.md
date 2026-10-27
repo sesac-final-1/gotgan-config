@@ -23,14 +23,14 @@
 
 | 이벤트 | 토픽 | 발행 | 구독 · 하는 일 | payload (담당자가 확정) |
 |---|---|---|---|---|
-| `StoreApproved` | store-events | store | user(SELLER 역할 · store_id) · settlement(스토어명 · 정산 계좌 스냅샷) · 알림 Lambda(승인 메일) | storeId · userId · storeName · sellerEmail · settlementAccount{bank, number, holder} |
-| `StoreApplicationRejected` | store-events | store | 알림 Lambda(입점 반려 메일) — 10/15 추가 | applicationId · userId · storeName · sellerEmail · reason (재신청 제한 30일 안내용 decidedAt) — userId 10/21 추가(알림 이력 키) |
-| `StoreApplicationSupplementRequested` | store-events | store | 알림 Lambda(보완요청 메일 — 7일 내 미보완 시 자동 반려 안내) — 10/15 추가 | applicationId · userId · storeName · sellerEmail · requestedDocs[] · message · dueAt — userId 10/21 추가(알림 이력 키) |
+| `StoreApproved` | store-events | store | user(SELLER 역할 · store_id) · settlement(스토어명 · 정산 계좌 스냅샷) · 알림 Lambda(승인 메일) · admin 알림 센터(`STORE_APPROVED` 화면 알림, 10/27) | storeId · userId · storeName · sellerEmail · settlementAccount{bank, number, holder} |
+| `StoreApplicationRejected` | store-events | store | 알림 Lambda(입점 반려 메일) — 10/15 추가 · admin 알림 센터(`STORE_REJECTED`, 10/27) | applicationId · userId · storeName · sellerEmail · reason (재신청 제한 30일 안내용 decidedAt) — userId 10/21 추가(알림 이력 키) |
+| `StoreApplicationSupplementRequested` | store-events | store | 알림 Lambda(보완요청 메일 — 7일 내 미보완 시 자동 반려 안내) — 10/15 추가 · admin 알림 센터(`STORE_SUPPLEMENT`, 10/27) | applicationId · userId · storeName · sellerEmail · requestedDocs[] · message · dueAt — userId 10/21 추가(알림 이력 키) |
 | `StoreStatusChanged` | store-events | store | product(상품 노출 숨김) · settlement(지급 보류) | storeId · status |
-| `OrderPaid` | order-events | order | user(5% 포인트 적립) · 알림 Lambda(주문 확인 메일) | orderNo · buyerId · ordererEmail · ordererName · payAmt · usedPoint · items[{orderItemId, earnedPoint, productName, optionName, quantity, itemAmt}] — ordererName 부터는 10/21 추가(주문 확인 메일 본문, 알림 Lambda 는 order 를 동기 호출하지 않음). 뒤 필드는 추가분 |
-| `OrderItemShipped` | order-events | order | 알림 Lambda(배송 시작 메일) | orderItemId · orderNo · buyerId · ordererEmail · ordererName · productName · optionName · courier · trackingNo — buyerId · ordererName · productName · optionName 은 10/21 추가(배송 시작 메일) |
+| `OrderPaid` | order-events | order | user(5% 포인트 적립) · 알림 Lambda(주문 확인 메일) · admin 알림 센터(`ORDER_PAID`, 10/27) | orderNo · buyerId · ordererEmail · ordererName · payAmt · usedPoint · items[{orderItemId, earnedPoint, productName, optionName, quantity, itemAmt}] — ordererName 부터는 10/21 추가(주문 확인 메일 본문, 알림 Lambda 는 order 를 동기 호출하지 않음). 뒤 필드는 추가분 |
+| `OrderItemShipped` | order-events | order | 알림 Lambda(배송 시작 메일) · admin 알림 센터(`ORDER_SHIPPED`, 10/27) | orderItemId · orderNo · buyerId · ordererEmail · ordererName · productName · optionName · courier · trackingNo — buyerId · ordererName · productName · optionName 은 10/21 추가(배송 시작 메일) |
 | `OrderItemConfirmed` | order-events | order | settlement(정산 적재) · review(리뷰 작성 자격) · user(누적 구매액 → 등급) | orderItemId · orderNo · buyerId · storeId · productId · productName · categoryId(하위) · topCategoryId(상위 — 판매수수료 기준) · itemAmt · confirmedAt — productName · topCategoryId 는 10/16 추가(settlement 정산 상세 · 수수료율, settlement 는 product 를 동기 호출하지 않음) |
-| `OrderItemCancelled` · `OrderItemReturned` | order-events | order | 알림 Lambda(취소/반품 완료 메일) | orderItemId · orderNo · buyerId · ordererEmail · ordererName · productName · optionName · refundAmt · restoredPoint · revokedPoint — buyerId · ordererName · productName · optionName · restoredPoint · revokedPoint 는 10/21 추가(취소/반품 완료 메일) |
+| `OrderItemCancelled` · `OrderItemReturned` | order-events | order | 알림 Lambda(취소/반품 완료 메일) · admin 알림 센터(`ORDER_CANCELLED` · `ORDER_RETURNED`, 10/27) | orderItemId · orderNo · buyerId · ordererEmail · ordererName · productName · optionName · refundAmt · restoredPoint · revokedPoint — buyerId · ordererName · productName · optionName · restoredPoint · revokedPoint 는 10/21 추가(취소/반품 완료 메일) |
 
 order 이벤트 필드 (10/21 추가분, 값은 모두 주문 시점 스냅샷)
 
@@ -38,7 +38,7 @@ order 이벤트 필드 (10/21 추가분, 값은 모두 주문 시점 스냅샷)
 - `optionName`: 옵션 없는 상품이면 `null`
 - `usedPoint`(OrderPaid): 주문 전체 사용 포인트(`orders.used_point`) · `itemAmt`: 상품주문 금액(`order_item.item_amt`)
 - `restoredPoint`: 돌려준 사용 포인트(`order_item.used_point`) · `revokedPoint`: 회수한 적립 포인트(`order_item.earned_point`) — 둘 다 0 일 수 있음
-| `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda | settlementId · storeId · week · payoutAmt · sellerEmail · storeName · weekStart · weekEnd · paidAt · salesAmt · commissionAmt · paymentFeeAmt · items[{orderNo · productName · confirmedAt · itemAmt · commissionRate · commissionAmt · paymentFeeAmt · payoutAmt}] — 명세서 내용을 모두 담음(10/21 방식 B, backend #57). 뒤 필드는 추가분 |
+| `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda · admin 알림 센터(스토어에 `SETTLEMENT_PAID`, 10/27) | settlementId · storeId · week · payoutAmt · sellerEmail · storeName · weekStart · weekEnd · paidAt · salesAmt · commissionAmt · paymentFeeAmt · items[{orderNo · productName · confirmedAt · itemAmt · commissionRate · commissionAmt · paymentFeeAmt · payoutAmt}] — 명세서 내용을 모두 담음(10/21 방식 B, backend #57). 뒤 필드는 추가분 |
 
 ## 순서 규칙 (10/15 결정 — A안)
 
