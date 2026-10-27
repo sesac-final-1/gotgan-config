@@ -34,7 +34,7 @@ services:
   # ── user (perish95)
   user-service:
     repository: sesac-gojigi-user
-    tag: "2bd8ef4"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "6f09ed4"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8081
     secretName: user-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
