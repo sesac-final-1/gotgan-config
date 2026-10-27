@@ -25,6 +25,7 @@ data:
   PAYMENT_SERVICE_URI: http://payment-service:8086
   REVIEW_SERVICE_URI: http://review-service:8087
   ADMIN_SERVICE_URI: http://admin-service:8088
+  CHAT_SERVICE_URI: http://chat-service:8089                # 1:1 채팅 (10/27) — 게이트웨이 /api/chats/** · /ws/chat
   # ── 관측성
   LOKI_URL: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
   ZIPKIN_ENDPOINT: http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans

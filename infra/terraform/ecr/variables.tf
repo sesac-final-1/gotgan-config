@@ -9,7 +9,7 @@ variable "aws_region" {
 variable "services" {
   description = "ECR 저장소를 만들 서비스 이름 — 저장소 이름은 sesac-gojigi-{서비스} (backend.yml REPOSITORY · Helm values repository 와 같다)"
   type        = set(string)
-  default     = ["gateway", "user", "store", "product", "order", "settlement", "payment", "review", "admin"]
+  default     = ["gateway", "user", "store", "product", "order", "settlement", "payment", "review", "admin", "chat"] # chat — 1:1 채팅 (10/27)
 }
 
 variable "keep_image_count" {
