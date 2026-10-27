@@ -1,15 +1,17 @@
 # IRSA 역할은 cluster/ 에 둔다 — 신뢰 정책이 그날의 EKS OIDC 공급자를 가리키므로 클러스터와 함께 매일 재생성 (이름이 같아 Helm values 의 roleArn 은 불변). 권한 대상(S3 · SQS · SNS) 은 app/ remote state 에서 읽는다
 # sesac-gojigi-{service}-irsa — user(sqs) · store(sns store-events · s3 seller-docs) · product(sqs · s3 images/products) · order(sns order-events) · review(sqs · s3 images/reviews) · settlement(sqs · sns settlement-events · s3 reports GetObject — 명세서 presign)
-# gateway · payment · admin 은 IRSA 없음 (시크릿은 GitHub Secrets → secrets-sync 워크플로가 K8s Secret 으로 만든다 — KMS · Secrets Manager 권한 없음). grafana(CloudWatch 읽기)는 여기 없음 — 관측성은 박지연 담당, cluster/irsa_grafana.tf 로 별도 작성
+# admin 은 알림 센터(SQS · DynamoDB inbox, 10/27) 만. gateway · payment 는 IRSA 없음 (시크릿은 GitHub Secrets → secrets-sync 워크플로가 K8s Secret 으로 만든다 — KMS · Secrets Manager 권한 없음). grafana(CloudWatch 읽기)는 여기 없음 — 관측성은 박지연 담당, cluster/irsa_grafana.tf 로 별도 작성
 
 locals {
   app_queues  = data.terraform_remote_state.app.outputs.queue_arns  # 구독 이름 → ARN
   app_topics  = data.terraform_remote_state.app.outputs.topic_arns  # store · order · settlement → ARN
   app_buckets = data.terraform_remote_state.app.outputs.bucket_arns # images · seller-docs · reports · log-archive → ARN
 
+  region      = var.aws_region
+  account_id  = data.aws_caller_identity.current.account_id
   sqs_consume = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:ChangeMessageVisibility", "sqs:GetQueueAttributes", "sqs:GetQueueUrl"]
 
-  # 서비스 → 허용 구문 (가이드라인 04장 "서비스별 IRSA 권한"). gateway · payment · admin 은 AWS 권한 없음
+  # 서비스 → 허용 구문 (가이드라인 04장 "서비스별 IRSA 권한"). gateway · payment 는 AWS 권한 없음
   irsa_statements = {
     user = [
       { actions = local.sqs_consume, resources = [local.app_queues["user-store-events"], local.app_queues["user-order-events"]] },
@@ -30,6 +32,11 @@ locals {
     review = [
       { actions = local.sqs_consume, resources = [local.app_queues["review-order-events"]] },
       { actions = ["s3:PutObject"], resources = ["${local.app_buckets["images"]}/reviews/*"] }, # 리뷰 이미지 presigned PUT
+    ]
+    # 알림 센터(NTF-08, 10/27) — 이벤트 구독 큐 3개 · 알림함 테이블. app/ apply 전에 cluster 가 다시 만들어져도 실패하지 않게 이름 규칙으로 ARN 을 만든다
+    admin = [
+      { actions = local.sqs_consume, resources = [for d in ["store", "order", "settlement"] : "arn:aws:sqs:${local.region}:${local.account_id}:sesac-gojigi-admin-${d}-events"] },
+      { actions = ["dynamodb:PutItem", "dynamodb:Query", "dynamodb:UpdateItem"], resources = ["arn:aws:dynamodb:${local.region}:${local.account_id}:table/sesac-gojigi-inbox"] },
     ]
     settlement = [
       { actions = local.sqs_consume, resources = [local.app_queues["settlement-store-events"], local.app_queues["settlement-order-events"]] },

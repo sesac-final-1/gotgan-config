@@ -3,6 +3,7 @@
 #   store-events      → sesac-gojigi-user-store-events · -product-store-events · -settlement-store-events · -notification-store-events
 #   order-events      → sesac-gojigi-user-order-events · -review-order-events · -settlement-order-events · -notification-order-events
 #   settlement-events → sesac-gojigi-report-settlement-events
+#   알림 센터(admin-service, 10/27 NTF-08) → sesac-gojigi-admin-store-events · -admin-order-events · -admin-settlement-events
 
 # 이벤트 계약: docs/events.md — 토픽 · 구독자 · 이벤트 타입이 바뀌면 여기와 함께 고친다
 locals {
@@ -19,6 +20,10 @@ locals {
     "settlement-order-events"   = { topic = "order", events = ["OrderItemConfirmed"] }
     "notification-order-events" = { topic = "order", events = ["OrderPaid", "OrderItemShipped", "OrderItemCancelled", "OrderItemReturned"] }
     "report-settlement-events"  = { topic = "settlement", events = ["SettlementPaid"] }
+    # 알림 센터(NTF-08) — 화면 알림함 · 실시간(SSE). 메일 Lambda 와 같은 이벤트를 따로 받는다
+    "admin-store-events"      = { topic = "store", events = ["StoreApproved", "StoreApplicationRejected", "StoreApplicationSupplementRequested"] }
+    "admin-order-events"      = { topic = "order", events = ["OrderPaid", "OrderItemShipped", "OrderItemCancelled", "OrderItemReturned"] }
+    "admin-settlement-events" = { topic = "settlement", events = ["SettlementPaid"] }
   }
 }
 
