@@ -50,7 +50,7 @@ services:
   # ── product (VoC-100)
   product-service:
     repository: sesac-gojigi-product
-    tag: "99d4da4"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "1aa7e55"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8083
     secretName: product-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
