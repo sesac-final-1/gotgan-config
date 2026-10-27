@@ -17,6 +17,7 @@
 | `REVIEW_DB_PASSWORD` | 〃 review | `mysql-secret` + `review-service-secret` | 〃 | 구지훈 |
 | `SETTLEMENT_DB_PASSWORD` | 〃 settlement | `mysql-secret` + `settlement-service-secret` | 〃 | 구지훈 |
 | `ADMIN_DB_PASSWORD` | 〃 admin — admindb(신고 · 조치 이력, ADR-0001 예외 10/26) | `mysql-secret` + `admin-service-secret` | 〃 | 구지훈 |
+| `CHAT_DB_PASSWORD` | 〃 chat — chatdb(1:1 채팅, chat-service 10/27) | `mysql-secret` + `chat-service-secret` | 〃 | 구지훈 |
 | `KEYCLOAK_DB_PASSWORD` | init-schemas.sh · Keycloak | `mysql-secret` + `keycloak-secret` → `KC_DB_PASSWORD` | 〃 | 구지훈 |
 | `KEYCLOAK_ADMIN_USERNAME` | Keycloak 초기 관리자 | `keycloak-secret` → `KC_BOOTSTRAP_ADMIN_USERNAME` | 팀이 정함 (예: `gotgan-admin`) | 이경석 |
 | `KEYCLOAK_ADMIN_PASSWORD` | 〃 | `keycloak-secret` → `KC_BOOTSTRAP_ADMIN_PASSWORD` | 무작위 24자 | 이경석 |
