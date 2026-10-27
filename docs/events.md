@@ -60,6 +60,7 @@ SNS + SQS 표준 큐는 **도착 순서를 보장하지 않는다** (재시도�
 - store-events → `sesac-gojigi-user-store-events` · `-product-store-events` · `-settlement-store-events` · `-notification-store-events`
 - order-events → `sesac-gojigi-user-order-events` · `-review-order-events` · `-settlement-order-events` · `-notification-order-events`
 - settlement-events → `sesac-gojigi-report-settlement-events`
+- 알림 센터(admin-service, NTF-08 — 10/27) → `sesac-gojigi-admin-store-events` · `-admin-order-events` · `-admin-settlement-events` (메일 Lambda 와 같은 이벤트를 따로 받아 화면 알림함 · 실시간 SSE)
 - 모든 큐에 DLQ(`-dlq`, 최대 수신 3회)
 - 구독 필터: SNS 구독마다 **본문의 `eventType`** 으로 거른다(`filter_policy_scope = MessageBody`) — 발행 측은 MessageAttributes 를 달 필요 없이 봉투 JSON 만 publish. raw delivery 라 소비자는 봉투를 그대로 받는다
 - 큐 URL · 토픽 ARN 은 ConfigMap `app-config`(`{소비자}_{도메인}_EVENTS_QUEUE_URL` · `{도메인}_EVENTS_TOPIC_ARN`), Lambda 는 SSM `/sesac-gojigi/dev/sqs/...`

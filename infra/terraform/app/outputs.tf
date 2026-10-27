@@ -42,7 +42,7 @@ output "queue_arns" {
 
 output "dynamodb_table_names" {
   description = "DynamoDB 테이블 이름"
-  value       = [aws_dynamodb_table.notifications.name, aws_dynamodb_table.settlement_reports.name]
+  value       = [aws_dynamodb_table.notifications.name, aws_dynamodb_table.settlement_reports.name, aws_dynamodb_table.inbox.name]
 }
 
 output "ssm_parameter_names" {

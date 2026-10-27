@@ -45,6 +45,10 @@ data:
   REVIEW_ORDER_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-review-order-events
   SETTLEMENT_STORE_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-settlement-store-events
   SETTLEMENT_ORDER_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-settlement-order-events
+  ADMIN_STORE_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-admin-store-events        # 알림 센터 (10/27)
+  ADMIN_ORDER_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-admin-order-events
+  ADMIN_SETTLEMENT_EVENTS_QUEUE_URL: https://sqs.ap-northeast-2.amazonaws.com/694951014380/sesac-gojigi-admin-settlement-events
+  INBOX_TABLE: sesac-gojigi-inbox                                                                                              # 알림 센터 알림함 (DynamoDB)
   # S3 버킷 — presigned PUT/GET 대상 (app output bucket_names). 이미지 조회 URL = IMAGES_BASE_URL/{products|reviews}/{key}
   IMAGES_BUCKET: sesac-gojigi-images-4380
   IMAGES_BASE_URL: https://sesac-gojigi-images-4380.s3.ap-northeast-2.amazonaws.com
