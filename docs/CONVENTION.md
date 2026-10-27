@@ -16,7 +16,7 @@
 ### 0-1. 판단 원칙
 
 - **"어떻게 쓰나"는 팀 기존 규칙 우선** — 코드 스타일 · 네이밍 · 응답 형식 · 예외 구조 · DB 규칙
-- **"무엇을 만드나"는 프로젝트 스펙 유지** — 서비스 9개 + Keycloak · 엔드포인트 · 이벤트 · 인프라 구성
+- **"무엇을 만드나"는 프로젝트 스펙 유지** — 서비스 10개(10/27 chat 추가) + Keycloak · 엔드포인트 · 이벤트 · 인프라 구성
 - **MSA 전용 규칙 추가** — 서비스 간 호출 · Resilience4j · 대시보드 조합 · 이벤트 · Saga · 멱등성 · 인프라 네이밍
 - 규칙끼리 충돌하면 이 문서가 우선, 다른 문서는 이 문서에 맞춰 수정
 
@@ -25,7 +25,7 @@
 | 항목 | 기존(따숨) | 곳간 | 이유 |
 |---|---|---|---|
 | 패키지 | 도메인형, 엔티티는 `domain/` | 도메인형, 엔티티는 **`entity/`**, 서비스 호출용 **`client/`** 추가 | 팀 합의(엔티티 패키지명) · 서비스 간 HTTP 호출 |
-| 보안 위치 | 각 앱 `common/security` | **게이트웨이에만** Spring Security, 업무 서비스는 `common/auth`(헤더 → 사용자) | 토큰 발급은 Keycloak, JWT 검증은 게이트웨이 한 곳 |
+| 보안 위치 | 각 앱 `common/security` | **게이트웨이에만** Spring Security, 업무 서비스는 공통 모듈 `libs/common-web`의 `auth`(헤더 → 사용자) | 토큰 발급은 Keycloak, JWT 검증은 게이트웨이 한 곳 |
 | 로그인 사용자 | `SecurityUtil.getMemberId()` | `@CurrentUser AuthUser` (게이트웨이가 넣은 `X-User-*` 헤더) | 업무 서비스에 SecurityContext 없음 |
 | FK 제약 | 참조 컬럼 FK 필수 | **같은 서비스 안에서만 FK 필수**, 다른 서비스 ID는 논리 참조 + 인덱스 | DB per Service |
 | 회원 테이블 · 패키지 | `member` · `member/` | **`users` · `user/`** | 서비스(user-service) · 스키마(userdb) 이름과 일치 |
@@ -50,14 +50,14 @@
 | 5 | 에러 코드 형식 | 의미형 `{도메인}_{상황}` — `ORDER_OUT_OF_STOCK` | 2-5 |
 | 6 | 프론트 언어 | JavaScript (`.js` / `.jsx`) — 목업 그대로 | 4-1 |
 | 7 | 프론트 페이지 위치 | `pages/{shop · mypage · seller · admin}/` — 로직은 `features/` | 4-2 |
-| 8 | Redis 키 이름 | `{용도}:{식별자}` — `cart:{userId}`(캐시, 원본은 `orderdb.cart_item`) · `blacklist:{jti}`(Could). 리프레시 토큰 키는 폐지(Keycloak이 관리) | 2-2 |
+| 8 | Redis 키 이름 | `{용도}:{식별자}` — `cart:{userId}`(캐시, 원본은 `orderdb.cart_item`) · `blacklist:{jti}`(Could) · `blocked:user:{userId}`(탈퇴 · 정지 회원 토큰 차단) · `chat:room:{roomId}` · `chat:presence:{roomId}` · `notify:{받는 쪽}`(10/27). 리프레시 토큰 키는 폐지(Keycloak이 관리) | 2-2 |
 
 ### 0-4. 10/12 추가 확정
 
 | 항목 | 확정 규칙 | 관련 절 |
 |---|---|---|
-| 서비스 구성 | Spring 9개(gateway · user · store · product · order · payment · review · settlement · admin) + Keycloak | 2-1 · 3-2 |
-| admin-service | DB 없는 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합만 | 2-1 · 2-4 · 2-7 |
+| 서비스 구성 | Spring 10개(gateway · user · store · product · order · payment · review · settlement · admin · chat — chat 은 10/27 추가) + Keycloak | 2-1 · 3-2 |
+| admin-service | 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합. 자기 DB는 신고 · 조치 이력(admindb, ADR-0001 예외 10/26)만 · 실시간 알림 센터(10/27) | 2-1 · 2-4 · 2-7 |
 | 카테고리 · 수수료 | 카테고리는 product-service, 카테고리별 수수료는 settlement-service | 2-1 · 3-2 |
 | 대시보드 | 판매자는 store, 관리자는 admin 안에서 조합 — 병렬 호출 + 실패 영역만 빼고 부분 응답 | 2-7 |
 | 서비스 간 호출 | Resilience4j 표준 (타임아웃 · 서킷 브레이커 · 멱등 GET만 재시도 · 폴백) | 2-7 |
@@ -81,7 +81,7 @@
 - `main` — 보호 브랜치. 직접 push 금지, PR + 승인 1명 + CI 통과 후 Squash merge
 - 작업 브랜치: `feat/{도메인}-{작업}` (예: `feat/order-payment-verify`, `feat/infra-eks-cluster`)
 - 그 외: `fix/` · `refactor/` · `docs/` · `chore/`(빌드 · 설정)
-- 도메인 값: `auth` `user` `store` `product` `order` `payment` `review` `settlement` `admin` `gateway` `front`(프론트 공통) `infra`(Keycloak 설정 포함, 예: `feat/infra-keycloak-realm`) `cicd` `obs`(관측성) `sls`(서버리스)
+- 도메인 값: `auth` `user` `store` `product` `order` `payment` `review` `settlement` `admin` `chat`(10/27) `gateway` `front`(프론트 공통) `infra`(Keycloak 설정 포함, 예: `feat/infra-keycloak-realm`) `cicd` `obs`(관측성) `sls`(서버리스)
 
 ### 1-2. 커밋 메시지
 
@@ -133,9 +133,10 @@
   - `warn` — 처리는 됐지만 주의 (재고 부족, 금액 불일치 감지, 재시도)
   - `info` — 상태 변화 (주문 PAID, Saga 보상 완료, 정산 집계 완료)
   - `debug` — 개발 확인용 (운영 미출력)
-- 로그 메시지에 업무 키 포함: `orderNo` · `sagaId` · `paymentId` (MDC 또는 메시지)
+- 로그 메시지에 업무 키 포함: `orderNo` · `sagaId`는 MDC(order · payment), 그 외(`paymentId` 등)는 메시지
+- 예외 로그는 `GlobalExceptionHandler` 한 곳에서 남김
 - **비밀번호 · 토큰 · 포트원 키 · 카드 정보 · 이메일 · 전화 · 주소는 info 이상에 남기지 않음**
-- 형식은 JSON (공통 `logback-spring.xml`), traceId 자동 포함 — 형식 임의 변경 금지
+- 형식은 공통 `logback-spring.xml` — 콘솔 `[traceId,spanId,userId]`, k8s는 Loki 전송(본문 JSON · 라벨 `app` · `namespace` · `level` · 배치 10초). 형식 임의 변경 금지
 
 ---
 
@@ -146,6 +147,7 @@
 - 이름: `sesac-gojigi-{용도}` (kebab-case) — `sesac-gojigi-eks-cluster` · `sesac-gojigi-order-events`
 - 모든 자원 태그: `Project=sesac-gojigi` · `ManagedBy=terraform` (콘솔에서 만든 자원은 `ManagedBy=manual` + 이슈 기록)
 - 계정 ID · 리전 하드코딩 금지 — `data.aws_caller_identity` · 변수 사용
+- AWS SDK를 쓰는 서비스는 `software.amazon.awssdk:sts` 의존성 필수(IRSA). S3 `HeadObject`로 존재 확인하면 버킷에 `s3:ListBucket` 권한 필요
 
 | 자원 | 규칙 | 예 |
 |---|---|---|
@@ -154,8 +156,8 @@
 | DLQ | 큐 이름 + `-dlq` | `sesac-gojigi-settlement-order-events-dlq` |
 | IAM 역할 (IRSA) | `sesac-gojigi-{service}-irsa` | `sesac-gojigi-order-irsa` |
 | SSM 파라미터 | `/sesac-gojigi/dev/{종류}/{이름}` | `/sesac-gojigi/dev/sqs/notification-queue-arn` |
-| S3 버킷 | `sesac-gojigi-{용도}-{계정ID 끝 4자리}` (전역 유일) | `sesac-gojigi-images-1234`(prefix `products/` · `reviews/`) · `sesac-gojigi-seller-docs-1234` · `sesac-gojigi-reports-1234` · `sesac-gojigi-log-archive-1234` |
-| DynamoDB | `sesac-gojigi-{용도}` | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` (그 외 테이블 없음) |
+| S3 버킷 | `sesac-gojigi-{용도}-{계정ID 끝 4자리}` (전역 유일) | `sesac-gojigi-images-1234`(prefix `products/` · `reviews/` · `stores/`) · `sesac-gojigi-seller-docs-1234` · `sesac-gojigi-reports-1234` · `sesac-gojigi-log-archive-1234` |
+| DynamoDB | `sesac-gojigi-{용도}` | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` · `sesac-gojigi-inbox`(알림 센터 알림함, 10/27) (그 외 테이블 없음) |
 
 ### 5-2. Terraform
 
@@ -163,7 +165,7 @@
 - 자원 로컬 이름: snake_case, 타입 반복 금지 (`aws_s3_bucket.product_images` ○ / `aws_s3_bucket.product_images_bucket` ✗)
 - 변수 · output: snake_case + `description` 필수
 - 커밋 전 `terraform fmt -recursive` · `terraform validate`
-- apply/destroy는 스케줄 워크플로(`infra-schedule`, OIDC 역할 — `cluster/` 매일 08:00 · 22:00) 또는 구지훈. 다른 사람은 plan까지(`infra.yml`이 PR에 plan 코멘트). 예외: `cicd/`(GitHub OIDC · Actions 역할)는 이경석이 작성 · 로컬 apply — 워크플로가 쓸 역할을 만드는 폴더라 워크플로로 apply할 수 없음
+- apply/destroy는 스케줄 워크플로(`infra-schedule`, OIDC 역할 — `cluster/` 매일 08:00 생성 · 22:00 삭제 — EventBridge Scheduler → Lambda 가 실행, 데이터는 매일 초기화) 또는 구지훈. 다른 사람은 plan까지(`infra.yml`이 PR에 plan 코멘트). 예외: `cicd/`(GitHub OIDC · Actions 역할)는 이경석이 작성 · 로컬 apply — 워크플로가 쓸 역할을 만드는 폴더라 워크플로로 apply할 수 없음
 - Terraform에 비밀 값 금지 — 시크릿은 GitHub Secrets → `secrets-sync`(1-5). `kms.tf` · `secrets.tf` · `eso.tf` 없음
 - `.terraform.lock.hcl` 커밋, `*.tfstate` · `.terraform/` 커밋 금지
 - 버전: Terraform **1.16.5** 고정(`required_version = "~> 1.16.0"`, 워크플로 `terraform_version: '1.16.5'`) · aws provider `~> 5.0` · 모듈 vpc `~> 5` / eks `~> 20`. 상태 잠금은 `backend "s3" { use_lockfile = true }`(1.10+, DynamoDB 잠금 테이블 없음)
@@ -196,7 +198,7 @@
 
 ### 5-5. Serverless · CI
 
-- 함수 폴더: kebab-case — `order-notification` · `settlement-report` · `log-archive` (3개, 사용자 API 없음), 서비스 이름 `sesac-gojigi-{폴더명}`
+- 함수 폴더: kebab-case — `order-notification` · `settlement-report` · `log-archive` · `upload-guard`(10/27) (4개, 사용자 API 없음), 서비스 이름 `sesac-gojigi-{폴더명}`
 - 핸들러 파일 camelCase (`notify.js`), export 이름 `handler`
 - 워크플로 파일: 영역 이름 kebab-case, job 이름 kebab-case (`bump-tag`). 저장소별 — gotgan-backend `backend.yml` · `serverless.yml` · `security.yml` / gotgan-frontend `frontend.yml` · `security.yml` / gotgan-config `infra.yml` · `infra-schedule.yml` · `bootstrap.yml` · `secrets-sync.yml` · `security.yml`
 - GitHub Secrets: UPPER_SNAKE (`AWS_ROLE_ARN` · `SERVERLESS_ACCESS_KEY` · `CONFIG_REPO_TOKEN` · `{SERVICE}_DB_PASSWORD`), Variables도 UPPER_SNAKE (`AWS_REGION`)
