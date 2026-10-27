@@ -15,12 +15,12 @@
 
 | 영역 | 구지훈 (완료) | 이경석 (CI/CD) | 박지연 (로깅 · 관측성) |
 | --- | --- | --- | --- |
-| Terraform | `global/s3` · `vpc` · `ecr` · `app` · `cluster`(EKS · 노드 그룹 · 애드온 · LBC · 서비스 IRSA 6개) | **`cicd/`** — GitHub OIDC 공급자 · Actions 역할 (작성 · 로컬 apply) | **`cluster/irsa_grafana.tf`** — grafana CloudWatch 읽기 IRSA |
+| Terraform | `global/s3` · `vpc` · `ecr` · `app` · `cluster`(EKS · 노드 그룹 · 애드온 · LBC · 서비스 IRSA 7개 — admin 은 10/27 알림 센터) | **`cicd/`** — GitHub OIDC 공급자 · Actions 역할 (작성 · 로컬 apply) | **`cluster/irsa_grafana.tf`** — grafana CloudWatch 읽기 IRSA |
 | GitHub | — | `AWS_ROLE_ARN` 등록(config · backend), backend CI · ArgoCD · SonarCloud · gitleaks | — |
 | k8s 매니페스트 | `deploy/k8s/00 · 01 · 02` · `db/`(MySQL · Redis · StorageClass · init-schemas) | `deploy/argocd/` · `deploy/helm/`(Deployment · Service 템플릿) · `deploy/k8s/keycloak/` | `deploy/observability/` 전체 |
 | 워크플로 | `infra` · `infra-schedule` · `bootstrap` · `secrets-sync` (인프라 자동화 — bootstrap 안의 ArgoCD · 관측성 단계 **내용**은 각 담당 매니페스트를 그대로 적용) | `backend.yml` · `serverless.yml` · `security.yml` | — |
-| 공유 파일에서 채운 줄 | `values.yaml`: `image.registry` · `roleArn` 6개 · gateway NLB 어노테이션 / `01-configmap.yaml`: AWS 자원 구획 | `values.yaml`의 나머지 (tag 줄은 backend CI만) | — |
-| 서버리스 | 공유 자원(버킷 · 큐 · 테이블 · SSM). Lambda 코드: `order-notification` · `settlement-report` | 배포 파이프라인(`serverless.yml`) | Lambda 코드: `log-archive` |
+| 공유 파일에서 채운 줄 | `values.yaml`: `image.registry` · `roleArn` 7개 · gateway NLB 어노테이션 / `01-configmap.yaml`: AWS 자원 구획 | `values.yaml`의 나머지 (tag 줄은 backend CI만) | — |
+| 서버리스 | 공유 자원(버킷 · 큐 · 테이블 · SSM). Lambda 코드: `order-notification` · `settlement-report` · `upload-guard`(10/27) | 배포 파이프라인(`serverless.yml`) | Lambda 코드: `log-archive` |
 
 > 경계 원칙: **AWS 자원과 그 이름 · ARN은 구지훈**, **배포 · 파이프라인은 이경석**, **수집 · 시각화는 박지연**. 서로의 파일은 PR로만 수정합니다(컨벤션 1-4).
 
@@ -37,14 +37,14 @@
 | | 퍼블릭 서브넷 [2a, 2c] | `subnet-023c11797072725df` · `subnet-0d52b05d6f680839c` |
 | | 프라이빗 서브넷 [2a, 2c] | `subnet-0e6a2e34b63b63be9` · `subnet-0acb72a4bc47ecae4` |
 | | NAT 게이트웨이 1개 (2a) | 공인 IP `52.79.161.22` (외부 IP 허용 목록이 필요할 때) |
-| `ecr` | 저장소 9개 · 최근 10개 보관 | `694951014380.dkr.ecr.ap-northeast-2.amazonaws.com/sesac-gojigi-{gateway · user · store · product · order · settlement · payment · review · admin}` |
+| `ecr` | 저장소 10개 · 최근 10개 보관 | `694951014380.dkr.ecr.ap-northeast-2.amazonaws.com/sesac-gojigi-{gateway · user · store · product · order · settlement · payment · review · admin · chat}` — chat 은 10/27 |
 | `app` | NLB용 EIP [2a, 2c] | `3.34.245.213`(eip-0) · `13.125.139.205` / `eipalloc-00eaad35e9b548733` · `eipalloc-026aa7de15c62370c` |
 | | Route 53 · ACM (`dns.tf`) | 호스팅 영역 `gotgan.click`(10/20 등록) · `api.gotgan.click` A → EIP 2개 · ACM 인증서(gateway NLB 443 TLS) |
-| | S3 버킷 4개 | `sesac-gojigi-images-4380`(products/ · reviews/ · stores/ 공개 읽기) · `-seller-docs-4380` · `-reports-4380` · `-log-archive-4380`(90일 후 Glacier) |
-| | SNS 토픽 3 · SQS 큐 9 + DLQ 9 | `sesac-gojigi-{store · order · settlement}-events` / `sesac-gojigi-{소비자}-{도메인}-events` (+`-dlq`) |
-| | DynamoDB 2 | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` |
+| | S3 버킷 4개 | `sesac-gojigi-images-4380`(products/ · reviews/ · stores/ 공개 읽기) · `-seller-docs-4380` · `-reports-4380` · `-log-archive-4380`(90일 후 Glacier). images · seller-docs 는 EventBridge 알림 켬 → Lambda `upload-guard` 가 업로드 파일 형식 검사 · 위조 삭제(10/27, `s3.tf`) |
+| | SNS 토픽 3 · SQS 큐 12 + DLQ 12 | `sesac-gojigi-{store · order · settlement}-events` / `sesac-gojigi-{소비자}-{도메인}-events` (+`-dlq`) — 알림 센터 `admin-{store · order · settlement}-events` 3개는 10/27 |
+| | DynamoDB 3 | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` · `sesac-gojigi-inbox`(알림 센터 알림함, TTL 90일 — 10/27) |
 | | SES 발신 주소 (샌드박스) | `wlsgksvheh@gmail.com` (Verified) |
-| | SSM 파라미터 8 | `/sesac-gojigi/dev/...` — `serverless.yml`이 읽음 |
+| | SSM 파라미터 12 | `/sesac-gojigi/dev/...` — `serverless.yml`이 읽음 (upload-guard 용 `s3/images-bucket` · `s3/seller-docs-bucket` · `sns/alerts-topic-arn` · `kms/alerts-key-arn` 은 10/27) |
 
 ### 매일 생성 · 삭제 (`cluster/`)
 
@@ -54,7 +54,7 @@
 | 노드 그룹 | `sesac-gojigi-app` t3.xlarge ×2(2a · 2c, `tier=app`) · `sesac-gojigi-db` t3.medium ×1(2a, `tier=db` + 테인트 `tier=db:NoSchedule`) |
 | 애드온 | vpc-cni(**NetworkPolicy 활성화**) · coredns · kube-proxy · aws-ebs-csi-driver · metrics-server (모두 EKS 관리형) |
 | Helm | AWS Load Balancer Controller 3.5.0 (`kube-system`) |
-| IRSA | `sesac-gojigi-{user · store · product · order · review · settlement}-irsa` · `-lbc-irsa` · `-ebs-csi-irsa` — 이름 고정이라 ARN 불변 |
+| IRSA | `sesac-gojigi-{user · store · product · order · review · settlement · admin}-irsa` · `-lbc-irsa` · `-ebs-csi-irsa` — 이름 고정이라 ARN 불변 |
 | 접근 권한 | 팀원 전원(`sesac-a1` ~ `a4`) + Actions 역할(있으면 자동) → 모두 클러스터 관리자 |
 
 ---
@@ -96,7 +96,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 
 ```
 08:00  infra-schedule(apply) → terraform apply cluster/ (약 15분)
-       └→ bootstrap → namespace · configmap · networkpolicy → secrets-sync → db(MySQL · Redis) → keycloak → 관측성 → ArgoCD → 서비스 9개
+       └→ bootstrap → namespace · configmap · networkpolicy → secrets-sync → db(MySQL · Redis) → keycloak → 관측성 → ArgoCD → 서비스 10개
 22:00  infra-schedule(destroy) → ArgoCD 앱 → LoadBalancer Service → PVC 삭제 → NLB 제거 대기 → terraform destroy cluster/
 ```
 
@@ -123,7 +123,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 
 - apply 후 `AWS_ROLE_ARN`을 **config · backend 두 저장소**에 ARN 형식으로 다시 등록 — 지금 PR마다 `plan (*)` 잡이 `Source Account ID is needed if the Role Name is provided` 로 실패하는 원인
 - 역할이 생기면 다음 cluster apply 때 access entry가 **자동으로** 추가됩니다(`cluster` output `access_entry_principals`에 `github-actions` 표시)
-- `values.yaml`에 이미 채운 것(건드리지 않아도 됨): 레지스트리 · `roleArn` 6개 · gateway NLB 어노테이션 3줄
+- `values.yaml`에 이미 채운 것(건드리지 않아도 됨): 레지스트리 · `roleArn` 7개 · gateway NLB 어노테이션 3줄
   - **`aws-load-balancer-attributes: load_balancing.cross_zone.enabled=true`를 빼면 2c 쪽 EIP가 응답하지 않습니다**(10/14 검증)
 - 남은 TODO(경석 님 영역): `bootstrap.yml`의 ArgoCD `stable` 매니페스트 버전 고정 · `security.yml` gitleaks · SonarCloud
 - Keycloak 파드는 라벨 `tier: backend` · `nodeSelector tier=app`을 유지해야 NetworkPolicy가 MySQL 접근을 허용합니다
@@ -165,7 +165,10 @@ module "grafana_irsa" {
 | order | SNS 발행 | `ORDER_EVENTS_TOPIC_ARN` |
 | review | SQS 수신 · S3 images/reviews/ Put | `REVIEW_ORDER_EVENTS_QUEUE_URL` · `IMAGES_BUCKET` |
 | settlement | SQS 수신 · SNS 발행 · S3 reports Get | `SETTLEMENT_*_EVENTS_QUEUE_URL` · `SETTLEMENT_EVENTS_TOPIC_ARN` · `REPORTS_BUCKET` |
-| gateway · payment · admin | 없음 | — |
+| admin | SQS 수신 · DynamoDB inbox Put/Query/Update (알림 센터, 10/27) | `ADMIN_{STORE · ORDER · SETTLEMENT}_EVENTS_QUEUE_URL` · `INBOX_TABLE` |
+| gateway · payment · chat | 없음 | gateway 는 라우트 대상 `*_SERVICE_URI`(chat 은 `CHAT_SERVICE_URI`, 10/27) |
+
+- chat-service(:8089, 10/27)는 AWS 호출이 없고 MySQL `chatdb`(`init-schemas.sh` chat 계정 · `CHAT_DB_PASSWORD` → `chat-service-secret`) · Redis 만 씁니다
 
 - AWS SDK는 **키 없이** 사용 (IRSA가 자격 증명 주입, 리전 `AWS_REGION`). 권한 밖 호출은 `AccessDenied`
 - 발행: 봉투 JSON만 publish (MessageAttributes 불필요 — 본문 `eventType`으로 구독 필터) / 소비: raw delivery, 3회 실패 시 `-dlq`
