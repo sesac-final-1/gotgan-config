@@ -5,6 +5,10 @@ locals {
   ssm_parameters = {
     "s3/log-archive-bucket"             = aws_s3_bucket.this["log-archive"].bucket
     "s3/reports-bucket"                 = aws_s3_bucket.this["reports"].bucket
+    "s3/images-bucket"                  = aws_s3_bucket.this["images"].bucket      # upload-guard (10/27)
+    "s3/seller-docs-bucket"             = aws_s3_bucket.this["seller-docs"].bucket # upload-guard
+    "sns/alerts-topic-arn"              = aws_sns_topic.alerts.arn                 # upload-guard 삭제 알림
+    "kms/alerts-key-arn"                = aws_kms_key.alerts.arn                   # 알림 토픽 암호화 키 — Lambda 발행에 필요
     "dynamodb/notifications-table"      = aws_dynamodb_table.notifications.name
     "dynamodb/settlement-reports-table" = aws_dynamodb_table.settlement_reports.name
     "ses/from-email"                    = var.ses_sender_email
