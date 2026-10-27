@@ -96,3 +96,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "log_archive" {
     }
   }
 }
+
+# 업로드 검사 — 브라우저가 presigned PUT 으로 바로 올린 파일을 Lambda upload-guard 가 앞부분으로 확인 (SYS-24, 10/27 회의 추가 기능)
+# 버킷 알림은 EventBridge 로만 켠다 — Lambda 쪽(serverless.yml)이 "Object Created" 규칙을 만들고, 버킷 알림 설정은 여기 한 곳에서만 관리
+resource "aws_s3_bucket_notification" "upload_guard" {
+  for_each = toset(["images", "seller-docs"])
+
+  bucket      = aws_s3_bucket.this[each.key].id
+  eventbridge = true
+}
