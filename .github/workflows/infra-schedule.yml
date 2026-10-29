@@ -134,3 +134,22 @@ jobs:
         run: |
           terraform init -input=false
           terraform destroy -input=false -auto-approve
+
+  # ── 실패 통지 (10/29 코드리뷰 A-구-7) — apply · bootstrap · destroy 중 하나라도 실패하면 SNS sesac-gojigi-alerts → 이메일.
+  #    특히 destroy 실패는 밤새 과금. Lambda infra-dispatch 자체 실패는 app/alarms.tf infra_dispatch_errors 알람이 맡는다
+  notify-failure:
+    needs: [decide, apply, bootstrap, destroy]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: SNS 발행
+        run: |
+          account=$(aws sts get-caller-identity --query Account --output text)
+          aws sns publish \
+            --topic-arn "arn:aws:sns:${{ vars.AWS_REGION }}:${account}:sesac-gojigi-alerts" \
+            --subject "[곳간] infra-schedule ${{ needs.decide.outputs.action }} 실패" \
+            --message "infra-schedule ${{ needs.decide.outputs.action }} 이 실패했습니다. destroy 실패면 클러스터가 남아 과금 중일 수 있습니다 — 로그 확인 후 수동 재실행: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
