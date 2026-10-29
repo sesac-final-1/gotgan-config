@@ -42,7 +42,7 @@ services:
   # ── store (VoC-100)
   store-service:
     repository: sesac-gojigi-store
-    tag: "7d0cf7d"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "660a3b7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8082
     secretName: store-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
