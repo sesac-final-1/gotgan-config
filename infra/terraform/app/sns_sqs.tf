@@ -15,7 +15,7 @@ locals {
     "product-store-events"      = { topic = "store", events = ["StoreStatusChanged"] }
     "settlement-store-events"   = { topic = "store", events = ["StoreApproved", "StoreStatusChanged"] }
     "notification-store-events" = { topic = "store", events = ["StoreApproved", "StoreApplicationRejected", "StoreApplicationSupplementRequested"] } # 입점 승인 · 반려 · 보완요청 메일
-    "user-order-events"         = { topic = "order", events = ["OrderPaid", "OrderItemConfirmed"] }
+    "user-order-events"         = { topic = "order", events = ["OrderItemConfirmed"] }
     "review-order-events"       = { topic = "order", events = ["OrderItemConfirmed"] }
     "settlement-order-events"   = { topic = "order", events = ["OrderItemConfirmed"] }
     "notification-order-events" = { topic = "order", events = ["OrderPaid", "OrderItemShipped", "OrderItemCancelled", "OrderItemReturned"] }
