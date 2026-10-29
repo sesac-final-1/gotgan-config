@@ -26,7 +26,7 @@
 | `StoreApproved` | store-events | store | user(SELLER 역할 · store_id) · settlement(스토어명 · 정산 계좌 스냅샷) · 알림 Lambda(승인 메일) · admin 알림 센터(`STORE_APPROVED` 화면 알림, 10/27) | storeId · userId · storeName · sellerEmail · settlementAccount{bank, number, holder} |
 | `StoreApplicationRejected` | store-events | store | 알림 Lambda(입점 반려 메일) — 10/15 추가 · admin 알림 센터(`STORE_REJECTED`, 10/27) | applicationId · userId · storeName · sellerEmail · reason (재신청 제한 30일 안내용 decidedAt) — userId 10/21 추가(알림 이력 키) |
 | `StoreApplicationSupplementRequested` | store-events | store | 알림 Lambda(보완요청 메일 — 7일 내 미보완 시 자동 반려 안내) — 10/15 추가 · admin 알림 센터(`STORE_SUPPLEMENT`, 10/27) | applicationId · userId · storeName · sellerEmail · requestedDocs[] · message · dueAt — userId 10/21 추가(알림 이력 키) |
-| `StoreStatusChanged` | store-events | store | product(상품 노출 숨김) · settlement(지급 보류) | storeId · status |
+| `StoreStatusChanged` | store-events | store | product(상품 노출 숨김 — backend #169) · settlement(지급 보류) | storeId · status — `ACTIVE` · `SUSPENDED`(관리자 정지 · 해제, store.md 9절) · `CLOSED`(판매자 폐점, store.md 12절 — 10/29 추가, 되돌릴 수 없음). eventId 는 변경마다 새 값(한 스토어에 여러 번) |
 | `OrderPaid` | order-events | order | 알림 Lambda(주문 확인 메일 — earnedPoint 는 적립 예정액) · admin 알림 센터(`ORDER_PAID`, 10/27) | orderNo · buyerId · ordererEmail · ordererName · payAmt · usedPoint · items[{orderItemId, earnedPoint, productName, optionName, quantity, itemAmt}] — ordererName 부터는 10/21 추가(주문 확인 메일 본문, 알림 Lambda 는 order 를 동기 호출하지 않음). 뒤 필드는 추가분. 10/27 포인트 적립은 구매확정(`OrderItemConfirmed`)으로 옮김 — user 는 이 이벤트를 적립에 쓰지 않음 |
 | `OrderItemShipped` | order-events | order | 알림 Lambda(배송 시작 메일) · admin 알림 센터(`ORDER_SHIPPED`, 10/27) | orderItemId · orderNo · buyerId · ordererEmail · ordererName · productName · optionName · courier · trackingNo — buyerId · ordererName · productName · optionName 은 10/21 추가(배송 시작 메일) |
 | `OrderItemConfirmed` | order-events | order | settlement(정산 적재) · review(리뷰 작성 자격) · user(5% 포인트 적립 · 누적 구매액 → 등급) | orderItemId · orderNo · buyerId · storeId · productId · productName · categoryId(하위) · topCategoryId(상위 — 판매수수료 기준) · itemAmt · earnedPoint · confirmedAt · buyerDisplayName · optionName · thumbnailUrl — productName · topCategoryId 는 10/16 추가(settlement 정산 상세 · 수수료율, settlement 는 product 를 동기 호출하지 않음). earnedPoint(상품주문 적립 포인트, 주문 시점 계산)는 10/27 추가 — user 가 이 값대로 적립, settlement 는 쓰지 않음(모르는 필드 무시). buyerDisplayName(orders.orderer_display_name — 닉네임, 없으면 마스킹 실명) · optionName · thumbnailUrl(order_item 주문 시점 스냅샷, 옵션 없는 상품 · 썸네일 없으면 null)은 10/28 추가 — review 작성 자격 스냅샷(공개 리뷰 작성자 이름 · 마이페이지 리뷰 화면, review 는 order · user · product 를 호출하지 않음), settlement · user 는 쓰지 않음 |
@@ -49,10 +49,10 @@ SNS + SQS 표준 큐는 **도착 순서를 보장하지 않는다** (재시도�
     `UPDATE … SET status = :status, {x}_changed_at = :occurredAt WHERE id = :id AND ({x}_changed_at IS NULL OR {x}_changed_at < :occurredAt)`
   - 0행 갱신 = 옛 이벤트 → 무시(로그만), `processed_event` 에는 기록
   - occurredAt 은 Asia/Seoul `LocalDateTime` 으로 변환해 DB `DATETIME(6)` 과 비교
-- **적용 대상**: `StoreStatusChanged` → product(`product.store_status_changed_at`, 박지연) · settlement(`settlement_store.store_status_changed_at`, 구지훈)
+- **적용 대상**: `StoreStatusChanged` → product(`store_status.status_changed_at` 스냅샷 + `product.store_status_changed_at`, 박지연 — productdb V3, 10/28) · settlement(`settlement_store.store_status_changed_at`, 구지훈)
 - **적용하지 않는 이벤트**: 누적 · 한 번만 일어나는 이벤트(`OrderItemConfirmed` 포인트 적립 · 정산 적재, `StoreApproved` 등)는 `processed_event` 중복 방지로 충분
 - 새로 "상태를 덮어쓰는" 이벤트를 추가하면 이 규칙을 같이 적용하고 위 대상 목록에 추가한다
-- 기준이 되는 행이 아직 없으면(예: `StoreApproved` 보다 `StoreStatusChanged` 가 먼저 도착) `processed_event` 를 남기지 않고 예외로 메시지를 큐에 돌려 재시도 (3회 실패 시 DLQ)
+- 기준이 되는 행이 아직 없으면(예: `StoreApproved` 보다 `StoreStatusChanged` 가 먼저 도착) `processed_event` 를 남기지 않고 예외로 메시지를 큐에 돌려 재시도 (3회 실패 시 DLQ) — product 는 기준 행(스냅샷)을 첫 이벤트로 만들므로 재시도하지 않음(상품이 없을 때 온 이벤트도 남겨 뒤에 등록하는 상품의 초기값으로)
 - 대안 검토: FIFO(B안)는 토픽 · 큐 · 구독 전체 재생성 + 모든 구독자 영향이라 채택 안 함, 그대로 둠(C안)은 지급 보류 · 상품 노출이 틀어질 수 있어 채택 안 함
 
 ## 큐 (구독자별, 컨벤션 5-1)
