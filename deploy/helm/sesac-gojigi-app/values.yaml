@@ -97,6 +97,6 @@ services:
   # ── chat (jihoon-devstu) — 1:1 채팅 (10/27). AWS 호출 없음 → IRSA 없음. WebSocket 연결 수는 지표 chat_ws_sessions
   chat-service:
     repository: sesac-gojigi-chat
-    tag: "6410957"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "d697998"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8089
     secretName: chat-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (chatdb)
