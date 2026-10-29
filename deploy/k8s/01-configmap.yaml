@@ -24,6 +24,7 @@ data:
   SETTLEMENT_SERVICE_URI: http://settlement-service:8085
   PAYMENT_SERVICE_URI: http://payment-service:8086
   REVIEW_SERVICE_URI: http://review-service:8087
+  REVIEW_CLIENT_MOCK: "false"                     # admin 신고 처리 — review 내부 API(backend #157) 배포 완료, MockReviewClient 대신 실제 호출 (10/29)
   ADMIN_SERVICE_URI: http://admin-service:8088
   CHAT_SERVICE_URI: http://chat-service:8089                # 1:1 채팅 (10/27) — 게이트웨이 /api/chats/** · /ws/chat
   # ── 관측성
