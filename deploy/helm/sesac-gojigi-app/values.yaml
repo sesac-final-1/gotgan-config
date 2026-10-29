@@ -89,7 +89,7 @@ services:
   # ── admin (jihoon-devstu)
   admin-service:
     repository: sesac-gojigi-admin
-    tag: "41f06ea"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "42f93e5"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8088
     secretName: admin-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (admindb, 10/26)
     serviceAccount:
