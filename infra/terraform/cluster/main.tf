@@ -40,16 +40,18 @@ module "eks" {
   cluster_enabled_log_types   = []
 
   # 기본 애드온. vpc-cni 는 노드보다 먼저 + NetworkPolicy 활성화 (deploy/k8s/02-networkpolicy.yaml)
+  # 버전 고정 (11/02 코드리뷰 B-구-3) — 매일 새로 만드는 클러스터가 날마다 다른 최신 버전으로 뜨지 않게. 값은 11/02 08:00 생성분에서 정상 동작한 버전.
+  # 올릴 때는 aws eks describe-addon-versions 로 확인 → PR plan → 하루 운영 후 다음 애드온 (metrics-server.tf 선례)
   cluster_addons = {
     vpc-cni = {
-      most_recent    = true
+      addon_version  = "v1.23.2-eksbuild.8"
       before_compute = true
       configuration_values = jsonencode({
         enableNetworkPolicy = "true"
       })
     }
-    kube-proxy = { most_recent = true }
-    coredns    = { most_recent = true }
+    kube-proxy = { addon_version = "v1.35.3-eksbuild.64" }
+    coredns    = { addon_version = "v1.14.7-eksbuild.28" }
   }
 
   # EKS 관리형 metrics-server 는 10251 포트 — 모듈 기본 규칙(443 · 4443 · 6443 · 8443 · 9443 · 10250)에 없어

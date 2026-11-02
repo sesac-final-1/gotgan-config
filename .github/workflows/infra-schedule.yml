@@ -91,7 +91,7 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: ArgoCD Application 삭제 (prune 으로 서비스 9개 정리)
+      - name: ArgoCD Application 삭제 (prune 으로 서비스 10개 정리)
         if: steps.kube.outputs.exists == 'true'
         run: |
           kubectl delete -f deploy/argocd/application.yaml --ignore-not-found --timeout=120s || \
