@@ -40,12 +40,36 @@ resource "aws_s3_bucket_public_access_block" "this" {
 }
 
 # 브라우저가 <img src> 로 바로 읽도록 세 prefix 만 공개 GET (10/14 결정, stores/ 는 10/15 STR-06 스토어 대표 이미지). 업로드는 presigned PUT 만
+# HTTPS 강제 (Sonar S6249) — 평문 HTTP 요청은 거부. presigned URL · SDK · 브라우저 모두 HTTPS 라 영향 없음
+locals {
+  deny_insecure_transport = {
+    for k, b in aws_s3_bucket.this : k => {
+      Sid       = "DenyInsecureTransport"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = "s3:*"
+      Resource  = [b.arn, "${b.arn}/*"]
+      Condition = { Bool = { "aws:SecureTransport" = "false" } }
+    }
+  }
+}
+
+# images 는 아래 공개 읽기 정책에 HTTPS 강제를 함께 넣고(버킷 정책은 버킷당 하나), 나머지 3개는 HTTPS 강제만
+resource "aws_s3_bucket_policy" "https_only" {
+  for_each = { for k, v in aws_s3_bucket.this : k => v if k != "images" }
+
+  bucket = each.value.id
+  policy = jsonencode({ Version = "2012-10-17", Statement = [local.deny_insecure_transport[each.key]] })
+
+  depends_on = [aws_s3_bucket_public_access_block.this]
+}
+
 resource "aws_s3_bucket_policy" "images_public_read" {
   bucket = aws_s3_bucket.this["images"].id
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
+    Statement = [local.deny_insecure_transport["images"], {
       Sid       = "PublicReadProductReviewStoreImages"
       Effect    = "Allow"
       Principal = "*"
