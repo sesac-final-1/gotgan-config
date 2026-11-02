@@ -8,8 +8,8 @@ on:
     secrets:
       ARGOCD_ADMIN_PASSWORD: { required: false }   # ArgoCD admin 비밀번호 고정 — 없으면 초기 랜덤 비밀번호 그대로
 
+# 권한은 잡마다(Sonar S8233) — 워크플로 기본은 읽기만. AWS 로그인(OIDC)이 필요한 잡에만 id-token: write
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
@@ -18,18 +18,24 @@ concurrency:
 
 jobs:
   secrets:
+    permissions:
+      id-token: write   # 호출되는 secrets-sync 의 OIDC — 호출하는 잡이 준 만큼만 쓸 수 있다
+      contents: read
     uses: ./.github/workflows/secrets-sync.yml
     secrets: inherit
 
   bootstrap:
     needs: secrets
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     env:
       NS: sesac-gojigi
       ARGOCD_VERSION: v3.5.3
     steps:
       - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
