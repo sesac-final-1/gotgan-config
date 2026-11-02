@@ -8,10 +8,9 @@ on:
       - '.github/workflows/infra.yml'
   workflow_dispatch:
 
+# 권한은 잡마다(Sonar S8233) — 워크플로 기본은 읽기만. fmt 는 읽기만, plan 만 OIDC · PR 코멘트
 permissions:
-  id-token: write      # OIDC
   contents: read
-  pull-requests: write # plan 결과 코멘트
 
 concurrency:
   group: infra-plan-${{ github.ref }}
@@ -22,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: '1.16.5'   # provider.tf required_version "~> 1.16.0" · 로컬과 같은 버전
       - name: terraform fmt -check
@@ -31,6 +30,10 @@ jobs:
   plan:
     needs: fmt
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write      # OIDC
+      contents: read
+      pull-requests: write # plan 결과 코멘트
     strategy:
       fail-fast: false
       matrix:
@@ -40,11 +43,11 @@ jobs:
         working-directory: infra/terraform/${{ matrix.folder }}
     steps:
       - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: '1.16.5'
       - name: terraform init

@@ -33,6 +33,8 @@ spec:
       terminationGracePeriodSeconds: {{ $.Values.defaults.terminationGracePeriodSeconds }}
       {{- if $svc.serviceAccount }}
       serviceAccountName: {{ $name }}
+      {{- else }}
+      automountServiceAccountToken: false   # IRSA 없는 서비스(gateway · payment · chat)는 쿠버네티스 API 토큰이 필요 없다 (Sonar S6865)
       {{- end }}
       containers:
         - name: {{ $name }}

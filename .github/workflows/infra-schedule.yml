@@ -13,10 +13,9 @@ on:
         type: choice
         options: [apply, destroy]
 
+# 권한은 잡마다(Sonar S8233 · S8264) — 워크플로 기본은 읽기만. AWS 로그인(OIDC)이 필요한 잡에만 id-token: write
 permissions:
-  id-token: write
   contents: read
-  actions: read    # bootstrap 은 workflow_call 로 호출 (gh workflow run 방식이면 actions: write 필요)
 
 concurrency:
   group: infra-schedule   # apply 와 destroy 가 겹치지 않게 (호출되는 bootstrap · secrets-sync 는 다른 그룹 — 같은 그룹이면 호출자가 자기를 기다려 교착)
@@ -29,6 +28,7 @@ env:
 jobs:
   decide:
     runs-on: ubuntu-latest
+    permissions: {}   # 입력값만 옮김
     outputs:
       action: ${{ steps.pick.outputs.action }}
     steps:
@@ -41,13 +41,16 @@ jobs:
     needs: decide
     if: needs.decide.outputs.action == 'apply'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: ${{ env.TF_VERSION }}
       - name: terraform apply cluster/
@@ -62,6 +65,10 @@ jobs:
 
   bootstrap:
     needs: apply
+    permissions:
+      id-token: write   # bootstrap · secrets-sync 의 OIDC — 호출하는 잡이 준 만큼만 쓸 수 있다
+      contents: read
+      actions: read     # bootstrap 은 workflow_call 로 호출 (gh workflow run 방식이면 actions: write 필요)
     uses: ./.github/workflows/bootstrap.yml
     secrets: inherit
 
@@ -70,15 +77,18 @@ jobs:
     needs: decide
     if: needs.decide.outputs.action == 'destroy'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     env:
       NS: sesac-gojigi
     steps:
       - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
@@ -141,8 +151,10 @@ jobs:
     needs: [decide, apply, bootstrap, destroy]
     if: failure()
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # SNS 발행용 AWS 로그인만 (checkout 없음)
     steps:
-      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
