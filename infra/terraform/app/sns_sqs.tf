@@ -18,7 +18,7 @@ locals {
     "user-order-events"         = { topic = "order", events = ["OrderItemConfirmed"] }
     "review-order-events"       = { topic = "order", events = ["OrderItemConfirmed"] }
     "settlement-order-events"   = { topic = "order", events = ["OrderItemConfirmed"] }
-    "notification-order-events" = { topic = "order", events = ["OrderPaid", "OrderItemShipped", "OrderItemCancelled", "OrderItemReturned"] }
+    "notification-order-events" = { topic = "order", events = ["OrderPaid", "OrderItemShipped", "OrderItemDelivered", "OrderItemCancelled", "OrderItemReturned"] } # 배송 완료 메일은 11/02 추가
     "report-settlement-events"  = { topic = "settlement", events = ["SettlementPaid"] }
     # 알림 센터(NTF-08) — 화면 알림함 · 실시간(SSE). 메일 Lambda 와 같은 이벤트를 따로 받는다
     "admin-store-events"      = { topic = "store", events = ["StoreApproved", "StoreApplicationRejected", "StoreApplicationSupplementRequested"] }
