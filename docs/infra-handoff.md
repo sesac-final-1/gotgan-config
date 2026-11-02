@@ -15,7 +15,7 @@
 
 | 영역 | 구지훈 (완료) | 이경석 (CI/CD) | 박지연 (로깅 · 관측성) |
 | --- | --- | --- | --- |
-| Terraform | `global/s3` · `vpc` · `ecr` · `app` · `cluster`(EKS · 노드 그룹 · 애드온 · LBC · 서비스 IRSA 7개 — admin 은 10/27 알림 센터) | **`cicd/`** — GitHub OIDC 공급자 · Actions 역할 (작성 · 로컬 apply) | **`cluster/irsa_grafana.tf`** — grafana CloudWatch 읽기 IRSA |
+| Terraform | `global/s3` · `vpc` · `ecr` · `app` · `cluster`(EKS · 노드 그룹 · 애드온 · LBC · 서비스 IRSA 7개 — admin 은 10/27 알림 센터) | **`cicd/`** — GitHub OIDC 공급자 · Actions 역할 (작성 · 로컬 apply) | **`cluster/irsa_grafana.tf`** — grafana CloudWatch 읽기 IRSA (11/02 기준 미작성 — Grafana CloudWatch 데이터소스를 쓰지 않음) |
 | GitHub | — | `AWS_ROLE_ARN` 등록(config · backend), backend CI · ArgoCD · SonarCloud · gitleaks | — |
 | k8s 매니페스트 | `deploy/k8s/00 · 01 · 02` · `db/`(MySQL · Redis · StorageClass · init-schemas) | `deploy/argocd/` · `deploy/helm/`(Deployment · Service 템플릿) · `deploy/k8s/keycloak/` | `deploy/observability/` 전체 |
 | 워크플로 | `infra` · `infra-schedule` · `bootstrap` · `secrets-sync` (인프라 자동화 — bootstrap 안의 ArgoCD · 관측성 단계 **내용**은 각 담당 매니페스트를 그대로 적용) | `backend.yml` · `serverless.yml` · `security.yml` | — |
@@ -130,7 +130,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 
 ## 7. 박지연 (로깅 · 관측성) 연결점
 
-- **grafana IRSA**는 `cluster/irsa_grafana.tf`로 작성 — 클러스터와 함께 매일 재생성됩니다. 같은 모듈 패턴 예시:
+- **grafana IRSA**는 `cluster/irsa_grafana.tf`로 작성 — 클러스터와 함께 매일 재생성됩니다(11/02 기준 미작성 — CloudWatch 데이터소스를 붙일 때 이 패턴으로). 같은 모듈 패턴 예시:
 
 ```hcl
 module "grafana_irsa" {
