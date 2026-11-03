@@ -30,9 +30,9 @@ data:
   LOKI_URL: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
   ZIPKIN_ENDPOINT: http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans
   # ── order (데모용 단축, 가이드라인 10장)
-  AUTO_CONFIRM_AFTER: 2m
+  AUTO_CONFIRM_AFTER: 1h                                 # 배송완료 후 자동 구매확정 (운영 기본 7d) — 11/3 2m → 1h: QA · 시연에서 반품 · 교환 신청할 여유
   PAYMENT_TIMEOUT: 15m
-  AUTO_DELIVER_AFTER: 1m                                 # 발송 후 자동 배송완료 (DLV-04, 운영 기본 1h — backend #99)
+  AUTO_DELIVER_AFTER: 10m                                # 발송 후 자동 배송완료 (DLV-04, 운영 기본 1h — backend #99) — 11/3 1m → 10m: 판매자 배송완료 처리를 직접 해 볼 여유
   # ── AWS 자원 (구지훈 — Terraform app/ output, 비밀 아님). 권한은 서비스별 IRSA(cluster/irsa.tf) 가 준다
   AWS_REGION: ap-northeast-2
   # SNS 토픽 — 발행: store · order · settlement 서비스 (app output topic_arns)
