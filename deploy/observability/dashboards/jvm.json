@@ -58,7 +58,7 @@
     {
       "id": 1,
       "type": "row",
-      "title": "요약 — 지금 한계에 가까운 곳",
+      "title": "요약",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -71,7 +71,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "DB 연결 합계 (Hikari)",
+      "title": "DB 커넥션 수 (전체)",
       "description": "모든 서비스 Hikari 연결 수 합계($app 무시). MySQL max_connections 151 에 Keycloak 연결이 더해지므로 140 부터 빨강. 레플리카를 늘리면 파드당 풀 크기(기본 10)만큼 늘어남 — 11/2 확장계획 5-4",
       "datasource": {
         "type": "prometheus",
@@ -141,7 +141,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "메모리 / limit 최대",
+      "title": "메모리 사용률 (최대)",
       "description": "고른 서비스 파드 중 working set ÷ 메모리 limit 이 가장 큰 값. 이 값이 100% 에 닿으면 OOMKilled",
       "datasource": {
         "type": "prometheus",
@@ -211,7 +211,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Hikari 대기 최대",
+      "title": "Pending 커넥션 (최대)",
       "description": "연결을 기다리는 요청 수(pending) 최대. 0 보다 크면 그 서비스 풀이 모자람 → 풀 크기 판단 근거",
       "datasource": {
         "type": "prometheus",
@@ -281,7 +281,7 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "재시작 (1시간)",
+      "title": "재시작 (1h)",
       "description": "고른 서비스 컨테이너 재시작 횟수(최근 1시간). 원인은 OOMKilled 칸 · Logs 대시보드에서",
       "datasource": {
         "type": "prometheus",
@@ -347,7 +347,7 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "OOMKilled 파드",
+      "title": "OOMKilled",
       "description": "마지막 종료 사유가 OOMKilled 인 컨테이너 수. 지표는 종료가 한 번이라도 있어야 생기므로 없으면 0. 다음 종료 사유로 바뀌거나 파드가 지워지면 사라짐",
       "datasource": {
         "type": "prometheus",
@@ -413,7 +413,7 @@
     {
       "id": 7,
       "type": "stat",
-      "title": "노드 CPU 최대",
+      "title": "노드 CPU (최대)",
       "description": "노드 중 CPU 사용률(할당 가능 코어 대비)이 가장 큰 값. 파드에 CPU limit 이 없어 파드가 아니라 노드가 먼저 꽉 참 → 같은 노드 서비스가 함께 느려짐",
       "datasource": {
         "type": "prometheus",
@@ -483,7 +483,7 @@
     {
       "id": 8,
       "type": "row",
-      "title": "메모리 — 파드 limit · 힙 · 힙 밖",
+      "title": "메모리",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -496,7 +496,7 @@
     {
       "id": 9,
       "type": "timeseries",
-      "title": "파드 메모리 / limit",
+      "title": "메모리 사용률 (limit 대비)",
       "description": "working set ÷ 메모리 limit(서비스 768Mi). 100% 에 닿으면 OOMKilled. 힙이 낮은데 이 값이 높으면 힙 밖(메타스페이스 · 스레드 · 네이티브)이 원인",
       "datasource": {
         "type": "prometheus",
@@ -579,7 +579,7 @@
     {
       "id": 10,
       "type": "timeseries",
-      "title": "힙 사용 / 최대",
+      "title": "Heap 사용률",
       "description": "JVM 힙 사용량 ÷ 힙 최대(-Xmx 또는 MaxRAMPercentage). GC 직후에도 높게 남으면 힙 부족",
       "datasource": {
         "type": "prometheus",
@@ -662,7 +662,7 @@
     {
       "id": 11,
       "type": "timeseries",
-      "title": "힙 밖 (non-heap) 사용량",
+      "title": "Non-heap 메모리",
       "description": "메타스페이스 · 코드 캐시 등 JVM 이 힙 밖에 쓰는 메모리(Micrometer 가 아는 것만 — 스레드 스택 · 직접 버퍼는 빠짐). 파드 메모리와의 차이도 함께 볼 것",
       "datasource": {
         "type": "prometheus",
@@ -727,7 +727,7 @@
     {
       "id": 12,
       "type": "timeseries",
-      "title": "GC 후 Old 영역 사용률",
+      "title": "Old Gen 사용률 (GC 후)",
       "description": "GC 직후 오래 사는 영역(long-lived) 사용률. 부하 중 계속 오르면 메모리 누수 · 힙 부족 신호",
       "datasource": {
         "type": "prometheus",
@@ -810,7 +810,7 @@
     {
       "id": 13,
       "type": "row",
-      "title": "GC — Serial GC(Copy · MarkSweepCompact), 멈추는 동안 요청 처리 안 함",
+      "title": "GC",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -823,8 +823,8 @@
     {
       "id": 14,
       "type": "timeseries",
-      "title": "GC 멈춤 비율",
-      "description": "1초 중 GC 로 멈춘 시간 비율. Serial GC 라 멈추는 동안 요청을 처리하지 않음 → 이 값이 오르면 p95 지연도 오름",
+      "title": "GC Pause 비율",
+      "description": "1초 중 GC 로 멈춘 시간 비율. 우리 서비스는 Serial GC(Copy · MarkSweepCompact) 라 멈추는 동안 요청을 처리하지 않음 → 이 값이 오르면 p95 지연도 오름",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -905,7 +905,7 @@
     {
       "id": 15,
       "type": "timeseries",
-      "title": "GC 1회 최대 멈춤",
+      "title": "GC Pause 최대",
       "description": "최근 GC 한 번에 멈춘 최대 시간(gc 종류별). MarkSweepCompact(전체 GC)가 길면 힙 부족",
       "datasource": {
         "type": "prometheus",
@@ -987,7 +987,7 @@
     {
       "id": 16,
       "type": "row",
-      "title": "DB 연결 — Hikari 풀",
+      "title": "DB 커넥션 (HikariCP)",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -1000,7 +1000,7 @@
     {
       "id": 17,
       "type": "timeseries",
-      "title": "Hikari 사용 중 (active)",
+      "title": "Active 커넥션",
       "description": "지금 쿼리에 쓰고 있는 연결 수. 풀 최대(기본 10)에 붙어 있으면 대기가 생김",
       "datasource": {
         "type": "prometheus",
@@ -1076,7 +1076,7 @@
     {
       "id": 18,
       "type": "timeseries",
-      "title": "Hikari 대기 (pending)",
+      "title": "Pending 커넥션",
       "description": "연결을 기다리는 요청 수. 0 보다 크면 풀이 모자람(풀을 키우기 전 max_connections 151 확인)",
       "datasource": {
         "type": "prometheus",
@@ -1154,7 +1154,7 @@
     {
       "id": 19,
       "type": "timeseries",
-      "title": "연결 얻는 시간 (평균)",
+      "title": "커넥션 획득 시간 (평균)",
       "description": "풀에서 연결을 받기까지 걸린 평균 시간. 대기가 생기면 이 값이 먼저 오름",
       "datasource": {
         "type": "prometheus",
@@ -1219,7 +1219,7 @@
     {
       "id": 20,
       "type": "timeseries",
-      "title": "연결 timeout",
+      "title": "커넥션 Timeout",
       "description": "connectionTimeout(기본 30초) 안에 연결을 못 받은 횟수. 1 이상이면 그 요청은 실패(5xx)",
       "datasource": {
         "type": "prometheus",
@@ -1310,7 +1310,7 @@
     {
       "id": 22,
       "type": "timeseries",
-      "title": "파드 CPU / requests",
+      "title": "CPU 사용률 (requests 대비)",
       "description": "CPU 사용량 ÷ CPU requests(대부분 100m). CPU limit 이 없어 100% 를 넘을 수 있음 — 넘는 만큼 노드 여유를 빌려 쓰는 것",
       "datasource": {
         "type": "prometheus",
@@ -1458,7 +1458,7 @@
     {
       "id": 24,
       "type": "timeseries",
-      "title": "라이브 스레드",
+      "title": "Live 스레드",
       "description": "JVM 스레드 수. 요청이 몰려 톰캣 스레드가 늘면 같이 오름(스레드마다 스택 메모리 — 힙 밖)",
       "datasource": {
         "type": "prometheus",
