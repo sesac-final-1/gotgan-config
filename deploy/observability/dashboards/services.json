@@ -35,7 +35,7 @@
           "refId": "app"
         },
         "definition": "label_values(http_server_requests_seconds_count{namespace=\"sesac-gojigi\"}, app)",
-        "description": "서비스별 · 엔드포인트 줄에만 적용(요약 · 게이트웨이 · 채팅은 전체)",
+        "description": "서비스별 · 엔드포인트 줄에만 적용됩니다. 요약 · 게이트웨이 · 채팅 줄은 늘 전체를 봅니다.",
         "refresh": 2,
         "sort": 1,
         "multi": true,
@@ -71,8 +71,8 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "전체 요청 수",
-      "description": "바깥에서 게이트웨이로 들어온 초당 요청 수(RPS, $app 무시). 서비스끼리 부르는 내부 호출은 빠짐",
+      "title": "요청 수 (RPS)",
+      "description": "외부에서 게이트웨이로 들어온 초당 요청 수입니다. 서비스끼리 주고받는 내부 호출은 포함하지 않습니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -134,8 +134,8 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "5xx 비율",
-      "description": "게이트웨이 응답 중 5xx 비율($app 무시). 요청이 없으면 '-'. 1% 노랑 · 5% 빨강",
+      "title": "에러율 (5xx)",
+      "description": "게이트웨이 응답 중 서버 오류(5xx)의 비율입니다. 1%를 넘으면 노랑, 5%를 넘으면 빨강으로 바뀝니다. 요청이 없으면 '-'로 표시됩니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -205,8 +205,8 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "429 (분당)",
-      "description": "요청 제한(RedisRateLimiter)에 걸린 응답 수(분당, $app 무시). 로그인 · 가입은 키당 분당 30회, 나머지 초당 20회(버스트 40). 라우트에서 처음 생긴 429 묶음은 0 으로 잡힘. 어느 라우트인지는 아래 게이트웨이 줄",
+      "title": "요청 제한 (429)",
+      "description": "최근 1분 동안 요청 제한에 걸려 429로 거절된 요청 수입니다. 한도는 로그인 · 가입이 사용자(또는 IP)당 분당 30회, 그 밖의 API가 초당 20회입니다. 어느 라우트에서 걸렸는지는 아래 게이트웨이 줄에서 봅니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -273,7 +273,7 @@
       "id": 5,
       "type": "stat",
       "title": "평균 응답 시간",
-      "description": "게이트웨이에서 잰 평균 응답 시간($app 무시, 서비스 처리 + 게이트웨이 경유)",
+      "description": "게이트웨이에서 잰 평균 응답 시간입니다. 뒤쪽 서비스의 처리 시간이 포함됩니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -343,7 +343,7 @@
       "id": 6,
       "type": "stat",
       "title": "p95 응답 시간",
-      "description": "게이트웨이에서 잰 응답 시간 95번째 백분위($app 무시) — 요청 100건 중 95건이 이 시간 안에 끝남. k6 p95 와 비교. 구간 50 · 100 · 200 · 300 · 500ms · 1 · 2 · 5s(backend management.metrics.distribution.slo) 사이를 비례로 나눈 추정값 — 5초를 넘으면 5s 로 표시",
+      "description": "요청 100건 중 95건이 이 시간 안에 끝났다는 뜻입니다. k6 결과의 p95와 비교할 때 씁니다. 응답 시간 구간(50ms부터 5s까지 8칸)으로 계산한 근삿값이며, 5초를 넘으면 5s로 표시됩니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -426,7 +426,7 @@
       "id": 8,
       "type": "timeseries",
       "title": "요청 수 (RPS)",
-      "description": "서비스가 받은 초당 요청 수(내부 호출 포함, /actuator 제외). 범례 · 선을 누르면 Logs 로",
+      "description": "서비스별 초당 요청 수입니다. 서비스끼리 주고받는 내부 호출도 포함합니다. 선을 누르면 그 서비스의 로그(Logs 대시보드)로 이동합니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -496,8 +496,8 @@
     {
       "id": 9,
       "type": "timeseries",
-      "title": "5xx 비율",
-      "description": "서비스 응답 중 5xx 비율. 요청이 없는 구간은 비어 보임. 오른 서비스는 Logs 에서 ERROR · 원인 확인",
+      "title": "에러율 (5xx)",
+      "description": "서비스별 응답 중 서버 오류(5xx)의 비율입니다. 값이 오른 서비스는 선을 눌러 로그에서 원인을 확인합니다. 요청이 없던 구간은 비어 보입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -585,7 +585,7 @@
       "id": 10,
       "type": "timeseries",
       "title": "p95 응답 시간",
-      "description": "서비스 안에서 잰 응답 시간 95번째 백분위(요청 100건 중 95건이 이 안에 끝남). 평균보다 느린 요청을 잘 드러냄. 구간 50 · 100 · 200 · 300 · 500ms · 1 · 2 · 5s(backend management.metrics.distribution.slo) 사이를 비례로 나눈 추정값 — 5초를 넘으면 5s 로 표시",
+      "description": "서비스별로 요청 100건 중 95건이 끝난 시간입니다. 평균보다 느린 요청이 잘 드러납니다. 응답 시간 구간(50ms부터 5s까지 8칸)으로 계산한 근삿값이며, 5초를 넘으면 5s로 표시됩니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -673,7 +673,7 @@
       "id": 11,
       "type": "timeseries",
       "title": "평균 응답 시간",
-      "description": "서비스 안에서 잰 평균 응답 시간(sum ÷ count)",
+      "description": "서비스별 평균 응답 시간입니다. p95와 차이가 크면 일부 요청만 유독 느리다는 뜻입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -761,7 +761,7 @@
       "id": 12,
       "type": "timeseries",
       "title": "최대 응답 시간",
-      "description": "최근(약 2분) 요청 중 가장 느린 한 건. 평균은 낮은데 이 값만 튀면 특정 API · GC 멈춤 의심 → 아래 엔드포인트 표 · jvm 대시보드",
+      "description": "최근 1 ~ 2분 동안 가장 느렸던 요청 한 건의 응답 시간입니다. 평균은 낮은데 이 값만 튀면 특정 API나 GC 멈춤을 의심하고, 아래 엔드포인트 표와 JVM 대시보드를 함께 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -862,7 +862,7 @@
       "id": 14,
       "type": "table",
       "title": "느린 API Top 10",
-      "description": "고른 시간 범위 전체의 평균 응답 시간이 긴 API 10개(서비스 · 메서드 · 경로, gateway 제외 — 경로를 모름). 행을 누르면 그 서비스 Logs",
+      "description": "선택한 시간 범위에서 평균 응답 시간이 가장 긴 API 10개입니다. 행을 누르면 그 서비스의 로그로 이동합니다. 게이트웨이는 경로 정보가 없어 제외했습니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -929,7 +929,7 @@
       "id": 15,
       "type": "table",
       "title": "오류 많은 API Top 10",
-      "description": "고른 시간 범위의 4xx · 5xx 응답 수가 많은 API 10개. 401 · 404 같은 정상 거절도 포함 — 상태 코드 칸으로 구분",
+      "description": "선택한 시간 범위에서 4xx · 5xx 응답이 가장 많은 API 10개입니다. 401(로그인 필요)이나 404(없는 데이터)처럼 정상적인 거절도 포함되니 상태 코드를 함께 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1010,7 +1010,7 @@
       "id": 17,
       "type": "timeseries",
       "title": "라우트별 요청 수 (RPS)",
-      "description": "게이트웨이 라우트(routeId)별 초당 요청 수. 요청이 한 번이라도 들어온 라우트만 보임. user 는 user-auth-strict(로그인 · 가입) · user-auth · user-service 로 나뉨",
+      "description": "게이트웨이 라우트별 초당 요청 수입니다. 요청이 한 번이라도 들어온 라우트만 보입니다. user 서비스는 user-auth-strict(로그인 · 가입), user-auth(그 밖의 인증), user-service로 나뉩니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1074,8 +1074,8 @@
     {
       "id": 18,
       "type": "timeseries",
-      "title": "라우트별 429",
-      "description": "요청 제한에 걸린 응답 수(라우트별). 로그인 무차별 대입 시연은 user-auth-strict. 요청 제한 Redis 가 죽으면 제한 없이 통과(fail-open)라 0 으로 보임. 라우트에서 429 가 처음 생길 때 첫 묶음은 0 으로 잡힘(Prometheus 카운터가 그때 처음 생김) — 다음 429 부터 셈",
+      "title": "라우트별 요청 제한 (429)",
+      "description": "라우트별로 요청 제한에 걸린 요청 수입니다. 로그인 무차별 대입 시연은 user-auth-strict에서 확인합니다. 주의: 그 라우트에서 429가 처음 생길 때의 첫 묶음은 0으로 잡힙니다(카운터가 그때 처음 만들어지기 때문). 요청 제한에 쓰는 Redis가 멈추면 제한 없이 통과하므로 0으로 보입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1154,7 +1154,7 @@
       "id": 19,
       "type": "timeseries",
       "title": "라우트별 p95 응답 시간",
-      "description": "게이트웨이에서 잰 라우트별 응답 시간 95번째 백분위(뒤 서비스 처리 포함). 구간 50 · 100 · 200 · 300 · 500ms · 1 · 2 · 5s(backend management.metrics.distribution.slo) 사이를 비례로 나눈 추정값 — 5초를 넘으면 5s 로 표시",
+      "description": "라우트별로 요청 100건 중 95건이 끝난 시간입니다. 뒤쪽 서비스의 처리 시간이 포함됩니다. 응답 시간 구간(50ms부터 5s까지 8칸)으로 계산한 근삿값이며, 5초를 넘으면 5s로 표시됩니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1249,7 +1249,7 @@
       "id": 21,
       "type": "timeseries",
       "title": "WebSocket 세션 수",
-      "description": "chat-service 에 연결된 STOMP WebSocket 세션 수(파드별). /ws/chat 은 요청 제한 제외",
+      "description": "chat-service에 연결된 채팅 WebSocket 세션 수입니다. 파드별로 보여 줍니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
