@@ -1,0 +1,52 @@
+// S2 로그인 — 11/02 요청 제한(#204 · #205) 뒤로 "요청 제한이 동작하는지" 확인하는 시나리오로 바꿈 (확장 계획 5-7)
+//   ① 한 IP 에서 POST 로그인 31번 → 31번째부터 429, 그 동안 다른 IP 의 로그인 · 로그인한 사용자의 조회는 통과
+//   ② (선택) Keycloak 부하 — 계정마다 다른 IP 로 10 → 30 → 60 VU 로그인 · refresh. 통과: p95 < 1s
+//   k6 run -e LOADTEST_PASSWORD=... loadtest/k6/s2-login-limit.js              (①만)
+//   k6 run -e LOADTEST_PASSWORD=... -e KEYCLOAK=1 loadtest/k6/s2-login-limit.js (① + ②)
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+import { BASE, accountEmail, fakeIp, login, authHeaders, get, stages, summaryTo } from './lib.js';
+
+const scenarios = {
+  limit: { executor: 'per-vu-iterations', vus: 1, iterations: 1, exec: 'limit' },
+};
+if (__ENV.KEYCLOAK) {
+  scenarios.keycloak = { executor: 'ramping-vus', startTime: '1m', stages: stages([10, 30, 60]), exec: 'keycloak' };
+}
+
+export const options = {
+  scenarios,
+  thresholds: { 'http_req_duration{scenario:keycloak}': ['p(95)<1000'], checks: ['rate>0.99'] },
+};
+
+export function limit() {
+  const sameIp = { 'Content-Type': 'application/json', 'X-Vercel-Forwarded-For': '10.250.0.1' };
+  const body = JSON.stringify({ email: accountEmail(1), password: 'wrong-password-1!' });   // 틀린 비밀번호 — 401 이 와도 횟수는 센다
+  const codes = [];
+  for (let i = 0; i < 31; i += 1) {
+    codes.push(http.post(`${BASE}/api/auth/login`, body, { headers: sameIp, tags: { name: 'POST /api/auth/login (같은 IP)' } }).status);
+  }
+  check(codes, {
+    '30번까지는 429 아님': (c) => c.slice(0, 30).every((s) => s !== 429),
+    '31번째 429': (c) => c[30] === 429,
+  });
+  // 다른 IP 의 로그인 · 로그인한 사용자의 일반 API 는 걸리지 않는다
+  login(2);
+  check(get('/api/users/me', 'GET /api/users/me', authHeaders()), { '다른 IP 로그인 · 조회 통과': (r) => r.status === 200 });
+}
+
+export function keycloak() {
+  const res = http.post(`${BASE}/api/auth/login`, JSON.stringify({ email: accountEmail(__VU), password: __ENV.LOADTEST_PASSWORD }), {
+    headers: { 'Content-Type': 'application/json', 'X-Vercel-Forwarded-For': fakeIp() }, tags: { name: 'POST /api/auth/login' },
+  });
+  check(res, { '로그인 200': (r) => r.status === 200 });
+  for (let i = 0; i < 2; i += 1) {
+    sleep(1);
+    check(http.post(`${BASE}/api/auth/refresh`, null, { headers: { 'X-Vercel-Forwarded-For': fakeIp() }, tags: { name: 'POST /api/auth/refresh' } }),
+      { 'refresh 200': (r) => r.status === 200 });
+  }
+  http.post(`${BASE}/api/auth/logout`, null, { headers: { 'X-Vercel-Forwarded-For': fakeIp() }, tags: { name: 'POST /api/auth/logout' } });
+  sleep(1);
+}
+
+export const handleSummary = summaryTo('s2-login-limit');
