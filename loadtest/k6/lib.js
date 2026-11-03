@@ -1,8 +1,9 @@
 // k6 공통 — 주소 · 단계 · 통과 기준 · 로그인 · 가상 IP. 담당 구지훈
 // 실행 방법 · 시나리오 설명은 loadtest/README.md, 판단 규칙은 노션 「확장성 · 메모리 점검과 확장 계획」 5장
 import http from 'k6/http';
-import { check, fail } from 'k6';
+import { check, fail, sleep } from 'k6';
 import exec from 'k6/execution';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.1.0/index.js';
 
 export const BASE = __ENV.BASE_URL || 'https://api.gotgan.click';
 
@@ -30,13 +31,29 @@ export const anonHeaders = () => ({ 'X-Vercel-Forwarded-For': fakeIp() });
 const session = { token: null, at: 0 };
 export const accountEmail = (n) => `loadtest+${n}@gotgan.test`;
 
-export function login(n = exec.vu.idInTest) {
+// 가입 규칙과 같은지 먼저 본다(user SignupRequest · Keycloak 정책: 8~64자 · 영문 · 특수문자) — 틀리면 가입 400 · 로그인 401 로만 보여 원인을 찾기 어렵다
+export function requirePassword() {
   const password = __ENV.LOADTEST_PASSWORD;
-  if (!password) fail('LOADTEST_PASSWORD 가 없습니다 — k6 run -e LOADTEST_PASSWORD=... (README 3절)');
+  if (!password) exec.test.abort('LOADTEST_PASSWORD 가 없습니다 — k6 run -e LOADTEST_PASSWORD=... (README 3절)');
+  if (password.length < 8 || password.length > 64 || !/[A-Za-z]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    exec.test.abort('LOADTEST_PASSWORD 가 가입 규칙에 맞지 않습니다 — 8~64자 · 영문 · 특수문자 1개 이상');
+  }
+  return password;
+}
+
+export function login(n = exec.vu.idInTest) {
+  const password = requirePassword();
   const res = http.post(`${BASE}/api/auth/login`, JSON.stringify({ email: accountEmail(n), password }), {
     headers: { 'Content-Type': 'application/json', ...anonHeaders() }, tags: { name: 'POST /api/auth/login' },
   });
-  if (!check(res, { '로그인 200': (r) => r.status === 200 })) fail(`로그인 실패 ${accountEmail(n)} → ${res.status} (계정 생성: accounts.js)`);
+  if (!check(res, { '로그인 200': (r) => r.status === 200 })) {
+    // 400 · 401 = 계정이 없거나 비밀번호가 다름 — 반복해도 같으므로 바로 멈춘다(쉬지 않고 반복하면 로그인 요청 제한 429 까지 감, 11/3 확인 실행)
+    if (res.status === 400 || res.status === 401) {
+      exec.test.abort(`로그인 실패 ${accountEmail(n)} → ${res.status} — accounts.js 로 계정을 만들었는지 · 같은 비밀번호인지 확인`);
+    }
+    sleep(5);   // 429 · 5xx — 잠깐 쉬고 다음 반복에서 다시
+    fail(`로그인 실패 ${accountEmail(n)} → ${res.status}`);
+  }
   session.token = res.json('data.accessToken');
   session.at = Date.now();
   return session.token;
@@ -76,7 +93,7 @@ export function summaryTo(name) {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     return {
       [`loadtest/results/${name}-${stamp}.json`]: JSON.stringify(data, null, 2),
-      stdout: `\n${name} 끝 — results/${name}-${stamp}.json\n`,
+      stdout: `${textSummary(data, { indent: ' ', enableColors: true })}\n\n${name} 끝 — results/${name}-${stamp}.json\n`,   // 화면 요약 + 저장 위치
     };
   };
 }
