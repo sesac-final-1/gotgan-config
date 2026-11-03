@@ -2,7 +2,7 @@
   "id": null,
   "uid": "jvm",
   "title": "JVM · 자원 (측정용)",
-  "description": "k6 부하 측정용 — 서비스별 파드 메모리 vs limit · 힙 · GC · Hikari · CPU · 재시작 · OOMKilled 를 한 화면에서. 쿼리는 grafana.com 4701(JVM) · 12900(Hikari) · 15760(Pods) 를 우리 라벨(app · container · pod)로 옮김. 11/2 노션 「11/2 확장계획」 5-1 · 5-5",
+  "description": "k6 부하 측정 때 서비스별 메모리 · Heap · GC · DB 커넥션 · CPU · 재시작을 한 화면에서 보는 대시보드입니다. 쿼리는 grafana.com 4701(JVM) · 12900(HikariCP) · 15760(Pods)을 우리 라벨에 맞게 옮겼습니다. 근거: 노션 「11/2 확장계획」 5-1 · 5-5",
   "tags": [
     "gotgan",
     "observability"
@@ -35,7 +35,7 @@
           "refId": "app"
         },
         "definition": "label_values(jvm_memory_used_bytes{namespace=\"sesac-gojigi\"}, app)",
-        "description": "JVM 지표를 내는 서비스만 목록에 나옴. All = 업무 서비스 전부(-service 로 끝나는 컨테이너 — MySQL · Redis · Keycloak 제외)",
+        "description": "JVM 지표를 내는 서비스만 목록에 나옵니다. All은 업무 서비스 전체이며 MySQL · Redis · Keycloak은 빠집니다.",
         "refresh": 2,
         "sort": 1,
         "multi": true,
@@ -72,7 +72,7 @@
       "id": 2,
       "type": "stat",
       "title": "DB 커넥션 수 (전체)",
-      "description": "모든 서비스 Hikari 연결 수 합계($app 무시). MySQL max_connections 151 에 Keycloak 연결이 더해지므로 140 부터 빨강. 레플리카를 늘리면 파드당 풀 크기(기본 10)만큼 늘어남 — 11/2 확장계획 5-4",
+      "description": "모든 서비스가 MySQL에 열어 둔 DB 커넥션(HikariCP)의 합계입니다. MySQL은 최대 151개까지 받고 Keycloak 연결도 여기에 더해지므로, 120을 넘으면 노랑, 140을 넘으면 빨강으로 바뀝니다. 레플리카를 늘리면 파드마다 풀 크기(기본 10)만큼 늘어납니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -142,7 +142,7 @@
       "id": 3,
       "type": "stat",
       "title": "메모리 사용률 (최대)",
-      "description": "고른 서비스 파드 중 working set ÷ 메모리 limit 이 가장 큰 값. 이 값이 100% 에 닿으면 OOMKilled",
+      "description": "선택한 서비스의 파드 중 메모리 limit 대비 사용률이 가장 높은 값입니다. 100%에 닿으면 쿠버네티스가 파드를 강제로 종료(OOMKilled)합니다. 80%를 넘으면 노랑, 90%를 넘으면 빨강입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -212,7 +212,7 @@
       "id": 4,
       "type": "stat",
       "title": "Pending 커넥션 (최대)",
-      "description": "연결을 기다리는 요청 수(pending) 최대. 0 보다 크면 그 서비스 풀이 모자람 → 풀 크기 판단 근거",
+      "description": "DB 커넥션을 받으려고 기다리는 요청 수의 최댓값입니다. 0보다 크면 그 서비스의 커넥션 풀이 모자라다는 뜻이고, 풀 크기를 정하는 근거가 됩니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -282,7 +282,7 @@
       "id": 5,
       "type": "stat",
       "title": "재시작 (1h)",
-      "description": "고른 서비스 컨테이너 재시작 횟수(최근 1시간). 원인은 OOMKilled 칸 · Logs 대시보드에서",
+      "description": "최근 1시간 동안 선택한 서비스의 컨테이너가 재시작된 횟수입니다. 원인은 옆의 OOMKilled 칸과 Logs 대시보드에서 확인합니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -348,7 +348,7 @@
       "id": 6,
       "type": "stat",
       "title": "OOMKilled",
-      "description": "마지막 종료 사유가 OOMKilled 인 컨테이너 수. 지표는 종료가 한 번이라도 있어야 생기므로 없으면 0. 다음 종료 사유로 바뀌거나 파드가 지워지면 사라짐",
+      "description": "마지막 종료 사유가 메모리 초과(OOMKilled)인 컨테이너 수입니다. 종료가 한 번도 없었으면 0입니다. 주의: 다음 종료 사유로 바뀌거나 파드가 지워지면 숫자에서 사라지므로 재시작 칸과 함께 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -414,7 +414,7 @@
       "id": 7,
       "type": "stat",
       "title": "노드 CPU (최대)",
-      "description": "노드 중 CPU 사용률(할당 가능 코어 대비)이 가장 큰 값. 파드에 CPU limit 이 없어 파드가 아니라 노드가 먼저 꽉 참 → 같은 노드 서비스가 함께 느려짐",
+      "description": "노드 중 CPU 사용률이 가장 높은 값입니다. 우리 파드에는 CPU limit이 없어 파드보다 노드가 먼저 꽉 차고, 그러면 같은 노드의 서비스가 함께 느려집니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -497,7 +497,7 @@
       "id": 9,
       "type": "timeseries",
       "title": "메모리 사용률 (limit 대비)",
-      "description": "working set ÷ 메모리 limit(서비스 768Mi). 100% 에 닿으면 OOMKilled. 힙이 낮은데 이 값이 높으면 힙 밖(메타스페이스 · 스레드 · 네이티브)이 원인",
+      "description": "파드별 메모리 사용량을 메모리 limit(서비스는 768Mi)으로 나눈 비율입니다. 100%에 닿으면 OOMKilled로 재시작됩니다. Heap 사용률은 낮은데 이 값이 높으면 Heap 밖(Non-heap · 스레드 · 네이티브 메모리)이 원인입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -580,7 +580,7 @@
       "id": 10,
       "type": "timeseries",
       "title": "Heap 사용률",
-      "description": "JVM 힙 사용량 ÷ 힙 최대(-Xmx 또는 MaxRAMPercentage). GC 직후에도 높게 남으면 힙 부족",
+      "description": "JVM Heap 사용량을 최대 Heap으로 나눈 비율입니다. 톱니 모양으로 오르내리는 것은 GC가 메모리를 정리하는 정상 동작입니다. GC 직후에도 높게 남아 있으면 Heap이 모자란 것입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -663,7 +663,7 @@
       "id": 11,
       "type": "timeseries",
       "title": "Non-heap 메모리",
-      "description": "메타스페이스 · 코드 캐시 등 JVM 이 힙 밖에 쓰는 메모리(Micrometer 가 아는 것만 — 스레드 스택 · 직접 버퍼는 빠짐). 파드 메모리와의 차이도 함께 볼 것",
+      "description": "JVM이 Heap 밖에 쓰는 메모리(메타스페이스 · 코드 캐시 등)입니다. 우리 서비스는 Heap보다 이 값이 큽니다. 주의: 스레드 스택과 다이렉트 버퍼는 여기에 잡히지 않으므로 메모리 사용률 (limit 대비)과 함께 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -728,7 +728,7 @@
       "id": 12,
       "type": "timeseries",
       "title": "Old Gen 사용률 (GC 후)",
-      "description": "GC 직후 오래 사는 영역(long-lived) 사용률. 부하 중 계속 오르면 메모리 누수 · 힙 부족 신호",
+      "description": "GC 직후 오래 사는 객체 영역(Old Gen)의 사용률입니다. 부하 중에 내려오지 않고 계속 오르기만 하면 메모리 누수나 Heap 부족을 의심합니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -824,7 +824,7 @@
       "id": 14,
       "type": "timeseries",
       "title": "GC Pause 비율",
-      "description": "1초 중 GC 로 멈춘 시간 비율. 우리 서비스는 Serial GC(Copy · MarkSweepCompact) 라 멈추는 동안 요청을 처리하지 않음 → 이 값이 오르면 p95 지연도 오름",
+      "description": "1초 중 GC 때문에 멈춘 시간의 비율입니다. 우리 서비스는 Serial GC라 멈추는 동안 요청을 처리하지 않으므로, 이 값이 오르면 응답 시간도 함께 늘어납니다. 5%를 넘으면 노랑, 10%를 넘으면 빨강입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -906,7 +906,7 @@
       "id": 15,
       "type": "timeseries",
       "title": "GC Pause 최대",
-      "description": "최근 GC 한 번에 멈춘 최대 시간(gc 종류별). MarkSweepCompact(전체 GC)가 길면 힙 부족",
+      "description": "최근 GC 한 번에 멈춘 가장 긴 시간을 GC 종류별로 보여 줍니다. Copy는 짧은 정리, MarkSweepCompact는 전체 정리이며, 전체 정리가 길게 나오면 Heap이 모자란 것입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1001,7 +1001,7 @@
       "id": 17,
       "type": "timeseries",
       "title": "Active 커넥션",
-      "description": "지금 쿼리에 쓰고 있는 연결 수. 풀 최대(기본 10)에 붙어 있으면 대기가 생김",
+      "description": "지금 쿼리에 쓰고 있는 DB 커넥션 수입니다. '풀 최대' 선(기본 10)에 붙어 있으면 곧 대기가 생깁니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1077,7 +1077,7 @@
       "id": 18,
       "type": "timeseries",
       "title": "Pending 커넥션",
-      "description": "연결을 기다리는 요청 수. 0 보다 크면 풀이 모자람(풀을 키우기 전 max_connections 151 확인)",
+      "description": "DB 커넥션을 기다리는 요청 수입니다. 0보다 크면 풀이 모자란 것입니다. 풀을 키우기 전에, 위쪽 DB 커넥션 수 (전체)가 MySQL 한도 151에 얼마나 가까운지 먼저 확인합니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1155,7 +1155,7 @@
       "id": 19,
       "type": "timeseries",
       "title": "커넥션 획득 시간 (평균)",
-      "description": "풀에서 연결을 받기까지 걸린 평균 시간. 대기가 생기면 이 값이 먼저 오름",
+      "description": "풀에서 DB 커넥션을 받기까지 걸린 평균 시간입니다. 대기가 생기면 Pending보다 이 값이 먼저 오릅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1220,7 +1220,7 @@
       "id": 20,
       "type": "timeseries",
       "title": "커넥션 Timeout",
-      "description": "connectionTimeout(기본 30초) 안에 연결을 못 받은 횟수. 1 이상이면 그 요청은 실패(5xx)",
+      "description": "정해진 시간(기본 30초) 안에 DB 커넥션을 받지 못한 횟수입니다. 1 이상이면 그 요청은 실패(5xx)한 것입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1311,7 +1311,7 @@
       "id": 22,
       "type": "timeseries",
       "title": "CPU 사용률 (requests 대비)",
-      "description": "CPU 사용량 ÷ CPU requests(대부분 100m). CPU limit 이 없어 100% 를 넘을 수 있음 — 넘는 만큼 노드 여유를 빌려 쓰는 것",
+      "description": "파드별 CPU 사용량을 CPU requests(대부분 100m)로 나눈 비율입니다. CPU limit이 없어 100%를 넘을 수 있고, 넘는 만큼은 노드의 남는 CPU를 빌려 쓰는 것입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1376,7 +1376,7 @@
       "id": 23,
       "type": "timeseries",
       "title": "노드 CPU 사용률",
-      "description": "노드 전체 CPU ÷ 할당 가능 코어($app 무시). 파드 CPU limit 이 없어 이 값이 100% 에 닿으면 같은 노드 서비스가 함께 느려짐. 노드 자동 확장 없음",
+      "description": "노드별 CPU 사용률입니다. 100%에 가까워지면 그 노드에 있는 서비스가 모두 느려집니다. 노드 자동 확장은 없습니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1459,7 +1459,7 @@
       "id": 24,
       "type": "timeseries",
       "title": "Live 스레드",
-      "description": "JVM 스레드 수. 요청이 몰려 톰캣 스레드가 늘면 같이 오름(스레드마다 스택 메모리 — 힙 밖)",
+      "description": "JVM의 스레드 수입니다. 요청이 몰리면 Tomcat 스레드가 늘면서 함께 오릅니다. 스레드마다 스택 메모리를 쓰므로 메모리 사용률 (limit 대비)과 함께 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
