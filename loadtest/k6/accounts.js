@@ -4,7 +4,7 @@
 // 가입은 IP 당 분당 30회 제한(POST 로그인 · 가입) — 계정마다 다른 가상 IP 라 한 번에 만든다. 이미 있으면(409) 성공으로 친다
 import http from 'k6/http';
 import { check } from 'k6';
-import { BASE, accountEmail, fakeIp } from './lib.js';
+import { BASE, accountEmail, fakeIp, requirePassword } from './lib.js';
 
 const COUNT = Number(__ENV.COUNT || 200);
 
@@ -15,8 +15,11 @@ export const options = {
 
 export default function () {
   const no = __VU;
+  const password = requirePassword();
   const res = http.post(`${BASE}/api/auth/signup`, JSON.stringify({
-    email: accountEmail(no), password: __ENV.LOADTEST_PASSWORD, name: `부하${no}`, phone: `010-9000-${String(no).padStart(4, '0')}`,
+    email: accountEmail(no), password, name: `부하${no}`, phone: `010-9000-${String(no).padStart(4, '0')}`,
   }), { headers: { 'Content-Type': 'application/json', 'X-Vercel-Forwarded-For': fakeIp(no) }, tags: { name: 'POST /api/auth/signup' } });
-  check(res, { '가입 201 · 이미 있음 409': (r) => r.status === 201 || r.status === 409 });
+  if (!check(res, { '가입 201 · 이미 있음 409': (r) => r.status === 201 || r.status === 409 })) {
+    console.error(`가입 실패 ${accountEmail(no)} → ${res.status} ${res.json('message') ?? ''}`);   // 400 이면 서버 입력 검사 메시지
+  }
 }
