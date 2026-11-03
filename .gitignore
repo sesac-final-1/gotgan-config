@@ -22,3 +22,6 @@ tfplan
 .vscode/
 .DS_Store
 Thumbs.db
+
+# k6 결과 (loadtest/README.md)
+loadtest/results/
