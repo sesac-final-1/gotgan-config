@@ -30,6 +30,7 @@ spec:
           env:
             - { name: KC_DB, value: mysql }
             - { name: KC_DB_URL, value: "jdbc:mysql://mysql:3306/keycloakdb" }
+            - { name: KC_DB_POOL_MAX_SIZE, value: "30" }  # 기본 100 — 11/4 k6 로그인 100 동시에 MySQL 연결이 상한(151)까지 감(이슈 21). 60 VU 로그인 실측 27개
             - { name: KC_HOSTNAME, value: "https://api.gotgan.click" }   # 공개 주소 — 브라우저 로그인 화면 · 토큰 iss (gateway KEYCLOAK_ISSUER 와 같게). gateway 가 /realms/gotgan/** 를 이리로
             - { name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC, value: "true" }  # 서버 간 호출(user-service 토큰 · Admin API, gateway JWKS)은 내부 주소 http://keycloak:8080 그대로
             - { name: KC_HOSTNAME_ADMIN, value: "http://localhost:8080" }  # 관리 콘솔은 외부에 열지 않음 — kubectl port-forward svc/keycloak 8080:8080 으로만
