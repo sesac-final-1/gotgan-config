@@ -1,11 +1,12 @@
 // S4 한정 재고 동시 주문 — 성능보다 정확성. 재고 10개 옵션에 100 VU 가 동시에 1개씩 주문 → 성공 정확히 10건 · 초과 판매 0
-// 준비: 판매자(seller1)가 판매자센터 재고 수정으로 옵션 하나를 재고 10 으로(기본 OPTION=10402 — 설향 딸기잼 2병). README 4절
-//   k6 run -e LOADTEST_PASSWORD=... -e OPTION=10402 loadtest/k6/s4-stock-race.js
+// 준비: 옵션 하나를 재고 10 으로(기본 OPTION=10201 — 지리산 야생화 꿀, 단일 옵션). S3 · S7 이 쓰는 ORDER_OPTIONS 에 없는 옵션이라
+//   S3 재고와 섞이지 않는다(11/4 — 10402 는 ORDER_OPTIONS 에 있어 S3 주문이 S4 재고를 먹음). README 4절
+//   k6 run -e LOADTEST_PASSWORD=... loadtest/k6/s4-stock-race.js
 import { check, sleep } from 'k6';
 import { Counter } from 'k6/metrics';
 import { login, authHeaders, post, summaryTo } from './lib.js';
 
-const OPTION = Number(__ENV.OPTION || 10402);
+const OPTION = Number(__ENV.OPTION || 10201);
 const created = new Counter('orders_created');
 const rejected = new Counter('orders_rejected');
 
