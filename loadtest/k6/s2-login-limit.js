@@ -21,7 +21,9 @@ export const options = {
 
 export function limit() {
   const sameIp = { 'Content-Type': 'application/json', 'X-Vercel-Forwarded-For': '10.250.0.1' };
-  const body = JSON.stringify({ email: accountEmail(1), password: 'wrong-password-1!' });   // 틀린 비밀번호 — 401 이 와도 횟수는 센다
+  // 없는 계정 · 틀린 비밀번호 — 401 이 와도 횟수는 센다. 부하용 계정(1번)으로 하면 Keycloak 무차별 대입 잠금(5회 실패 → 최대 15분)에 걸려
+  // 뒤 시나리오(S4 · S5 · S3)의 1번 로그인이 401 로 멈춘다(11/4)
+  const body = JSON.stringify({ email: 'loadtest-limit@gotgan.test', password: 'wrong-password-1!' });
   const codes = [];
   for (let i = 0; i < 31; i += 1) {
     codes.push(http.post(`${BASE}/api/auth/login`, body, { headers: sameIp, tags: { name: 'POST /api/auth/login (같은 IP)' } }).status);
