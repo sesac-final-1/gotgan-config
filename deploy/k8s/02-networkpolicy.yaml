@@ -43,3 +43,39 @@ spec:
       ports:
         - { protocol: UDP, port: 53 }
         - { protocol: TCP, port: 53 }
+---
+# 업무 티어 — 같은 네임스페이스 tier=backend(서비스 간 호출 · gateway) + monitoring(Prometheus 수집)만. 다른 네임스페이스 파드가
+# /internal/** 을 직접 부르지 못하게 한다(코드리뷰 B-구-2). kubelet 프로브는 노드 → 파드라 VPC CNI 가 항상 허용
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-ingress-from-backend-monitoring
+  namespace: sesac-gojigi
+spec:
+  podSelector:
+    matchLabels:
+      tier: backend
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: backend
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+---
+# 입구 — gateway 만 NLB(파드 IP 대상)에서 들어온다
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateway-ingress-from-nlb
+  namespace: sesac-gojigi
+spec:
+  podSelector:
+    matchLabels:
+      app: gateway-service
+  policyTypes: ["Ingress"]
+  ingress:
+    - ports:
+        - { protocol: TCP, port: 8080 }
