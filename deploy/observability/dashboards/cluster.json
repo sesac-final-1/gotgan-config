@@ -566,7 +566,16 @@
           "mode": "multi",
           "sort": "desc"
         }
-      }
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(ip-[0-9-]+)\\..*$",
+            "renamePattern": "$1"
+          }
+        }
+      ]
     },
     {
       "id": 10,
@@ -649,7 +658,16 @@
           "mode": "multi",
           "sort": "desc"
         }
-      }
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(ip-[0-9-]+)\\..*$",
+            "renamePattern": "$1"
+          }
+        }
+      ]
     },
     {
       "id": 11,
@@ -732,7 +750,16 @@
           "mode": "multi",
           "sort": "desc"
         }
-      }
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(ip-[0-9-]+)\\..*$",
+            "renamePattern": "$1"
+          }
+        }
+      ]
     },
     {
       "id": 12,
@@ -815,7 +842,16 @@
           "mode": "multi",
           "sort": "desc"
         }
-      }
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(ip-[0-9-]+)\\..*$",
+            "renamePattern": "$1"
+          }
+        }
+      ]
     },
     {
       "id": 13,
@@ -877,7 +913,16 @@
           "mode": "multi",
           "sort": "desc"
         }
-      }
+      },
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(ip-[0-9-]+)\\..*$",
+            "renamePattern": "$1"
+          }
+        }
+      ]
     },
     {
       "id": 14,
