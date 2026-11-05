@@ -269,14 +269,14 @@
       "id": 7,
       "type": "timeseries",
       "title": "5xx 요청 수 (RPS)",
-      "description": "서비스별로 1초에 발생한 5xx 응답 수입니다. 배포나 장애 중에도 0을 유지하면 사용자에게 오류가 나가지 않은 것입니다. 요청을 한 번이라도 받은 서비스만 표시됩니다.",
+      "description": "서비스별로 1초에 발생한 5xx 응답 수입니다. 배포나 장애 중에도 0을 유지하면 서비스가 5xx를 반환하지 않은 것입니다. 모든 서비스를 표시하므로 요청이 없는 서비스도 0으로 나옵니다. 요청이 실제로 있었는지는 「서비스 (RED)」에서 함께 확인합니다.",
       "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", status=~\"5..\"}[1m])) or sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\"}[1m])) * 0",
+          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", status=~\"5..\"}[1m])) or sum by (app) (up{namespace=\"sesac-gojigi\", app=~\".+-service\"}) * 0",
           "legendFormat": "{{app}}",
           "instant": false,
           "range": true
@@ -287,7 +287,7 @@
           "color": { "mode": "palette-classic" },
           "unit": "reqps",
           "min": 0,
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "axisSoftMax": 1 }
         },
         "overrides": []
       },
