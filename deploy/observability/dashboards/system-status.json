@@ -237,15 +237,15 @@
     {
       "id": 6,
       "type": "timeseries",
-      "title": "ReplicaSet Ready 파드 수",
-      "description": "ReplicaSet별 Ready 파드 수입니다. 배포 때 옛 ReplicaSet은 줄고 새 ReplicaSet은 늘어나며 두 선이 교차합니다. 지난 배포의 ReplicaSet은 0으로 남습니다.",
+      "title": "ReplicaSet별 Ready 파드 수",
+      "description": "ReplicaSet별 Ready 파드 수입니다. ReplicaSet은 배포 버전마다 하나씩 생기므로, 목록의 줄 수가 파드 수는 아닙니다. 배포 때는 옛 버전의 선이 내려가다 사라지고 새 버전의 선이 올라옵니다. 파드가 없는 지난 버전은 표시하지 않습니다.",
       "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "kube_replicaset_status_ready_replicas{namespace=\"sesac-gojigi\"}",
+          "expr": "kube_replicaset_status_ready_replicas{namespace=\"sesac-gojigi\"} > 0",
           "legendFormat": "{{replicaset}}",
           "instant": false,
           "range": true
