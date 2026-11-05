@@ -1,0 +1,234 @@
+# Grafana 알림 규칙 (담당 박지연) — 지표 기반. noDataState: OK = 지표가 없으면 정상(예: saga_failed_total 은 실패 전까지 없음)
+# 값을 바꾸면 다음 08:00 bootstrap 때 반영. 화면에서 고쳐도 재시작 때 사라진다
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: gotgan
+    folder: 곳간 알림
+    interval: 30s
+    rules:
+      - uid: circuit-open
+        title: "서킷 OPEN"
+        condition: C
+        for: 1m
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ .Labels.app }} → {{ .Labels.name }} 호출 서킷이 열렸습니다"
+          description: "대상 서비스 상태 · 지연을 확인하세요. 열린 동안 호출은 바로 실패하거나 대체 동작으로 처리됩니다."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "max by (app, name) (resilience4j_circuitbreaker_state{state=\"open\"})"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: gt, params: [0] } }]
+      - uid: hikari-pending
+        title: "DB 커넥션 풀 대기"
+        condition: C
+        for: 1m
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ .Labels.app }} DB 커넥션 대기가 1분 넘게 이어집니다"
+          description: "jvm.json 의 Hikari 패널과 느린 쿼리 · 잠금을 확인하세요."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "max by (app) (hikaricp_connections_pending)"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: gt, params: [0] } }]
+      - uid: pod-restart
+        title: "파드 재시작"
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ .Labels.pod }} 가 재시작했습니다"
+          description: "OOMKilled 인지 kubectl describe pod 로 확인하세요. 아침 기동 때 chat 이 Redis 보다 먼저 떠 1회 재시작할 수 있습니다."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "sum by (pod) (increase(kube_pod_container_status_restarts_total{namespace=\"sesac-gojigi\"}[5m]))"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: gt, params: [0] } }]
+      - uid: memory-near-limit
+        title: "메모리 limit 90% 초과"
+        condition: C
+        for: 5m
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ .Labels.pod }} 메모리가 limit 의 90% 를 넘었습니다"
+          description: "넘으면 OOMKilled 됩니다. jvm.json 의 힙 · 힙 밖 패널을 확인하세요."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "max by (pod) (container_memory_working_set_bytes{namespace=\"sesac-gojigi\", container!=\"\"} / on (pod, container) kube_pod_container_resource_limits{namespace=\"sesac-gojigi\", resource=\"memory\"})"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: gt, params: [0.9] } }]
+      - uid: service-down
+        title: "서비스 다운"
+        condition: C
+        for: 5m
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ with .Labels.deployment }}{{ . }}{{ end }}{{ with .Labels.statefulset }}{{ . }}{{ end }} 가용 파드가 0 입니다"
+          description: "kubectl get pods 로 확인하세요. 아침 기동 시간을 넘기도록 5분 지속 조건입니다."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "kube_deployment_status_replicas_available{namespace=\"sesac-gojigi\"} or kube_statefulset_status_replicas_ready{namespace=\"sesac-gojigi\"}"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: lt, params: [1] } }]
+      - uid: http-5xx
+        title: "5xx 비율 5% 초과"
+        condition: C
+        for: 1m
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ .Labels.app }} 최근 5분 5xx 비율이 5% 를 넘었습니다"
+          description: "Logs 대시보드에서 해당 서비스 ERROR 로그를 확인하세요. 5분에 6건 미만인 트래픽은 판단하지 않습니다."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "sum by (app) (rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / (sum by (app) (rate(http_server_requests_seconds_count[5m])) > 0.02)"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: gt, params: [0.05] } }]
+      - uid: saga-failed
+        title: "Saga 실패"
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ .Labels.type }} Saga 가 보상까지 실패했습니다"
+          description: "사람이 확인해야 합니다. orderNo · sagaId 로 Loki 를 검색하세요."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "sum by (app, type) (saga_failed_total) - (sum by (app, type) (saga_failed_total offset 5m) or sum by (app, type) (saga_failed_total) * 0)"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: gt, params: [0] } }]
+      - uid: payment-mismatch
+        title: "결제 금액 불일치"
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: critical }
+        annotations:
+          summary: "결제 금액 불일치가 발생했습니다"
+          description: "payment-service 로그에서 주문을 찾아 포트원 결제 내역과 대조하세요."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "sum by (app) (increase(payment_mismatch_total[5m]))"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: gt, params: [0] } }]
+      - uid: payment-cancel-unresolved
+        title: "결제 취소 미해결"
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: KeepLast   # Prometheus 가 잠깐 안 될 때 오탐 방지
+        labels: { severity: critical }
+        annotations:
+          summary: "재시도로 풀리지 않은 결제 취소가 있습니다"
+          description: "포트원 콘솔에서 수동으로 확인하세요."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "sum by (app) (increase(payment_cancel_unresolved_total[5m]))"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{ evaluator: { type: gt, params: [0] } }]

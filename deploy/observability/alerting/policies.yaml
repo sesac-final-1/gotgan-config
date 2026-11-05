@@ -1,0 +1,9 @@
+# 알림 묶기 · 반복 (담당 박지연). 같은 규칙은 30초 동안 모아 한 번에, 계속되면 4시간마다 다시
+apiVersion: 1
+policies:
+  - orgId: 1
+    receiver: gotgan
+    group_by: [alertname]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
