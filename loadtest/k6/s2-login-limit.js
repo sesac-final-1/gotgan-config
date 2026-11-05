@@ -25,12 +25,12 @@ export function limit() {
   // 뒤 시나리오(S4 · S5 · S3)의 1번 로그인이 401 로 멈춘다(11/4)
   const body = JSON.stringify({ email: 'loadtest-limit@gotgan.test', password: 'wrong-password-1!' });
   const codes = [];
-  for (let i = 0; i < 31; i += 1) {
+  for (let i = 0; i < 36; i += 1) {   // 분당 30회 = 0.5개/초 보충 — 순차로 보내는 동안 토큰이 차서 31번째가 아닐 수 있다(11/5 33번째 429). 36번 안에 걸리면 동작
     codes.push(http.post(`${BASE}/api/auth/login`, body, { headers: sameIp, tags: { name: 'POST /api/auth/login (같은 IP)' } }).status);
   }
   check(codes, {
     '30번까지는 429 아님': (c) => c.slice(0, 30).every((s) => s !== 429),
-    '31번째 429': (c) => c[30] === 429,
+    '36번 안에 429': (c) => c.includes(429),
   });
   // 다른 IP 의 로그인 · 로그인한 사용자의 일반 API 는 걸리지 않는다
   login(2);
