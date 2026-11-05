@@ -367,7 +367,7 @@
       "id": 10,
       "type": "timeseries",
       "title": "서킷 실패율",
-      "description": "서킷별 최근 호출의 실패 비율입니다. 빨간 선(50%)에 닿으면 서킷이 열립니다. 왼쪽 이름은 「호출 서비스 → 서킷 이름」이고, 파드가 여러 개면 가장 높은 값을 표시합니다. 최근 호출이 최소 횟수(대부분 5건, gateway 10건)보다 적으면 계산되지 않으므로 평소에 비어 있어도 정상입니다.",
+      "description": "서킷별 호출의 실패 비율입니다. 빨간 선(50%)에 닿으면 서킷이 열립니다. 왼쪽 이름은 「호출 서비스 → 서킷 이름」이고, 파드가 여러 개면 가장 높은 값을 표시합니다. 집계된 호출이 최소 횟수(대부분 5건, gateway 10건)보다 적으면 계산되지 않아 Not enough calls로 표시되며, 평소에 이렇게 나와도 정상입니다.",
       "gridPos": { "x": 0, "y": 38, "w": 24, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -384,6 +384,7 @@
         "defaults": {
           "color": { "mode": "palette-classic" },
           "unit": "percent",
+          "noValue": "Not enough calls",
           "min": 0,
           "max": 100,
           "thresholds": { "mode": "absolute", "steps": [{ "color": "transparent", "value": null }, { "color": "red", "value": 50 }] },
