@@ -8,7 +8,7 @@ image:
 defaults:
   replicas: 1
   resources:
-    requests: { cpu: 250m, memory: 512Mi }  # CPU = max(250m, S7 중간값) · 메모리 requests 는 힙 조정 뒤 재측정해 결정 (사이징 계획 11/5)
+    requests: { cpu: 100m, memory: 512Mi }  # 메모리 requests 는 힙 조정 뒤 재측정해 결정 (사이징 계획 11/5)
     limits: { memory: 768Mi }               # 힙 256 + 힙 밖 최대 255 + 128 = 639 → 최소 768 유지
   env:
     - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=33 -XX:+ExitOnOutOfMemoryError" }   # 힙 = max(256Mi, GC 직후 × 2) → 768 의 33%. 이미지 기본값 75% 를 덮는다
@@ -21,7 +21,7 @@ services:
     tag: "466769d"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8080
     resources:
-      requests: { cpu: 375m, memory: 512Mi }   # S7 파드당 중간값 기준
+      requests: { cpu: 200m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     replicas: 2                             # 입구는 2개 — 하나가 죽어도 접속 유지
     service:
@@ -49,6 +49,9 @@ services:
     repository: sesac-gojigi-store
     tag: "466769d"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8082
+    resources:
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      limits: { memory: 768Mi }
     secretName: store-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
       roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-store-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
@@ -58,7 +61,7 @@ services:
     tag: "466769d"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8083
     resources:
-      requests: { cpu: 450m, memory: 512Mi }   # S7 파드당 중간값 기준
+      requests: { cpu: 250m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: product-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -69,7 +72,7 @@ services:
     tag: "12587dc"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8084
     resources:
-      requests: { cpu: 275m, memory: 512Mi }   # S7 파드당 중간값 기준
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: order-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -94,6 +97,9 @@ services:
     repository: sesac-gojigi-review
     tag: "3433d30"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8087
+    resources:
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      limits: { memory: 768Mi }
     secretName: review-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
       roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-review-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
@@ -112,6 +118,9 @@ services:
     repository: sesac-gojigi-chat
     tag: "26c4608"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8089
+    resources:
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      limits: { memory: 768Mi }
     env:
       - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=50 -XX:+ExitOnOutOfMemoryError" }   # GC 직후 힙 약 190Mi(S5) → 힙 384Mi
     secretName: chat-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (chatdb)
