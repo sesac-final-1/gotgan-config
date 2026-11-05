@@ -11,7 +11,7 @@ defaults:
     requests: { cpu: 100m, memory: 512Mi }  # 메모리 requests 는 힙 조정 뒤 재측정해 결정 (사이징 계획 11/5)
     limits: { memory: 768Mi }               # 힙 256 + 힙 밖 최대 255 + 128 = 639 → 최소 768 유지
   env:
-    - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=33 -XX:+ExitOnOutOfMemoryError" }   # 힙 = max(256Mi, GC 직후 × 2) → 768 의 33%. 이미지 기본값 75% 를 덮는다
+    - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=33 -XX:+ExitOnOutOfMemoryError" }   # 힙 = max(256Mi, 라이브 × 2) → 768 의 33%. 이미지 기본값 75% 를 덮는다 · 힙 + 힙 밖 + 스레드 · 네이티브 약 180Mi ≤ 768
   terminationGracePeriodSeconds: 60
 
 services:
@@ -109,7 +109,7 @@ services:
     tag: "12c5478"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8088
     env:
-      - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=50 -XX:+ExitOnOutOfMemoryError" }   # GC 직후 힙 약 190Mi(S5) → 힙 384Mi
+      - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=41 -XX:+ExitOnOutOfMemoryError" }   # 라이브 138Mi × 2 → 힙 320Mi. 11/5 S5 에서 75%(557Mi)까지 커지며 OOMKilled
     secretName: admin-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (admindb, 10/26)
     serviceAccount:
       roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-admin-irsa   # Terraform cluster/irsa.tf — 알림 센터 SQS · DynamoDB inbox (10/27)
@@ -121,6 +121,4 @@ services:
     resources:
       requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
-    env:
-      - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=50 -XX:+ExitOnOutOfMemoryError" }   # GC 직후 힙 약 190Mi(S5) → 힙 384Mi
     secretName: chat-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (chatdb)
