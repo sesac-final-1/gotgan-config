@@ -39,7 +39,7 @@ services:
   # ── user (perish95)
   user-service:
     repository: sesac-gojigi-user
-    tag: "2461e06"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "01e5afb"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8081
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     secretName: user-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
