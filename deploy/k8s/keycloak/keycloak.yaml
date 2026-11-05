@@ -43,7 +43,7 @@ spec:
             - { containerPort: 8080 }
             - { containerPort: 9000, name: management }
           resources:
-            requests: { cpu: 200m, memory: 1Gi }
+            requests: { cpu: 500m, memory: 1Gi }   # 11/4 k6 60 VU 최대 1,544m(이슈 경-3). limit 은 없어 그 이상도 쓴다. 1000m 면 노드 1대 장애 시 예약 99%(3.90 / 3.92 vCPU) — 500m 는 87%
             limits: { memory: 1536Mi }
           startupProbe:
             httpGet: { path: /health/started, port: 9000 }
