@@ -2,7 +2,7 @@
   "id": null,
   "uid": "system-status",
   "title": "System Status",
-  "description": "헬스 체크 대시보드 — 서비스별 가용 상태 · 생존 · Ready · 롤링 배포 · 5xx. 데이터는 Prometheus up · kube-state-metrics · Micrometer 만 (가이드라인 13장, SYS-01). 시연 때 ?kiosk",
+  "description": "헬스 체크 대시보드 — 서비스별 가용 상태 · 생존 · Ready · 롤링 배포 · 5xx · 서킷. 데이터는 Prometheus up · kube-state-metrics · Micrometer 만 (가이드라인 13장, SYS-01). 시연 때 ?kiosk",
   "tags": ["gotgan", "observability"],
   "timezone": "browser",
   "editable": true,
@@ -294,6 +294,73 @@
       "options": {
         "legend": { "showLegend": true, "displayMode": "list", "placement": "right" },
         "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "서킷 OPEN",
+      "description": "지금 열려 있는 서킷 수. 호출하는 서비스와 대상이 같으면 파드가 여러 개여도 1개로 센다. 0 초록 · 1 이상 빨강. 서킷이 열리면 그 대상으로 가는 호출을 보내지 않고 바로 실패 처리한다",
+      "gridPos": { "x": 0, "y": 26, "w": 4, "h": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "count(max by (app, name) (resilience4j_circuitbreaker_state{namespace=\"sesac-gojigi\", state=\"open\"}) == 1) or vector(0)",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 9,
+      "type": "state-timeline",
+      "title": "서킷 상태 (호출 서비스 → 대상)",
+      "description": "서비스 간 호출의 서킷 상태. 초록 정상(CLOSED) · 노랑 시험 호출 중(HALF_OPEN) · 빨강 차단(OPEN). 같은 서비스의 파드 중 가장 나쁜 상태를 보여 준다. 서킷을 처음 쓰기 전까지는 줄이 없을 수 있다",
+      "gridPos": { "x": 4, "y": 26, "w": 20, "h": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "2 * max by (app, name) (resilience4j_circuitbreaker_state{namespace=\"sesac-gojigi\", state=\"open\"}) + max by (app, name) (resilience4j_circuitbreaker_state{namespace=\"sesac-gojigi\", state=\"half_open\"})",
+          "legendFormat": "{{app}} → {{name}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 2 }] },
+          "mappings": [{ "type": "value", "options": { "0": { "text": "정상" }, "1": { "text": "시험 호출" }, "2": { "text": "OPEN" }, "3": { "text": "OPEN" } } }]
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "alignValue": "left",
+        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
       }
     }
   ]
