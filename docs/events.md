@@ -40,7 +40,7 @@ order 이벤트 필드 (10/21 추가분, 값은 모두 주문 시점 스냅샷)
 - `optionName`: 옵션 없는 상품이면 `null`
 - `usedPoint`(OrderPaid): 주문 전체 사용 포인트(`orders.used_point`) · `itemAmt`: 상품주문 금액(`order_item.item_amt`)
 - `restoredPoint`: 돌려준 사용 포인트(`order_item.used_point`) · `revokedPoint`: 회수한 적립 포인트 — 10/27부터 항상 0 (적립이 구매확정 때이고 취소 · 반품은 구매확정 전에만 되므로 회수할 적립이 없다)
-| `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda · admin 알림 센터(스토어에 `SETTLEMENT_PAID`, 10/27) | settlementId · storeId · week · payoutAmt · sellerEmail · storeName · weekStart · weekEnd · paidAt · salesAmt · commissionAmt · paymentFeeAmt · items[{orderNo · productName · confirmedAt · itemAmt · commissionRate · commissionAmt · paymentFeeAmt · payoutAmt}] — 명세서 내용을 모두 담음(10/21 방식 B, backend #57). 뒤 필드는 추가분 |
+| `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda · admin 알림 센터(스토어에 `SETTLEMENT_PAID`, 10/27) | settlementId · storeId · week · payoutAmt · sellerEmail · storeName · weekStart · weekEnd · paidAt · salesAmt · commissionAmt · paymentFeeAmt · items[{orderNo · productName · confirmedAt · itemAmt · commissionRate · commissionAmt · paymentFeeAmt · payoutAmt}] — 명세서 내용을 모두 담음(10/21 방식 B, backend #57). 뒤 필드는 추가분. 항목 JSON 이 200KB 를 넘으면 `items` 대신 `itemsGzip`(gzip + Base64) — SNS 한도 256KB, 약 900건부터(11/5, backend #240) |
 
 ## 순서 규칙 (10/15 결정 — A안)
 

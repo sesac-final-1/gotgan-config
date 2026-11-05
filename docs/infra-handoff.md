@@ -195,11 +195,21 @@ module "grafana_irsa" {
 
 ---
 
-## 10. 남은 일 (구지훈)
+## 10. 사이징 확정값 (11/5, k6 측정 뒤)
 
-| 작업 | 선행 조건 |
+| 항목 | 값 | 근거 |
+| --- | --- | --- |
+| 메모리 limit · requests | 768Mi · 512Mi 유지(requests 는 2차 측정으로 확인) | 힙 + 힙 밖 + 약 180Mi ≤ limit |
+| 힙 상한 | Helm env `JAVA_TOOL_OPTIONS` 33%(254Mi) · admin 41%(316Mi) | 이미지 기본 75% 에서 admin OOMKilled → 조정 뒤 재시작 0 |
+| CPU requests | gateway 200 · product 250 · order · review · store · chat 150 · 나머지 100m · Keycloak 500m | 합 3.58 vCPU · 노드 1대 장애 때 3.40 / 3.92 로 전부 수용 |
+| 커넥션 | 서비스 풀 10 · Keycloak 풀 30 · `max_connections` 250 | 풀 대기 0 · 최대 131(배포 중 193) |
+| 노드 | app t3.xlarge × 2 · db t3.medium · HPA 없음 | CPU 가 먼저 무너진 서비스 없음 |
+| NetworkPolicy | DB 티어 + 업무 티어(같은 티어 · monitoring) · gateway 8080 개방 | 다른 네임스페이스 → order · Keycloak 차단 실측(config #81) |
+
+## 11. 남은 일 (구지훈)
+
+| 작업 | 시점 |
 | --- | --- |
-| 4페이즈 — `infra-schedule` apply/destroy 실행, bootstrap 전 과정(MySQL 스키마 8 · Redis AOF · NetworkPolicy 실동작 · NLB+EIP · 고아 자원 0) 확인 후 **크론 켜기** | 이경석 `cicd/` apply · `AWS_ROLE_ARN` |
-| 2주차 말 걷는 뼈대(목업 서비스 1개: NLB → gateway → 응답 · 로그 · 자동 배포) | 4페이즈 · CI/CD · 로깅 연결 |
-| SES 수신자(시연 계정) 추가 | 시연 계정 이메일 확정 |
-| 서버리스 `order-notification` · `settlement-report` 구현 · 배포 | 4~5주차 |
+| 2차 측정 · 메모리 requests 판단 · QA | 11/6 |
+| CSP 강제 전환 · 문서 최신화 | 11/9 |
+| AWS 자원 전체 삭제 | 11/20 발표 후 |
