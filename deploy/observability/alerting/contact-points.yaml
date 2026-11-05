@@ -1,0 +1,26 @@
+# 알림 받는 곳 (담당 박지연) — Discord + 관리자 벨. 웹훅 URL 은 환경 변수로만 — alert-webhook-secret(secrets-sync) → grafana.yaml env
+# 이 파일에서 Go 템플릿 변수는 $$ 로 쓴다($ 는 Grafana 가 환경 변수로 먼저 바꿈)
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: gotgan
+    receivers:
+      - uid: gotgan-discord
+        type: discord
+        settings:
+          url: ${ALERT_WEBHOOK_URL}
+          title: '{{ if eq .Status "firing" }}🚨 알림 {{ len .Alerts.Firing }}건{{ else }}✅ 해결{{ end }}'
+          message: |
+            {{ range .Alerts }}**{{ .Labels.alertname }}** ({{ .Labels.severity }}) — {{ .Annotations.summary }}
+            {{ .Annotations.description }}
+            {{ end }}
+      # 관리자 벨 — admin POST /internal/notifications (admin.md 5절). sourceId 가 같으면 한 번만 쌓이므로 발생 시각을 넣는다 · 해결 알림은 보내지 않음
+      - uid: gotgan-admin-bell
+        type: webhook
+        disableResolveMessage: true
+        settings:
+          url: http://admin-service.sesac-gojigi.svc.cluster.local:8088/internal/notifications
+          httpMethod: POST
+          payload:
+            template: |
+              {{ $$a := index .Alerts.Firing 0 }}{{ coll.Dict "admins" true "type" "SYSTEM_ALERT" "title" (printf "[%s] %s (%d건)" $$a.Labels.severity $$a.Labels.alertname (len .Alerts.Firing)) "body" $$a.Annotations.summary "sourceId" (printf "grafana-%s-%d" $$a.Fingerprint $$a.StartsAt.Unix) | data.ToJSON }}

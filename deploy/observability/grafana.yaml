@@ -6,7 +6,8 @@
 # - 대시보드: dashboards/*.json → bootstrap 이 grafana-dashboards ConfigMap 으로 만든다(--from-file) → 2-1 provider 가 등록
 # - 로그인: grafana-secret(admin-user · admin-password, secrets-sync 가 생성) 의 관리자 계정 하나. 익명 접근 · 가입 없음
 # - 외부 미노출 — 접속은 kubectl -n monitoring port-forward svc/grafana 3000 → http://localhost:3000
-# - 아직 없는 것: 알림(4주차, alerting/ 폴더) · CloudWatch 데이터소스(5주차, IRSA 필요)
+# - 알림: alerting/*.yaml → bootstrap 이 grafana-alerting ConfigMap 으로 만든다 → /etc/grafana/provisioning/alerting 으로 등록
+# - 아직 없는 것: CloudWatch 데이터소스(5주차, IRSA 필요)
 #
 # 구성 (위에서부터):
 #   1. ServiceAccount — 이름 grafana. 지금은 권한 없음 — 5주차 CloudWatch IRSA(monitoring:grafana) 가 이 이름을 가리킨다
@@ -131,6 +132,9 @@ spec:
             - name: GF_SECURITY_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef: { name: grafana-secret, key: admin-password }
+            - name: ALERT_WEBHOOK_URL         # alerting/contact-points.yaml 이 읽는다 — secrets-sync 가 만든 값
+              valueFrom:
+                secretKeyRef: { name: alert-webhook-secret, key: url }
             - { name: GF_ANALYTICS_REPORTING_ENABLED, value: "false" }   # Grafana Labs 로 사용 통계를 보내지 않음
             - { name: GF_ANALYTICS_CHECK_FOR_UPDATES, value: "false" }
             - { name: GF_PLUGINS_PREINSTALL_DISABLED, value: "true" }   # 켜질 때 플러그인 자동 설치 · 업데이트 끔 — 읽기 전용 파일시스템이라 업데이트가 실패하며 prometheus · zipkin 등록이 풀림(10/23 EKS 확인). 쓰는 데이터소스 플러그인은 이미지에 포함
@@ -152,6 +156,7 @@ spec:
           volumeMounts:
             - { name: datasources, mountPath: /etc/grafana/provisioning/datasources }
             - { name: dashboard-provider, mountPath: /etc/grafana/provisioning/dashboards }
+            - { name: alerting, mountPath: /etc/grafana/provisioning/alerting }
             - { name: dashboards, mountPath: /etc/grafana/dashboards }
             - { name: data, mountPath: /var/lib/grafana }   # Grafana 내부 DB(SQLite) · 세션 — 파드와 함께 사라지는 빈 폴더
             - { name: tmp, mountPath: /tmp }
@@ -162,6 +167,10 @@ spec:
         - name: dashboard-provider
           configMap:
             name: grafana-dashboard-provider
+        - name: alerting
+          configMap:
+            name: grafana-alerting
+            optional: true            # 손으로 apply 할 때도 Grafana 는 뜨게 (알림만 없음)
         - name: dashboards
           configMap:
             name: grafana-dashboards
