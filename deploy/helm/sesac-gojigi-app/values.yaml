@@ -41,6 +41,7 @@ services:
     repository: sesac-gojigi-user
     tag: "2461e06"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8081
+    replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     secretName: user-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
       roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-user-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
@@ -49,6 +50,7 @@ services:
     repository: sesac-gojigi-store
     tag: "f8b996f"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8082
+    replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     resources:
       requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
@@ -60,6 +62,7 @@ services:
     repository: sesac-gojigi-product
     tag: "466769d"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8083
+    replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     resources:
       requests: { cpu: 250m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
@@ -71,6 +74,7 @@ services:
     repository: sesac-gojigi-order
     tag: "f8e45f5"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8084
+    replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     resources:
       requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }

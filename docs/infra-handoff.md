@@ -201,9 +201,10 @@ module "grafana_irsa" {
 | --- | --- | --- |
 | 메모리 limit · requests | 768Mi · 512Mi 유지(requests 는 2차 측정으로 확인) | 힙 + 힙 밖 + 약 180Mi ≤ limit |
 | 힙 상한 | Helm env `JAVA_TOOL_OPTIONS` 33%(254Mi) · admin 41%(316Mi) | 이미지 기본 75% 에서 admin OOMKilled → 조정 뒤 재시작 0 |
-| CPU requests | gateway 200 · product 250 · order · review · store · chat 150 · 나머지 100m · Keycloak 500m | 합 3.58 vCPU · 노드 1대 장애 때 3.40 / 3.92 로 전부 수용 |
-| 커넥션 | 서비스 풀 10 · Keycloak 풀 30 · `max_connections` 250 | 풀 대기 0 · 최대 131(배포 중 193) |
-| 노드 | app t3.xlarge × 2 · db t3.medium · HPA 없음 | CPU 가 먼저 무너진 서비스 없음 |
+| CPU requests | gateway 200 · product 250 · order · review · store · chat 150 · 나머지 100m · Keycloak 500m | 합 약 4.23 vCPU(54%) — 노드 1대 장애 때 약 4.05 / 3.92 로 예비 파드 일부 Pending 가능, 살아 있는 파드가 처리 |
+| 커넥션 | 서비스 풀 10 · Keycloak 풀 30 · `max_connections` 300 | 풀 10 × (레플리카 + 롤링 1) 230 + 30 + 20 = 280. 측정 최대 131(레플리카 늘리기 전) |
+| 레플리카 | gateway · payment · product · order · user · store 2 · 나머지 1 · HPA 없음 | 구매 경로 이중화 — 주문 한 건이 거치는 서비스. 2 이상만 노드 분산(`ScheduleAnyway`) + PDB(`maxUnavailable: 1`) |
+| 노드 | app t3.xlarge × 2 · db t3.medium | CPU 가 먼저 무너진 서비스 없음. 파드가 늘어도 노드는 그대로 |
 | NetworkPolicy | DB 티어 + 업무 티어(같은 티어 · monitoring) · gateway 8080 개방 | 다른 네임스페이스 → order · Keycloak 차단 실측(config #81) |
 
 ## 11. 남은 일 (구지훈)

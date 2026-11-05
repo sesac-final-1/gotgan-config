@@ -1,0 +1,20 @@
+{{- range $name, $svc := .Values.services }}
+{{- if gt (int ($svc.replicas | default $.Values.defaults.replicas)) 1 }}
+---
+# 노드 drain 때 한 번에 1개만 내린다. 레플리카 1 인 서비스에 걸면 drain 이 막히므로 2 이상만
+# 파드 크래시 · 노드 장애는 막지 못한다 — 그쪽은 deployment.yaml 의 topologySpreadConstraints
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow   # 이미 망가진 파드가 drain 을 막지 않게
+  selector:
+    matchLabels:
+      app: {{ $name }}
+{{- end }}
+{{- end }}
