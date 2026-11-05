@@ -5,9 +5,9 @@
 | 폴더 | 내용 | 실행 주체 | 담당 |
 |---|---|---|---|
 | `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `app` → `cluster` (apply 순서). `cicd/` 는 독립(이경석) | `infra-schedule` 워크플로(OIDC) · 구지훈 (`cicd/` 는 이경석) | 구지훈 · `cicd/` 이경석 |
-| `deploy/k8s/` | 기본 계층 — namespace · configmap · `02-networkpolicy`(DB 티어) · MySQL · Redis · Keycloak | `bootstrap` 워크플로 | 구지훈 · 이경석(keycloak) |
+| `deploy/k8s/` | 기본 계층 — namespace · configmap · `02-networkpolicy`(DB · 업무 티어) · MySQL · Redis · Keycloak | `bootstrap` 워크플로 | 구지훈 · 이경석(keycloak) |
 | `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · System Status 대시보드 (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
-| `deploy/helm/sesac-gojigi-app/` | 서비스 9개 Deployment · Service · ServiceAccount — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
+| `deploy/helm/sesac-gojigi-app/` | 서비스 10개 Deployment · Service · ServiceAccount — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
 | `deploy/argocd/` | ArgoCD Application ("이 저장소의 helm 폴더를 감시하라") | `bootstrap` 워크플로 | 이경석 |
 | `scripts/` | scale-nodes · build-and-push (수동 보조) | 사람 | 구지훈 |
 | `docs/` | ADR · 이벤트 목록 · 시크릿 목록(값 없음) · 인프라 · 로그 컨벤션 | 전원 | 전원 |
@@ -24,7 +24,7 @@
 ```
 KST 08:00  infra-schedule(apply)  → terraform apply infra/terraform/cluster
            └→ bootstrap           → k8s 기본 계층(namespace · configmap · networkpolicy) → secrets-sync(GitHub Secrets → K8s Secret) → MySQL · Redis(db 노드) · Keycloak
-                                    → observability → ArgoCD 설치 + Application → 서비스 9개 배포 (약 20분)
+                                    → observability → ArgoCD 설치 + Application → 서비스 10개 배포 (약 20분)
 KST 22:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
 ```
 

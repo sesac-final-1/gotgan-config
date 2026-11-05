@@ -96,7 +96,7 @@ user-service 가 대리(BFF)로 처리한다 — 브라우저는 Keycloak 로그
 | 카카오 | Kakao Developers → 애플리케이션 추가 → 카카오 로그인 활성화 · **OpenID Connect 활성화** · 동의항목(닉네임 필수, 카카오계정(이메일) 선택) · 보안 → Client Secret 생성 · 사용 | `https://api.gotgan.click/realms/gotgan/broker/kakao/endpoint` | `KAKAO_CLIENT_ID`(REST API 키) · `KAKAO_CLIENT_SECRET` |
 | 네이버 | NAVER Developers → 애플리케이션 등록 → 네이버 로그인 · 제공 정보(이메일 · 이름 필수) · 서비스 URL `https://gotgan-ashy.vercel.app` · 개발 중이면 멤버 관리에 테스트 아이디 등록 | `https://api.gotgan.click/realms/gotgan/broker/naver/endpoint` | `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET` |
 
-등록 후: GitHub Secrets 6개 → 다음 bootstrap(매일 07:00)에 secrets-sync · realm import 로 반영. 이미 떠 있는 클러스터면 secrets-sync 수동 실행 후 realm 을 다시 import 해야 한다 (realm 이 있으면 import 를 건너뜀).
+등록 후: GitHub Secrets 6개 → 다음 bootstrap(매일 08:00)에 secrets-sync · realm import 로 반영. 이미 떠 있는 클러스터면 secrets-sync 수동 실행 후 realm 을 다시 import 해야 한다 (realm 이 있으면 import 를 건너뜀).
 
 미리 알아둘 것:
 
