@@ -941,7 +941,7 @@
       "id": 15,
       "type": "timeseries",
       "title": "파드 CPU 사용량",
-      "description": "파드별 CPU 사용량입니다. 단위는 코어이며 1이면 코어 1개를 모두 쓰는 것입니다. 위쪽 네임스페이스 선택을 따릅니다.",
+      "description": "파드별 CPU 사용량입니다. 단위는 밀리코어(mCPU)이며 1000 mCPU가 코어 1개입니다. CPU requests는 대부분 100 mCPU이고, 이 값을 넘으면 노드의 남는 CPU를 빌려 쓰는 것입니다. 위쪽 네임스페이스 선택을 따릅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -959,7 +959,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", container!=\"\"}[$__rate_interval]))",
+          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", container!=\"\"}[$__rate_interval])) * 1000",
           "legendFormat": "{{pod}}",
           "range": true,
           "instant": false
@@ -967,7 +967,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "suffix: mCPU",
           "color": {
             "mode": "palette-classic"
           },
@@ -978,7 +978,8 @@
             "showPoints": "never",
             "spanNulls": true
           },
-          "min": 0
+          "min": 0,
+          "decimals": 0
         },
         "overrides": []
       },
@@ -1074,7 +1075,7 @@
         "x": 0,
         "y": 31,
         "w": 24,
-        "h": 10
+        "h": 21
       },
       "targets": [
         {
@@ -1083,7 +1084,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (namespace, pod, node) (kube_pod_info{namespace=~\"$namespace\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\"} == 1))",
+          "expr": "label_replace(max by (namespace, pod, node) (kube_pod_info{namespace=~\"$namespace\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\"} == 1)), \"node\", \"$1\", \"node\", \"(ip-[0-9-]+)\\\\..*\")",
           "legendFormat": "",
           "range": false,
           "instant": true,
@@ -1132,7 +1133,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 52,
         "w": 24,
         "h": 1
       },
@@ -1142,14 +1143,14 @@
       "id": 19,
       "type": "timeseries",
       "title": "네임스페이스 CPU 사용량",
-      "description": "네임스페이스별 CPU 사용량입니다. 단위는 코어입니다. 업무 서비스와 모니터링 · 시스템 파드가 각각 얼마나 쓰는지 비교합니다. 위쪽 네임스페이스 선택과 관계없이 전체를 봅니다.",
+      "description": "네임스페이스별 CPU 사용량입니다. 단위는 밀리코어(mCPU)이며 1000 mCPU가 코어 1개입니다. 업무 서비스와 모니터링 · 시스템 파드가 각각 얼마나 쓰는지 비교합니다. 위쪽 네임스페이스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
       "gridPos": {
         "x": 0,
-        "y": 42,
+        "y": 53,
         "w": 12,
         "h": 8
       },
@@ -1160,7 +1161,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\"}[$__rate_interval]))",
+          "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\"}[$__rate_interval])) * 1000",
           "legendFormat": "{{namespace}}",
           "range": true,
           "instant": false
@@ -1168,7 +1169,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "suffix: mCPU",
           "color": {
             "mode": "palette-classic"
           },
@@ -1179,7 +1180,8 @@
             "showPoints": "never",
             "spanNulls": true
           },
-          "min": 0
+          "min": 0,
+          "decimals": 0
         },
         "overrides": []
       },
@@ -1211,7 +1213,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 42,
+        "y": 53,
         "w": 12,
         "h": 8
       },
@@ -1273,7 +1275,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 50,
+        "y": 61,
         "w": 12,
         "h": 8
       },
@@ -1335,7 +1337,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 50,
+        "y": 61,
         "w": 12,
         "h": 8
       },
