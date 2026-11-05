@@ -2,7 +2,7 @@
   "id": null,
   "uid": "system-status",
   "title": "System Status",
-  "description": "헬스 체크 대시보드 — 서비스별 가용 상태 · 생존 · Ready · 롤링 배포 · 5xx. 데이터는 Prometheus up · kube-state-metrics · Micrometer 만 (가이드라인 13장, SYS-01). 시연 때 ?kiosk",
+  "description": "서비스가 정상인지 한 화면에서 확인하는 헬스 체크 대시보드입니다. 서비스 가용률, 파드 상태, 배포 과정, 5xx, 서킷 상태를 보여 줍니다. 근거: 가이드라인 13장 · 스펙 SYS-01 · SYS-10. 시연 때는 kiosk 모드로 엽니다.",
   "tags": ["gotgan", "observability"],
   "timezone": "browser",
   "editable": true,
@@ -17,8 +17,8 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "입구 생존 (gateway)",
-      "description": "살아 있는 gateway 파드 수(up == 1). 2 = UP(초록), 1 = 하나만 살아 있음(노랑 — 요청은 계속 처리), 0 = DOWN(빨강). or vector(0) — 둘 다 없으면 count 결과가 비어 No data 가 되므로 0 으로. 외부 프로브(blackbox) 없이 수집 대상 생존으로 판단",
+      "title": "Gateway 가용 파드",
+      "description": "요청을 받을 수 있는 gateway 파드 수입니다. 2면 정상, 1이면 파드 하나로 요청을 처리하는 중, 0이면 외부 요청이 모두 실패합니다. Prometheus 수집 성공 여부로 판단하므로, 수집만 실패해도 값이 줄어들 수 있습니다.",
       "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -59,8 +59,8 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "파드 재시작 (10분)",
-      "description": "최근 10분 컨테이너 재시작 합계. 0 초록 · 1 이상 노랑 · 3 이상 빨강. 같은 컨테이너가 다시 뜰 때(OOMKilled · liveness 실패)만 늘고, kubectl delete pod 로 새 파드가 생기면 늘지 않는다",
+      "title": "컨테이너 재시작 (10분)",
+      "description": "최근 10분 동안 컨테이너가 재시작한 횟수입니다. 1 이상이면 노랑, 3 이상이면 빨강이며 OOMKilled나 liveness 실패를 의심합니다. 배포나 kubectl delete pod로 파드가 새로 만들어진 경우는 세지 않습니다.",
       "gridPos": { "x": 0, "y": 4, "w": 4, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -99,8 +99,8 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "서비스별 가용 상태",
-      "description": "가용(Ready) 레플리카 / 원하는 레플리카. 1 = UP(초록), 0~1 = 일부만 살아 있음 · 롤링 중(노랑), 0 = DOWN(빨강). 분모 clamp_min(…, 1) — 레플리카를 0 으로 줄여도 No data 가 아니라 빨강. sum by — kube-state-metrics 재시작 때 타일이 겹치지 않게",
+      "title": "서비스 가용률",
+      "description": "원하는 레플리카 중 Ready 상태인 비율입니다. 100%면 정상, 0%보다 크고 100%보다 작으면 일부 파드가 내려갔거나 배포 중, 0%면 서비스 중단입니다. 레플리카를 0으로 줄여도 빈 칸이 아니라 빨강으로 표시됩니다.",
       "gridPos": { "x": 4, "y": 0, "w": 20, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -151,8 +151,8 @@
     {
       "id": 4,
       "type": "state-timeline",
-      "title": "수집 대상 생존 (up)",
-      "description": "파드별 Prometheus 수집 성공 여부. 죽었다 살아나는 구간이 빨강 → 초록 띠로 보인다. keycloak · mysql · redis 는 수집 대상이 아님(가용 상태 · 파드 Ready 패널에서 확인)",
+      "title": "Scrape 상태 (up)",
+      "description": "Prometheus가 파드의 지표를 수집하는 데 성공했는지 보여 줍니다. 초록은 성공, 빨강은 실패이며 파드가 죽었다 살아나면 빨강에서 초록으로 바뀝니다. Keycloak · MySQL · Redis는 수집 대상이 아니므로 서비스 가용률과 파드 Ready에서 확인합니다.",
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 10 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -195,7 +195,7 @@
       "id": 5,
       "type": "state-timeline",
       "title": "파드 Ready",
-      "description": "파드별 Ready 여부(kube-state-metrics). 롤링 배포 때 새 파드가 Ready 가 된 뒤 옛 파드가 빠지는 순서가 보인다",
+      "description": "파드별로 트래픽을 받을 준비가 되었는지 보여 줍니다. 초록이면 Ready입니다. 배포 때는 새 파드가 초록이 된 뒤 옛 파드가 사라지는 순서를 확인할 수 있습니다.",
       "gridPos": { "x": 12, "y": 8, "w": 12, "h": 10 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -237,15 +237,15 @@
     {
       "id": 6,
       "type": "timeseries",
-      "title": "롤링 배포 (ReplicaSet Ready 파드 수)",
-      "description": "ReplicaSet 별 Ready 파드 수. 배포 때 옛 ReplicaSet ↓ · 새 ReplicaSet ↑ 가 교차한다. 지난 배포의 ReplicaSet 은 0 으로 남는다",
+      "title": "ReplicaSet별 Ready 파드 수",
+      "description": "ReplicaSet별 Ready 파드 수입니다. ReplicaSet은 배포 버전마다 하나씩 생기므로, 목록의 줄 수가 파드 수는 아닙니다. 배포 때는 옛 버전의 선이 내려가다 사라지고 새 버전의 선이 올라옵니다. 파드가 없는 지난 버전은 표시하지 않습니다.",
       "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "kube_replicaset_status_ready_replicas{namespace=\"sesac-gojigi\"}",
+          "expr": "kube_replicaset_status_ready_replicas{namespace=\"sesac-gojigi\"} > 0",
           "legendFormat": "{{replicaset}}",
           "instant": false,
           "range": true
@@ -268,15 +268,15 @@
     {
       "id": 7,
       "type": "timeseries",
-      "title": "서비스별 5xx (초당)",
-      "description": "서비스별 초당 5xx 응답 수. 배포 · 장애 중 0 유지 확인. 5xx 가 한 번도 없으면 시리즈가 없어 No data 가 되므로, 요청이 있던 서비스는 요청 수 × 0 으로 0 선을 그린다(요청을 한 번이라도 받은 서비스만 보임)",
+      "title": "5xx 요청 수 (RPS)",
+      "description": "서비스별로 1초에 발생한 5xx 응답 수입니다. 배포나 장애 중에도 0을 유지하면 서비스가 5xx를 반환하지 않은 것입니다. 모든 서비스를 표시하므로 요청이 없는 서비스도 0으로 나옵니다. 요청이 실제로 있었는지는 「서비스 (RED)」에서 함께 확인합니다.",
       "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", status=~\"5..\"}[1m])) or sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\"}[1m])) * 0",
+          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", status=~\"5..\"}[1m])) or sum by (app) (up{namespace=\"sesac-gojigi\", app=~\".+-service\"}) * 0",
           "legendFormat": "{{app}}",
           "instant": false,
           "range": true
@@ -287,7 +287,108 @@
           "color": { "mode": "palette-classic" },
           "unit": "reqps",
           "min": 0,
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "axisSoftMax": 1 }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "서킷 OPEN 수",
+      "description": "지금 열려 있는 서킷 수입니다. 0이면 정상이고 1 이상이면 빨강입니다. 서킷이 열리면 그 대상으로 호출을 보내지 않고 바로 실패 처리합니다. 파드가 여러 개여도 호출 서비스와 대상이 같으면 1개로 셉니다.",
+      "gridPos": { "x": 0, "y": 26, "w": 4, "h": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "count(max by (app, name) (resilience4j_circuitbreaker_state{namespace=\"sesac-gojigi\", state=\"open\"}) == 1) or vector(0)",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 9,
+      "type": "state-timeline",
+      "title": "서킷 상태",
+      "description": "서비스 간 호출의 서킷 상태입니다. 초록은 정상(CLOSED), 노랑은 시험 호출 중(HALF_OPEN), 빨강은 호출 차단(OPEN)입니다. 왼쪽 이름은 「호출 서비스 → 서킷 이름」이고, 서킷 이름은 대상 서비스나 redisCart · portone · keycloak 같은 외부 의존성입니다. 파드가 여러 개면 가장 나쁜 상태를 표시합니다.",
+      "gridPos": { "x": 4, "y": 26, "w": 20, "h": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "2 * max by (app, name) (resilience4j_circuitbreaker_state{namespace=\"sesac-gojigi\", state=\"open\"}) + max by (app, name) (resilience4j_circuitbreaker_state{namespace=\"sesac-gojigi\", state=\"half_open\"})",
+          "legendFormat": "{{app}} → {{name}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 2 }] },
+          "mappings": [{ "type": "value", "options": { "0": { "text": "정상" }, "1": { "text": "시험 호출" }, "2": { "text": "OPEN" }, "3": { "text": "OPEN" } } }]
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "alignValue": "left",
+        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "서킷 실패율",
+      "description": "서킷별 호출의 실패 비율입니다. 빨간 선(50%)에 닿으면 서킷이 열립니다. 왼쪽 이름은 「호출 서비스 → 서킷 이름」이고, 파드가 여러 개면 가장 높은 값을 표시합니다. 집계된 호출이 최소 횟수(대부분 5건, gateway 10건)보다 적으면 계산되지 않아 Not enough calls로 표시되며, 평소에 이렇게 나와도 정상입니다.",
+      "gridPos": { "x": 0, "y": 38, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "max by (app, name) (resilience4j_circuitbreaker_failure_rate{namespace=\"sesac-gojigi\"}) >= 0",
+          "legendFormat": "{{app}} → {{name}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "percent",
+          "noValue": "Not enough calls",
+          "min": 0,
+          "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "transparent", "value": null }, { "color": "red", "value": 50 }] },
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "thresholdsStyle": { "mode": "line" } }
         },
         "overrides": []
       },
