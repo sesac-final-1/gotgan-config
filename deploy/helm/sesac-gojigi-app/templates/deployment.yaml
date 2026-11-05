@@ -31,6 +31,16 @@ spec:
       nodeSelector:
         tier: app                           # 백 티어 노드 그룹(app, t3.xlarge ×2) 에만. db 노드는 테인트 tier=db:NoSchedule 로 막혀 있음
       terminationGracePeriodSeconds: {{ $.Values.defaults.terminationGracePeriodSeconds }}
+      {{- if gt (int ($svc.replicas | default $.Values.defaults.replicas)) 1 }}
+      topologySpreadConstraints:            # 레플리카를 노드별로 나눈다 — 노드 하나가 죽어도 끊기지 않게. 자리가 없으면 그래도 띄운다(ScheduleAnyway)
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          matchLabelKeys: [pod-template-hash]   # 배포 중에는 새 버전 파드끼리 나눈다
+          labelSelector:
+            matchLabels:
+              app: {{ $name }}
+      {{- end }}
       {{- if $svc.serviceAccount }}
       serviceAccountName: {{ $name }}
       {{- else }}

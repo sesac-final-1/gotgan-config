@@ -55,7 +55,7 @@ spec:
             - --character-set-server=utf8mb4
             - --collation-server=utf8mb4_unicode_ci
             - --innodb-buffer-pool-size=256M             # requests 1Gi 안에서
-            - --max-connections=250                      # 기본 151 은 11/4 k6 에서 닿음(이슈 21). 앱 풀 10 × (레플리카 + 롤링 1) 합 190 + Keycloak 30 + 여유 20 → 240 → 250
+            - --max-connections=300                      # 기본 151 은 11/4 k6 에서 닿음(이슈 21). 앱 풀 10 × (레플리카 + 롤링 1) 합 230 + Keycloak 30 + 여유 20 → 280 → 300 (11/5 구매 경로 이중화)
           envFrom:
             - secretRef: { name: mysql-secret }        # MYSQL_ROOT_PASSWORD + *_DB_PASSWORD 8개 → init-schemas.sh 가 읽음
           env:
