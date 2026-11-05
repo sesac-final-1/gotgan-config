@@ -16,6 +16,7 @@
 | `k6/s5-realtime.js` | **S5 실시간** — 채팅 WebSocket 50 → 200 → 500 연결(20% 는 1초 1건) · 알림 SSE 50 → 200 연결. 연결 > 99% · 왕복 p95 < 1s | 필요 |
 | `k6/s6-aggregate.js` | **S6 둘러보기 + 정산 집계** — S1 100 VU 중 5분에 관리자 "지금 집계" | 관리자 |
 | `k6/s7-soak.js` | **S7 혼합 30분** — S1 70% · S3 20% · refresh 10%, 한계의 70% | 필요 |
+| `k6/s8-category-skew.js` | **S8 카테고리 쏠림**(멘토링 F-3) — 3분 고르게 → 5분 한 카테고리에 몰기(합 200 VU). 나머지 카테고리 p95 변화를 본다 | — |
 | `watch-db.sh` | 10초마다 MySQL 연결 · Redis 메모리 · ops · 파드 CPU/메모리 합 CSV + 끝날 때 쿼리 상위 5 | kubectl |
 | `run.sh` | 한 시나리오 측정 묶음 — watch-db + k6(요청별 CSV · p99) + 종료 처리. `bash loadtest/run.sh s5 s5-realtime.js -e COUNT=200` | `.env` |
 | `.env.example` | 비밀번호 파일 양식 — `loadtest/.env` 로 복사(Git 제외) | — |
