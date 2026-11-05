@@ -362,6 +362,39 @@
         "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" },
         "tooltip": { "mode": "single", "sort": "none" }
       }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "서킷 실패율 (호출 서비스 → 대상)",
+      "description": "최근 호출 중 실패 비율. 50%(빨간 선)에 닿으면 서킷이 열린다. 같은 서비스의 파드 중 가장 높은 값을 보여 준다. 최근 호출이 최소 횟수(대부분 5건, gateway 10건)보다 적으면 계산되지 않아 선이 없고, 평소에 비어 있어도 정상이다. 쿼리 출처: grafana.com 21307",
+      "gridPos": { "x": 0, "y": 38, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "max by (app, name) (resilience4j_circuitbreaker_failure_rate{namespace=\"sesac-gojigi\"}) >= 0",
+          "legendFormat": "{{app}} → {{name}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "transparent", "value": null }, { "color": "red", "value": 50 }] },
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "thresholdsStyle": { "mode": "line" } }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
     }
   ]
 }
