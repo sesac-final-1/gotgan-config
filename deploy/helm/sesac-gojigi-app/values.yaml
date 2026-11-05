@@ -69,7 +69,7 @@ services:
   # ── order (perish95)
   order-service:
     repository: sesac-gojigi-order
-    tag: "12587dc"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "f8e45f5"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8084
     resources:
       requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
