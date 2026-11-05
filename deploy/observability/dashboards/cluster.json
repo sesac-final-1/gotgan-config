@@ -1305,7 +1305,8 @@
             "showPoints": "never",
             "spanNulls": true
           },
-          "min": 0
+          "min": 0,
+          "noValue": "재시작 없음"
         },
         "overrides": []
       },
@@ -1367,7 +1368,8 @@
             "showPoints": "never",
             "spanNulls": true
           },
-          "min": 0
+          "min": 0,
+          "noValue": "해당 파드 없음"
         },
         "overrides": []
       },
