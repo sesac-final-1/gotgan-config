@@ -17,6 +17,8 @@
 | `k6/s6-aggregate.js` | **S6 둘러보기 + 정산 집계** — S1 100 VU 중 5분에 관리자 "지금 집계" | 관리자 |
 | `k6/s7-soak.js` | **S7 혼합 30분** — S1 70% · S3 20% · refresh 10%, 한계의 70% | 필요 |
 | `watch-db.sh` | 10초마다 MySQL 연결 · Redis 메모리 · ops · 파드 CPU/메모리 합 CSV + 끝날 때 쿼리 상위 5 | kubectl |
+| `run.sh` | 한 시나리오 측정 묶음 — watch-db + k6(요청별 CSV · p99) + 종료 처리. `bash loadtest/run.sh s5 s5-realtime.js -e COUNT=200` | `.env` |
+| `.env.example` | 비밀번호 파일 양식 — `loadtest/.env` 로 복사(Git 제외) | — |
 
 결과는 `loadtest/results/`(Git 제외) — k6 요약 JSON · watch CSV · 쿼리 상위 5.
 
@@ -48,6 +50,8 @@ k6 run -e ADMIN_EMAIL=<관리자 이메일> -e ADMIN_PASSWORD=<비밀번호> loa
 k6 run -e LOADTEST_PASSWORD=<비밀번호> loadtest/k6/s3-order.js            # 끝나면 pending_orders 가 0 근처까지(약 50분)
 k6 run -e LOADTEST_PASSWORD=<비밀번호> -e VUS=<S1·S3 한계의 70%> loadtest/k6/s7-soak.js   # 30분
 ```
+
+> **`run.sh` 를 쓰면** 위 터미널 두 개가 한 번에 된다(11/4 측정에서 정리). 단계별 p95 · p99 는 `results/{이름}-{시각}.csv.gz` 에서 계산 — k6 요약은 전체 값 하나뿐이다. 백그라운드로 띄운 watch-db 는 Ctrl+C 가 닿지 않아 `kill -TERM` 으로 끝낸다.
 
 ## 4. 시나리오별 준비
 

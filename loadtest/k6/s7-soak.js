@@ -11,6 +11,7 @@ const VUS = Number(__ENV.VUS || 70);
 const DURATION = __ENV.HOLD || '30m';
 
 export const options = {
+  noCookiesReset: true,   // k6 는 반복마다 쿠키를 비운다 → 2번째 반복부터 Refresh Token 쿠키가 없어 refresh 401(11/4 S7 7,206건 — Keycloak 부하가 빠진 측정이 됨)
   scenarios: {
     browse: { executor: 'constant-vus', vus: Math.max(1, Math.round(VUS * 0.7)), duration: DURATION, exec: 'browse' },
     order: { executor: 'constant-vus', vus: Math.max(1, Math.round(VUS * 0.2)), duration: DURATION, exec: 'order' },
