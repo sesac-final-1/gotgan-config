@@ -10,7 +10,7 @@
 | `k6/lib.js` | 주소(`BASE_URL`, 기본 `https://api.gotgan.click`) · 시드 상품 · 옵션 번호 · 가상 IP · 로그인/refresh · 통과 기준 · 결과 저장 | — |
 | `k6/accounts.js` | 부하용 구매자 계정 `loadtest+{번호}@gotgan.test` 를 회원가입 API 로 만든다(번호 = VU 번호) | 비밀번호 필요 |
 | `k6/s1-browse.js` | **S1 둘러보기** — 비로그인, 10 → 50 → 100 → 200 VU · 각 3분. p95 < 500ms | — |
-| `k6/s2-login-limit.js` | **S2 로그인** — 같은 IP 31번째 로그인 429 확인 + (선택 `KEYCLOAK=1`) 10 → 60 VU 로그인 · refresh. p95 < 1s | 필요 |
+| `k6/s2-login-limit.js` | **S2 로그인** — 같은 IP 36번 안에 로그인 429 확인 + (선택 `KEYCLOAK=1`) 10 → 60 VU 로그인 · refresh. p95 < 1s | 필요 |
 | `k6/s3-order.js` | **S3 장바구니 → 주문 생성**(결제 직전, PENDING) — 10 → 30 → 60 VU. p95 < 1.5s · Saga 실패 0 | 필요 |
 | `k6/s4-stock-race.js` | **S4 한정 재고 동시 주문** — 재고 10 옵션에 100 VU 동시 1개 → 성공 정확히 10 | 필요 |
 | `k6/s5-realtime.js` | **S5 실시간** — 채팅 WebSocket 50 → 200 → 500 연결(20% 는 1초 1건) · 알림 SSE 50 → 200 연결. 연결 > 99% · 왕복 p95 < 1s | 필요 |
