@@ -47,7 +47,7 @@ services:
   # ── store (VoC-100)
   store-service:
     repository: sesac-gojigi-store
-    tag: "1acaabc"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "f8b996f"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8082
     resources:
       requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
