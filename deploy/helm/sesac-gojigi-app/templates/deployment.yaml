@@ -41,6 +41,8 @@ spec:
           image: "{{ $.Values.image.registry }}/{{ $svc.repository }}:{{ $svc.tag }}"
           ports:
             - containerPort: {{ $svc.port }}
+          env:
+            {{- toYaml (default $.Values.defaults.env $svc.env) | nindent 12 }}
           envFrom:
             - configMapRef:
                 name: app-config
