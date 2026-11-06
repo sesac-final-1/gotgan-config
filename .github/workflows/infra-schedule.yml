@@ -53,6 +53,14 @@ jobs:
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: ${{ env.TF_VERSION }}
+      # DB 는 매일 새로 만들어져 번호가 1부터 다시 시작 → 안 지워지는 표의 중복 표식과 겹치면 알림 · 명세서가 빠지고
+      #   옛 알림 링크가 다른 방으로 간다(QA 2차 N-구-7 · 8). 표를 통째로 새로 만들어 DB 와 수명을 맞춘다. 실패해도 클러스터는 띄운다
+      - name: 알림함 · 명세서 이력 비우기
+        continue-on-error: true
+        working-directory: infra/terraform/app
+        run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve             -target=aws_dynamodb_table.inbox -target=aws_dynamodb_table.settlement_reports             -replace=aws_dynamodb_table.inbox -replace=aws_dynamodb_table.settlement_reports
       - name: terraform apply cluster/
         working-directory: ${{ env.TF_DIR }}
         run: |

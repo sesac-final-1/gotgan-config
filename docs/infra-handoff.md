@@ -42,7 +42,7 @@
 | | Route 53 · ACM (`dns.tf`) | 호스팅 영역 `gotgan.click`(10/20 등록) · `api.gotgan.click` A → EIP 2개 · ACM 인증서(gateway NLB 443 TLS) |
 | | S3 버킷 4개 | `sesac-gojigi-images-4380`(products/ · reviews/ · stores/ 공개 읽기) · `-seller-docs-4380` · `-reports-4380` · `-log-archive-4380`(90일 후 Glacier). images · seller-docs 는 EventBridge 알림 켬 → Lambda `upload-guard` 가 업로드 파일 형식 검사 · 위조 삭제(10/27, `s3.tf`) |
 | | SNS 토픽 3 · SQS 큐 12 + DLQ 12 | `sesac-gojigi-{store · order · settlement}-events` / `sesac-gojigi-{소비자}-{도메인}-events` (+`-dlq`) — 알림 센터 `admin-{store · order · settlement}-events` 3개는 10/27 |
-| | DynamoDB 3 | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` · `sesac-gojigi-inbox`(알림 센터 알림함, TTL 90일 — 10/27) |
+| | DynamoDB 3 | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` · `sesac-gojigi-inbox`(알림 센터 알림함, TTL 90일 — 10/27). inbox · settlement-reports 는 매일 08:00 apply 때 새로 만든다(11/6, DB 와 수명 맞춤) |
 | | SES 발신 주소 (샌드박스) | `wlsgksvheh@gmail.com` (Verified) |
 | | SSM 파라미터 12 | `/sesac-gojigi/dev/...` — `serverless.yml`이 읽음 (upload-guard 용 `s3/images-bucket` · `s3/seller-docs-bucket` · `sns/alerts-topic-arn` · `kms/alerts-key-arn` 은 10/27) |
 
