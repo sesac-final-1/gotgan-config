@@ -2,7 +2,7 @@
   "id": null,
   "uid": "system-status",
   "title": "System Status",
-  "description": "서비스가 정상인지 한 화면에서 확인하는 헬스 체크 대시보드입니다. 서비스 가용률, 파드 상태, 배포 과정, 5xx, 서킷 상태를 보여 줍니다. 근거: 가이드라인 13장 · 스펙 SYS-01 · SYS-10. 시연 때는 kiosk 모드로 엽니다.",
+  "description": "서비스가 정상인지 한 화면에서 확인하는 대시보드입니다. 서비스 상태, 파드 상태, 배포 과정, 5xx, 서킷 상태를 보여 줍니다. 장애 시연 때 이 화면에서 시작합니다.",
   "tags": ["gotgan", "observability"],
   "timezone": "browser",
   "editable": true,
@@ -17,8 +17,8 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Gateway 가용 파드",
-      "description": "요청을 받을 수 있는 gateway 파드 수입니다. 2면 정상, 1이면 파드 하나로 요청을 처리하는 중, 0이면 외부 요청이 모두 실패합니다. Prometheus 수집 성공 여부로 판단하므로, 수집만 실패해도 값이 줄어들 수 있습니다.",
+      "title": "Gateway 상태",
+      "description": "요청을 받을 수 있는 gateway 파드 수를 상태로 보여 줍니다. UP이면 2개 모두 정상, 1/2이면 파드 하나로 처리하는 중, DOWN이면 외부 요청이 모두 실패합니다. Prometheus 수집 성공 여부로 판단하므로, 수집만 실패해도 상태가 나빠질 수 있습니다.",
       "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -99,8 +99,8 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "서비스 가용률",
-      "description": "원하는 레플리카 중 Ready 상태인 비율입니다. 100%면 정상, 0%보다 크고 100%보다 작으면 일부 파드가 내려갔거나 배포 중, 0%면 서비스 중단입니다. 레플리카를 0으로 줄여도 빈 칸이 아니라 빨강으로 표시됩니다.",
+      "title": "서비스 상태",
+      "description": "서비스별로 원하는 레플리카 중 Ready 상태인 비율을 보여 줍니다. 100%면 UP, 0%면 DOWN으로 표시하고, 그 사이는 일부 파드가 내려갔거나 배포 중이라 비율로 표시합니다. 레플리카를 0으로 줄여도 빈 칸이 아니라 빨강으로 표시됩니다.",
       "gridPos": { "x": 4, "y": 0, "w": 20, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -152,7 +152,7 @@
       "id": 4,
       "type": "state-timeline",
       "title": "Scrape 상태 (up)",
-      "description": "Prometheus가 파드의 지표를 수집하는 데 성공했는지 보여 줍니다. 초록은 성공, 빨강은 실패이며 파드가 죽었다 살아나면 빨강에서 초록으로 바뀝니다. Keycloak · MySQL · Redis는 수집 대상이 아니므로 서비스 가용률과 파드 Ready에서 확인합니다.",
+      "description": "Prometheus가 파드의 지표를 수집하는 데 성공했는지 보여 줍니다. 초록은 성공, 빨강은 실패이며 파드가 죽었다 살아나면 빨강에서 초록으로 바뀝니다. Keycloak · MySQL · Redis는 수집 대상이 아니므로 서비스 상태와 파드 Ready에서 확인합니다.",
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 10 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [

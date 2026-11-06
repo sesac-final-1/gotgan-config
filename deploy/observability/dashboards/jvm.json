@@ -2,7 +2,7 @@
   "id": null,
   "uid": "jvm",
   "title": "JVM · 자원 (측정용)",
-  "description": "k6 부하 측정 때 서비스별 메모리 · Heap · GC · DB 커넥션 · CPU · 재시작을 한 화면에서 보는 대시보드입니다. 쿼리는 grafana.com 4701(JVM) · 12900(HikariCP) · 15760(Pods)을 우리 라벨에 맞게 옮겼습니다. 근거: 노션 「11/2 확장계획」 5-1 · 5-5",
+  "description": "서비스별 메모리, Heap, GC, DB 커넥션, CPU, 재시작을 보는 대시보드입니다. 부하 측정 때 어떤 자원이 먼저 부족해지는지 찾을 때 씁니다. 노드 전체의 여유는 「클러스터」에서 봅니다.",
   "tags": [
     "gotgan",
     "observability"
