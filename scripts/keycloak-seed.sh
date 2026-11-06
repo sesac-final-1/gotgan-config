@@ -36,6 +36,13 @@ if [[ -n "${KC_HOSTNAME_ADMIN:-}" ]]; then
   echo "master realm frontendUrl = $KC_HOSTNAME_ADMIN"
 fi
 
+# Admin API 용 토큰 — 26.8.2 부터 토큰에 kc-admin-api 스코프 · audience 가 있어야 한다(CVE-2026-19688).
+# 없으면 가입 · 비밀번호 변경 · 탈퇴 · 회원 정지의 Admin API 호출이 401. 스코프는 realm 에 있지만 우리 client 에는 자동 할당되지 않는다
+CLIENT_UUID=$(kc get clients -r gotgan -q clientId=gotgan-backend --fields id --format csv --noquotes)
+SCOPE_UUID=$(kc get client-scopes -r gotgan --fields id,name --format csv --noquotes | grep kc-admin-api | grep -oE '[0-9a-f-]{36}')
+kc update "clients/$CLIENT_UUID/default-client-scopes/$SCOPE_UUID" -r gotgan
+echo "gotgan-backend 기본 스코프에 kc-admin-api 추가"
+
 if [[ -z "${SEED_ADMIN_PASSWORD:-}" || -z "${SEED_DEMO_PASSWORD:-}" ]]; then
   echo "SEED_ADMIN_PASSWORD · SEED_DEMO_PASSWORD 가 없어 시드 계정을 건너뜀" >&2
   rm -f "$CONFIG"

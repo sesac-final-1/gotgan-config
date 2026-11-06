@@ -84,16 +84,6 @@
       },
       "protocolMappers": [
         {
-          "name": "realm-management-audience",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "config": {
-            "included.client.audience": "realm-management",
-            "access.token.claim": "true",
-            "id.token.claim": "false"
-          }
-        },
-        {
           "name": "user_id",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
