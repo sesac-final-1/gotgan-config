@@ -25,7 +25,7 @@ spec:
       automountServiceAccountToken: false              # 쿠버네티스 API 를 부르지 않는다 (Sonar S6865)
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:26.8          # 로컬 docker-compose 와 같은 버전으로 고정
+          image: quay.io/keycloak/keycloak:26.8.2        # 패치 번호까지 고정 — 26.8 은 움직이는 태그라 11/6 아침 26.8.2 가 자동으로 받아져 Admin API 가 401 이 됐다.  로컬 docker-compose 와 같은 버전으로 고정
           args: ["start", "--import-realm"]              # realm 이 이미 있으면 가져오기는 건너뜀
           env:
             - { name: KC_DB, value: mysql }
