@@ -130,23 +130,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 
 ## 7. 박지연 (로깅 · 관측성) 연결점
 
-- **grafana IRSA**는 `cluster/irsa_grafana.tf`로 작성 — 클러스터와 함께 매일 재생성됩니다(11/02 기준 미작성 — CloudWatch 데이터소스를 붙일 때 이 패턴으로). 같은 모듈 패턴 예시:
-
-```hcl
-module "grafana_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.0"
-
-  role_name        = "sesac-gojigi-grafana-irsa"
-  role_policy_arns = { cw = "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess" } # 필요하면 범위 축소한 정책으로
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["monitoring:grafana"] # grafana.yaml 의 ServiceAccount 이름과 맞출 것
-    }
-  }
-}
-```
+- **grafana IRSA**는 `cluster/irsa_grafana.tf` — 클러스터와 함께 매일 재생성됩니다. Lambda 로그 · CloudWatch 지표 읽기 전용이고, `grafana.yaml` 의 ServiceAccount 연결 · CloudWatch 데이터소스는 역할이 생긴 뒤 추가합니다
 
 - PR로 올리면 plan은 CI가, apply는 다음 08:00 스케줄(또는 구지훈)이 합니다
 - Prometheus · Loki 볼륨: `storageClassName: ebs-sc` (gp3 · 암호화 · `WaitForFirstConsumer`) · 노드 `tier=app`
