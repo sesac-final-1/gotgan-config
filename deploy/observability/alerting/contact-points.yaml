@@ -1,5 +1,6 @@
 # 알림 받는 곳 (담당 박지연) — Discord + 관리자 벨. 웹훅 URL 은 환경 변수로만 — alert-webhook-secret(secrets-sync) → grafana.yaml env
 # 이 파일에서 Go 템플릿 변수는 $$ 로 쓴다($ 는 Grafana 가 환경 변수로 먼저 바꿈)
+# Discord 제목 링크는 Grafana 가 root_url + /alerting/list 로 고정해 넣어 끌 수 없다. Grafana 는 외부 미노출이라 localhost:3000 그대로 두고 메시지에 접속 명령을 적는다
 apiVersion: 1
 contactPoints:
   - orgId: 1
@@ -14,6 +15,7 @@ contactPoints:
             {{ range .Alerts }}**{{ .Labels.alertname }}** ({{ .Labels.severity }}) — {{ .Annotations.summary }}
             {{ .Annotations.description }}
             {{ end }}
+            제목 링크는 port-forward 를 켜야 열립니다: `kubectl -n monitoring port-forward svc/grafana 3000`
       # 관리자 벨 — admin POST /internal/notifications (admin.md 5절). sourceId 가 같으면 한 번만 쌓이므로 발생 시각을 넣는다 · 해결 알림은 보내지 않음
       - uid: gotgan-admin-bell
         type: webhook
