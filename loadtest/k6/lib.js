@@ -41,7 +41,8 @@ export function requirePassword() {
   return password;
 }
 
-export function login(n = exec.vu.idInTest) {
+// ACCOUNTS: 계정 수보다 VU 가 많을 때(한계 측정) 계정을 돌려 쓴다
+export function login(n = ((exec.vu.idInTest - 1) % Number(__ENV.ACCOUNTS || 1e9)) + 1) {
   const password = requirePassword();
   const res = http.post(`${BASE}/api/auth/login`, JSON.stringify({ email: accountEmail(n), password }), {
     headers: { 'Content-Type': 'application/json', ...anonHeaders() }, tags: { name: 'POST /api/auth/login' },
