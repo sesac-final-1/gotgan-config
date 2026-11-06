@@ -21,7 +21,7 @@ services:
     tag: "466769d"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8080
     resources:
-      requests: { cpu: 200m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 200m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     replicas: 2                             # 입구는 2개 — 하나가 죽어도 접속 유지
     service:
@@ -52,7 +52,7 @@ services:
     port: 8082
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     resources:
-      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: store-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -64,7 +64,7 @@ services:
     port: 8083
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     resources:
-      requests: { cpu: 250m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 250m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: product-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -76,7 +76,7 @@ services:
     port: 8084
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     resources:
-      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: order-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -102,7 +102,7 @@ services:
     tag: "3433d30"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8087
     resources:
-      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: review-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -123,6 +123,6 @@ services:
     tag: "2748b04"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8089
     resources:
-      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애에도 다 올라가는 예산 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: chat-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (chatdb)
