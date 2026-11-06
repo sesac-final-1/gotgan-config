@@ -40,8 +40,8 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "주문 생성",
-      "description": "선택한 기간에 만들어진 주문 수입니다. 주문 API 응답이 2xx인 요청을 셉니다.",
+      "title": "주문 생성 (누적)",
+      "description": "현재 order 파드가 뜬 뒤 만들어진 주문 수입니다. 주문 API 응답이 2xx인 요청을 셉니다. 파드가 재시작하면 0부터 다시 셉니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -59,7 +59,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=\"order-service\", method=\"POST\", uri=\"/api/orders\",status=~\"2..\"}[$__range])) or vector(0)",
+          "expr": "sum(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=\"order-service\", method=\"POST\", uri=\"/api/orders\",status=~\"2..\"}) or vector(0)",
           "legendFormat": "",
           "range": false,
           "instant": true
@@ -102,8 +102,8 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "주문 실패",
-      "description": "선택한 기간에 실패한 주문 요청 수입니다. 재고 부족 같은 4xx와 서버 오류 5xx를 모두 포함합니다.",
+      "title": "주문 실패 (누적)",
+      "description": "현재 order 파드가 뜬 뒤 실패한 주문 요청 수입니다. 재고 부족 같은 4xx와 서버 오류 5xx를 모두 포함합니다. 파드가 재시작하면 0부터 다시 셉니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -121,7 +121,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=\"order-service\", method=\"POST\", uri=\"/api/orders\",status!~\"2..\"}[$__range])) or vector(0)",
+          "expr": "sum(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=\"order-service\", method=\"POST\", uri=\"/api/orders\",status!~\"2..\"}) or vector(0)",
           "legendFormat": "",
           "range": false,
           "instant": true
@@ -164,8 +164,8 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "결제 승인",
-      "description": "선택한 기간에 승인된 결제 수입니다. 결제 확인 API 응답이 2xx인 요청을 셉니다.",
+      "title": "결제 승인 (누적)",
+      "description": "현재 order 파드가 뜬 뒤 승인된 결제 수입니다. 결제 확인 API 응답이 2xx인 요청을 셉니다. 파드가 재시작하면 0부터 다시 셉니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -183,7 +183,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=\"order-service\", method=\"POST\", uri=\"/api/orders/{orderNo}/payment/confirm\",status=~\"2..\"}[$__range])) or vector(0)",
+          "expr": "sum(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=\"order-service\", method=\"POST\", uri=\"/api/orders/{orderNo}/payment/confirm\",status=~\"2..\"}) or vector(0)",
           "legendFormat": "",
           "range": false,
           "instant": true
@@ -226,8 +226,8 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "결제 실패",
-      "description": "선택한 기간에 실패한 결제 확인 요청 수입니다. 1 이상이면 빨강입니다. 결제 금액 불일치와 재시도 요청도 포함될 수 있어 로그로 원인을 확인합니다.",
+      "title": "결제 실패 (누적)",
+      "description": "현재 order 파드가 뜬 뒤 실패한 결제 확인 요청 수입니다. 1 이상이면 빨강입니다. 재시도 요청도 포함될 수 있어 로그로 원인을 확인합니다. 파드가 재시작하면 0부터 다시 셉니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -245,7 +245,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=\"order-service\", method=\"POST\", uri=\"/api/orders/{orderNo}/payment/confirm\",status!~\"2..\"}[$__range])) or vector(0)",
+          "expr": "sum(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=\"order-service\", method=\"POST\", uri=\"/api/orders/{orderNo}/payment/confirm\",status!~\"2..\"}) or vector(0)",
           "legendFormat": "",
           "range": false,
           "instant": true
@@ -292,7 +292,7 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Saga 실패",
+      "title": "Saga 실패 (누적)",
       "description": "현재 order 파드가 뜬 뒤 보상까지 실패한 Saga 수입니다. 1 이상이면 빨강이고 수동 확인이 필요합니다. 파드가 재시작하면 0부터 다시 셉니다.",
       "datasource": {
         "type": "prometheus",
@@ -358,7 +358,7 @@
     {
       "id": 7,
       "type": "stat",
-      "title": "결제 금액 불일치",
+      "title": "결제 금액 불일치 (누적)",
       "description": "현재 payment 파드가 뜬 뒤 주문 금액과 PG 결제 금액이 다르게 확인된 건수입니다. 1 이상이면 빨강이고 즉시 확인해야 합니다. 파드가 재시작하면 0부터 다시 셉니다.",
       "datasource": {
         "type": "prometheus",
