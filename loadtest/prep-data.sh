@@ -33,10 +33,10 @@ EOF
     sql <<'EOF'
 SET SESSION cte_max_recursion_depth = 6000;
 SET @week_start = DATE_SUB(CURDATE(), INTERVAL (WEEKDAY(CURDATE()) + 7) DAY);
-INSERT INTO settlementdb.settlement_item (order_item_id, order_no, store_id, product_id, category_id, item_amt, commission_rate, commission_amt, payment_fee_amt, confirmed_at)
+INSERT INTO settlementdb.settlement_item (order_item_id, order_no, store_id, product_id, product_name, category_id, item_amt, commission_rate, commission_amt, payment_fee_amt, confirmed_at)
 WITH RECURSIVE s(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM s WHERE n < 5000),
  t AS (SELECT n, IF(n % 2 = 0, 1, ELT(1 + (n DIV 2) % 7, 2, 11, 12, 13, 17, 18, 19)) AS store_id, 20000 + (n * 37) % 80000 AS amt FROM s)
-SELECT 9000000 + n, CONCAT('LOAD-', LPAD(n, 8, '0')), store_id, store_id * 100 + 1, 1 + n % 3, amt, 7.00, FLOOR(amt * 0.07), FLOOR(amt * 0.022),
+SELECT 9000000 + n, CONCAT('LOAD-', LPAD(n, 8, '0')), store_id, store_id * 100 + 1, CONCAT('부하 상품 ', store_id), 1 + n % 3, amt, 7.00, FLOOR(amt * 0.07), FLOOR(amt * 0.022),
   TIMESTAMP(@week_start) + INTERVAL (n * 120) SECOND FROM t;
 SELECT store_id, COUNT(*) AS items FROM settlementdb.settlement_item WHERE order_item_id >= 9000000 GROUP BY store_id;
 EOF
