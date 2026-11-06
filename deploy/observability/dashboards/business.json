@@ -858,7 +858,7 @@
       "id": 15,
       "type": "timeseries",
       "title": "Saga 보상",
-      "description": "Saga 종류별 보상 누적 수입니다. 결제 대기 만료에서도 정상으로 생기므로, 값이 있다고 곧 장애는 아닙니다. 평소보다 빠르게 늘면 원인을 확인합니다. 파드가 재시작하면 0부터 다시 셉니다.",
+      "description": "Saga 종류별 보상 누적 수입니다. 결제 대기 만료에서도 정상으로 생기므로, 값이 있다고 곧 장애는 아닙니다. 평소보다 빠르게 늘면 원인을 확인합니다. 파드가 재시작하면 0부터 다시 셉니다. 범례는 Saga 종류입니다. PLACE_ORDER는 주문 생성, CANCEL_ITEM은 취소, RETURN_ITEM은 반품입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -923,7 +923,7 @@
       "id": 16,
       "type": "timeseries",
       "title": "Saga 재시도",
-      "description": "Saga 종류별 보상 재시도 누적 수입니다. 재시도 뒤 성공하면 괜찮지만, 계속 늘면 대상 서비스 장애를 의심합니다. 파드가 재시작하면 0부터 다시 셉니다.",
+      "description": "Saga 종류별 보상 재시도 누적 수입니다. 재시도 뒤 성공하면 괜찮지만, 계속 늘면 대상 서비스 장애를 의심합니다. 파드가 재시작하면 0부터 다시 셉니다. 범례는 Saga 종류입니다. PLACE_ORDER는 주문 생성, CANCEL_ITEM은 취소, RETURN_ITEM은 반품입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -988,7 +988,7 @@
       "id": 17,
       "type": "timeseries",
       "title": "Saga 실패",
-      "description": "Saga 종류별 보상 실패 누적 수입니다. 값이 생기면 자동 복구되지 않은 것이므로 Loki에서 sagaId로 확인합니다. 파드가 재시작하면 0부터 다시 셉니다.",
+      "description": "Saga 종류별 보상 실패 누적 수입니다. 값이 생기면 자동 복구되지 않은 것이므로 Loki에서 sagaId로 확인합니다. 파드가 재시작하면 0부터 다시 셉니다. 범례는 Saga 종류입니다. PLACE_ORDER는 주문 생성, CANCEL_ITEM은 취소, RETURN_ITEM은 반품입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
