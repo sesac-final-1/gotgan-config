@@ -2,7 +2,7 @@
   "id": null,
   "uid": "cluster",
   "title": "클러스터",
-  "description": "노드와 파드의 CPU · 메모리를 한 화면에서 보는 대시보드입니다. 노드 여유, requests 예약량, 파드 배치를 확인합니다. 네임스페이스 패널 쿼리는 grafana.com 15757을 우리 라벨에 맞게 옮겼습니다. 근거: 스펙 관측성 dashboards · 가이드라인 13장",
+  "description": "노드와 파드의 CPU · 메모리를 보는 대시보드입니다. 노드 여유, requests 예약량, 파드 배치를 확인할 때 씁니다. 서비스 내부의 Heap · GC · DB 커넥션은 「JVM · 자원」에서 봅니다.",
   "tags": [
     "gotgan",
     "observability"

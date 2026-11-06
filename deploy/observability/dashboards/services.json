@@ -2,7 +2,7 @@
   "id": null,
   "uid": "services",
   "title": "서비스 (RED)",
-  "description": "서비스별 요청 수(Rate) · 오류(Errors) · 응답 시간(Duration, p95 · 평균 · 최대) + 게이트웨이 라우트별 요청 · 429 · p95 + 채팅 세션. 자원(메모리 · GC · 커넥션)은 jvm 대시보드, 로그는 Logs. p95 는 backend slo 구간 8개(_bucket)로 계산. 가이드라인 13장 · 노션 11/02 「게이트웨이 요청 제한」",
+  "description": "서비스별 요청 수, 오류율, 응답 시간을 보는 대시보드입니다. 게이트웨이 라우트별 요청 · 429와 채팅 세션도 함께 보여 줍니다. 어느 서비스가 느리거나 오류를 내는지 찾을 때 씁니다. 자원 사용량은 「JVM · 자원」, 원인이 되는 로그는 「Logs」에서 봅니다.",
   "tags": [
     "gotgan",
     "observability"
