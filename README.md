@@ -6,10 +6,11 @@
 |---|---|---|---|
 | `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `app` → `cluster` (apply 순서). `cicd/` 는 독립(이경석) | `infra-schedule` 워크플로(OIDC) · 구지훈 (`cicd/` 는 이경석) | 구지훈 · `cicd/` 이경석 |
 | `deploy/k8s/` | 기본 계층 — namespace · configmap · `02-networkpolicy`(DB · 업무 티어) · MySQL · Redis · Keycloak | `bootstrap` 워크플로 | 구지훈 · 이경석(keycloak) |
-| `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · System Status 대시보드 (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
+| `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · 대시보드 6개(System Status · Logs · 서비스 · JVM · 비즈니스 · 클러스터) · 알림 규칙 12개(지표 9 · 로그 3) (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
 | `deploy/helm/sesac-gojigi-app/` | 서비스 10개 Deployment · Service · ServiceAccount — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
 | `deploy/argocd/` | ArgoCD Application ("이 저장소의 helm 폴더를 감시하라") | `bootstrap` 워크플로 | 이경석 |
 | `scripts/` | scale-nodes · build-and-push (수동 보조) | 사람 | 구지훈 |
+| `loadtest/` | k6 부하 측정 S1 ~ S8 · 측정 직전 데이터 `prep-data.sh`(stock · settlement · status) · 계정보다 VU 가 많으면 `ACCOUNTS` 로 돌려 씀 | 사람(측정 공지 뒤) | 구지훈 |
 | `docs/` | ADR · 이벤트 목록 · 시크릿 목록(값 없음) · 인프라 · 로그 컨벤션 | 전원 | 전원 |
 | `.github/workflows/` | `infra`(plan) · `infra-schedule`(08:00 apply · 22:00 destroy — EventBridge Scheduler → Lambda 가 실행) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 |
 

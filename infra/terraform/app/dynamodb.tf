@@ -23,7 +23,7 @@ resource "aws_dynamodb_table" "notifications" {
   }
 }
 
-# 정산 명세서 Lambda — 발송 이력 · 멱등. PK STORE#{storeId} · SK SETTLEMENT#{settlementId}
+# 정산 명세서 Lambda — 발송 이력 · 멱등. PK STORE#{storeId} · SK WEEK#{week}(serverless report.js)
 #   조건부 쓰기(attribute_not_exists(SK))로 같은 정산 재발송 방지, 스토어별 이력은 PK 로 조회
 resource "aws_dynamodb_table" "settlement_reports" {
   name         = "sesac-gojigi-settlement-reports"

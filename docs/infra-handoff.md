@@ -130,12 +130,12 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 
 ## 7. 박지연 (로깅 · 관측성) 연결점
 
-- **grafana IRSA**는 `cluster/irsa_grafana.tf` — 클러스터와 함께 매일 재생성됩니다. Lambda 로그 · CloudWatch 지표 읽기 전용이고, `grafana.yaml` 의 ServiceAccount 연결 · CloudWatch 데이터소스는 역할이 생긴 뒤 추가합니다
+- **grafana IRSA**는 `cluster/irsa_grafana.tf`(`sesac-gojigi-grafana-irsa`, 11/6) — 클러스터와 함께 매일 재생성됩니다. Lambda 로그 · CloudWatch 지표 읽기 전용이고, `grafana.yaml` 의 ServiceAccount 연결 · CloudWatch 데이터소스는 역할이 생긴 뒤 추가합니다
 
 - PR로 올리면 plan은 CI가, apply는 다음 08:00 스케줄(또는 구지훈)이 합니다
 - Prometheus · Loki 볼륨: `storageClassName: ebs-sc` (gp3 · 암호화 · `WaitForFirstConsumer`) · 노드 `tier=app`
 - `grafana-secret`(admin-password) · `alert-webhook-secret`(url)은 `secrets-sync`가 `monitoring` 네임스페이스에 만듭니다 — `grafana.yaml`에서 참조만 하면 됨
-- bootstrap은 `kubectl apply -f deploy/observability/`(하위 폴더 미포함) — dashboards · alerting을 ConfigMap으로 바꾸면 `-R`로 바꿔야 합니다
+- bootstrap은 `dashboards/` · `alerting/` 폴더를 각각 `grafana-dashboards` · `grafana-alerting` ConfigMap으로 만든 뒤 `kubectl apply -f deploy/observability/`(하위 폴더 미포함)를 합니다 — 새 대시보드 · 규칙은 폴더에 파일만 넣으면 됩니다
 - log-archive Lambda: 버킷 `sesac-gojigi-log-archive-4380`, SSM `/sesac-gojigi/dev/s3/log-archive-bucket`
 - **파드는 IRSA 없이는 AWS 권한이 없습니다**(IMDS 차단) — CloudWatch를 읽는 컴포넌트는 반드시 IRSA로
 
@@ -171,6 +171,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 | metrics-server 버전 | EKS 1.35 기본 애드온 v0.9.0 이 protobuf `/openapi/v2` 를 503 으로 만들어 ArgoCD 동기화(`Unknown`) · LBC Helm 설치가 실패 → **`v0.8.1-eksbuild.21` 고정**(이슈 #11 · PR #12). LBC 의 `disable_openapi_validation = true` 는 같은 증상의 이전 우회책으로 안전장치로 유지 |
 | gateway NLB 포트 | Helm Service 템플릿이 `port = targetPort = 8080` 이라 NLB 가 8080 으로 열림 → `vercel.json`(80번)과 불일치. gateway 만 NLB 80 → 파드 8080 으로 분리 필요 (Helm 담당 이경석, 10/15 확인) |
 | 노드 그룹 이름 | `sesac-gojigi-app` · `-db` 고정 (기본값은 매일 바뀜) |
+| 이미지 태그 | Keycloak `26.8` 은 움직이는 태그 — 11/6 08:00 생성 때 26.8.2 가 받아져 Admin API 401(가입 502). **패치 번호까지 고정**(`26.8.2`, config #89) + 26.8.2 가 요구하는 `kc-admin-api` 스코프를 `scripts/keycloak-seed.sh` 가 서비스 계정에 할당(config #90) |
 | KMS · 로그 그룹 | 매일 재생성이라 EKS KMS 키 · 제어 평면 로그를 만들지 않음 |
 | SNS 필터 | 새 구독 · 필터는 퍼지는 데 수 분 걸림 / SQS purge는 최대 60초 — 그 사이 보낸 메시지도 지워짐 |
 | SES | 샌드박스 — 수신자도 인증 필요(`app` 변수 `ses_recipient_emails`), Gmail 발신이라 스팸함 가능 |
@@ -179,15 +180,15 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 
 ---
 
-## 10. 사이징 확정값 (11/5, k6 측정 뒤)
+## 10. 사이징 확정값 (11/5, k6 측정 뒤 · 11/6 2차 측정으로 값 변경 없음 확인)
 
 | 항목 | 값 | 근거 |
 | --- | --- | --- |
-| 메모리 limit · requests | 768Mi · 512Mi 유지(requests 는 2차 측정으로 확인) | 힙 + 힙 밖 + 약 180Mi ≤ limit |
+| 메모리 limit · requests | 768Mi · 512Mi 유지 | 힙 + 힙 밖 + 약 180Mi ≤ limit. 2차(11/6) S7 30분 평탄 · 최대 chat 665 · admin 661Mi(86%) · OOM 0 |
 | 힙 상한 | Helm env `JAVA_TOOL_OPTIONS` 33%(254Mi) · admin 41%(316Mi) | 이미지 기본 75% 에서 admin OOMKilled → 조정 뒤 재시작 0 |
 | CPU requests | gateway 200 · product 250 · order · review · store · chat 150 · 나머지 100m · Keycloak 500m | 합 약 4.23 vCPU(54%) — 노드 1대 장애 때 약 4.05 / 3.92 로 예비 파드 일부 Pending 가능, 살아 있는 파드가 처리 |
-| 커넥션 | 서비스 풀 10 · Keycloak 풀 30 · `max_connections` 300 | 풀 10 × (레플리카 + 롤링 1) 230 + 30 + 20 = 280. 측정 최대 131(레플리카 늘리기 전) |
-| 레플리카 | gateway · payment · product · order · user · store 2 · 나머지 1 · HPA 없음 | 구매 경로 이중화 — 주문 한 건이 거치는 서비스. 2 이상만 노드 분산(`ScheduleAnyway`) + PDB(`maxUnavailable: 1`) |
+| 커넥션 | 서비스 풀 10 · Keycloak 풀 30 · `max_connections` 300 | 풀 10 × (레플리카 + 롤링 1) 230 + 30 + 20 = 280. 측정 최대 131(레플리카 늘리기 전) → 2차 171 / 300 · 거부 0 |
+| 레플리카 | gateway · payment · product · order · user · store 2 · 나머지 1 · HPA 없음 | 구매 경로 이중화 — 주문 한 건이 거치는 서비스. 2 이상만 노드 분산(`ScheduleAnyway`) + PDB(`maxUnavailable: 1`). 2차(11/6) 파드 삭제 5xx 0 · 노드 drain 때 예비 파드 1개 Pending · 구매 경로 유지 |
 | 노드 | app t3.xlarge × 2 · db t3.medium | CPU 가 먼저 무너진 서비스 없음. 파드가 늘어도 노드는 그대로 |
 | NetworkPolicy | DB 티어 + 업무 티어(같은 티어 · monitoring) · gateway 8080 개방 | 다른 네임스페이스 → order · Keycloak 차단 실측(config #81) |
 
@@ -195,6 +196,6 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 
 | 작업 | 시점 |
 | --- | --- |
-| 2차 측정 · 메모리 requests 판단 · QA | 11/6 |
+| 2차 측정 · 메모리 requests 판단 · QA | 11/6 완료 — 값 변경 없음(Helm 주석만 config #97) |
 | CSP 강제 전환 · 문서 최신화 | 11/9 |
 | AWS 자원 전체 삭제 | 11/20 발표 후 |

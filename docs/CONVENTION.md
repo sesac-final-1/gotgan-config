@@ -186,7 +186,7 @@
 - 파드 배치: 업무 서비스 · gateway · Keycloak · 관측성 · ArgoCD는 `nodeSelector: { tier: app }`(Helm `deployment.yaml` 기본). MySQL · Redis만 `nodeSelector: { tier: db }` + `tolerations: [{ key: tier, value: db, effect: NoSchedule }]`
 - 파드 라벨 `tier`: DB에 접속하는 파드(업무 서비스 · Keycloak · 디버그용 mysql 클라이언트)는 `tier: backend`, MySQL · Redis는 `tier: db`. `app:` 라벨과 별개로 둘 다 붙인다
 - NetworkPolicy(`deploy/k8s/02-networkpolicy.yaml`, bootstrap이 configmap 직후 적용): `tier=db` 파드의 3306 · 6379 ingress는 네임스페이스 `sesac-gojigi`의 `tier=backend` 파드만, `tier=db` 파드 egress는 kube-dns 53뿐. 정책 이름은 `db-ingress-from-backend` · `db-egress-deny-except-dns`. 다른 네임스페이스(monitoring 등)에서 DB에 직접 붙지 않는다. 업무 티어(11/5): `tier=backend` 는 같은 티어 · `monitoring` 에서만(`backend-ingress-from-backend-monitoring`), gateway 8080 은 어디서나(`gateway-ingress-from-nlb`)
-- 이미지 태그: 커밋 SHA 7자리. `latest` 금지
+- 이미지 태그: 커밋 SHA 7자리. `latest` 금지. 외부 이미지는 패치 번호까지 고정(`keycloak:26.8.2`) — `26.8` 같은 움직이는 태그는 매일 생성 때 새 패치가 받아짐(11/6 Admin API 401)
 - 모든 컨테이너에 `resources.requests` 필수, 메모리 `limits` 필수
 - JVM 힙 상한은 Helm env `JAVA_TOOL_OPTIONS`(33%, admin 41%) — 이미지 값(75%)을 통째로 덮으므로 `ExitOnOutOfMemoryError` 도 함께 적는다. 힙 = max(256Mi, 라이브 × 2), 힙 + 힙 밖 + 약 180Mi ≤ limit
 
