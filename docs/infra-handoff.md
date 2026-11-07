@@ -106,7 +106,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 - **destroy 전에 LoadBalancer Service · PVC를 먼저 지워야** 고아 NLB · EBS가 남지 않습니다(워크플로가 처리, 손으로 지울 때도 같은 순서)
 - 노드 수 수동 조정(보조): `scripts/scale-nodes.sh up | down` — `sesac-gojigi-app`만 대상
 - apply · destroy 권한: 워크플로(Actions 역할) 또는 구지훈. **다른 팀원은 plan까지**, 예외로 `cicd/`는 이경석
-- **여러 서비스 재시작은 하나씩**: `kubectl rollout restart deploy/<서비스> -n sesac-gojigi` 후 `rollout status` 로 Ready 를 보고 다음 서비스로. 11/6 전 서비스를 한꺼번에 재시작했더니 CPU requests 100m 서비스 4개(user · payment · settlement · admin)와 order 가 startup probe(5초 × 36 = 180초) 를 넘겨 1회씩 재시작(OOM 아님 · 사용자 영향 없음). 분석: `_notion` 2026-11-07 분석 문서
+- **여러 서비스 재시작은 하나씩**: `kubectl rollout restart deploy/<서비스> -n sesac-gojigi` 후 `rollout status` 로 Ready 를 보고 다음 서비스로. 11/6 전 서비스를 한꺼번에 재시작했더니 CPU requests 100m 서비스 4개(user · payment · settlement · admin)와 order 가 startup probe(5초 × 36 = 180초) 를 넘겨 1회씩 재시작(OOM 아님 · 사용자 영향 없음). 분석: `_notion/05_트러블슈팅/2026-11-06_동시재기동_startup_probe실패·drain복구5분_CPU경쟁.md`
 
 ---
 
