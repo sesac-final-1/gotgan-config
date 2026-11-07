@@ -1,0 +1,32 @@
+{{- $admin := index .Values.services "admin-service" }}
+{{- if and $admin $admin.serviceAccount }}
+---
+# F-1 장애 시연 — admin-service 가 이 네임스페이스의 파드를 조회 · 삭제한다 (11/7, 구지훈). 노드 · 시크릿 · 다른 네임스페이스 권한 없음
+# 내리기 자체는 앱 설정 APP_CHAOS_ENABLED(기본 false)로 막는다. 레플리카 변경 권한은 주지 않는다(ArgoCD selfHeal 이 되돌림 — 파드 삭제만)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: admin-service-chaos
+  namespace: {{ .Values.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]   # 원하는 레플리카 수(spec.replicas) 읽기만
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: admin-service-chaos
+  namespace: {{ .Values.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: admin-service                         # serviceaccount.yaml 이 만드는 IRSA 계정과 같은 계정 — 토큰 자동 마운트는 기본(켜짐)
+    namespace: {{ .Values.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: admin-service-chaos
+{{- end }}
