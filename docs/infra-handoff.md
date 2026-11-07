@@ -106,6 +106,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 - **destroy 전에 LoadBalancer Service · PVC를 먼저 지워야** 고아 NLB · EBS가 남지 않습니다(워크플로가 처리, 손으로 지울 때도 같은 순서)
 - 노드 수 수동 조정(보조): `scripts/scale-nodes.sh up | down` — `sesac-gojigi-app`만 대상
 - apply · destroy 권한: 워크플로(Actions 역할) 또는 구지훈. **다른 팀원은 plan까지**, 예외로 `cicd/`는 이경석
+- **여러 서비스 재시작은 하나씩**: `kubectl rollout restart deploy/<서비스> -n sesac-gojigi` 후 `rollout status` 로 Ready 를 보고 다음 서비스로. 11/6 전 서비스를 한꺼번에 재시작했더니 CPU requests 100m 서비스 4개(user · payment · settlement · admin)와 order 가 startup probe(5초 × 36 = 180초) 를 넘겨 1회씩 재시작(OOM 아님 · 사용자 영향 없음). 분석: `_notion` 2026-11-07 분석 문서
 
 ---
 
@@ -177,6 +178,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 | SES | 샌드박스 — 수신자도 인증 필요(`app` 변수 `ses_recipient_emails`), Gmail 발신이라 스팸함 가능 |
 | 비용 확인 | 교육 조직 연계 계정이라 Budgets · Cost Explorer 불가 → Tag Editor로 `Project=sesac-gojigi` 검색 |
 | 로컬 Terraform | **1.16.5 고정**, 잠금 파일은 `terraform providers lock -platform=windows_amd64 -platform=linux_amd64` |
+| 노드 1대 장애(drain) 복구 | **알려진 한계** — 남은 노드에서 여러 JVM 이 동시에 떠 구매 경로 복구 약 5분 · 예비 파드 일부 Pending(CPU requests 합 약 4.05 / 3.92). 그동안 남은 파드로 구매 경로 유지(11/6 실측). 설정은 측정 뒤 바꾸지 않기로 함 — 고치려면 startup probe 여유(실패 36 → 60 · timeout 1 → 3초) |
 
 ---
 
