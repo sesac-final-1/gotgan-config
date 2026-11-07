@@ -135,7 +135,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 - PR로 올리면 plan은 CI가, apply는 다음 08:00 스케줄(또는 구지훈)이 합니다
 - Prometheus · Loki 볼륨: `storageClassName: ebs-sc` (gp3 · 암호화 · `WaitForFirstConsumer`) · 노드 `tier=app`
 - `grafana-secret`(admin-password) · `alert-webhook-secret`(url)은 `secrets-sync`가 `monitoring` 네임스페이스에 만듭니다 — `grafana.yaml`에서 참조만 하면 됨
-- bootstrap은 `kubectl apply -f deploy/observability/`(하위 폴더 미포함) — dashboards · alerting을 ConfigMap으로 바꾸면 `-R`로 바꿔야 합니다
+- bootstrap은 `dashboards/` · `alerting/` 폴더를 각각 `grafana-dashboards` · `grafana-alerting` ConfigMap으로 만든 뒤 `kubectl apply -f deploy/observability/`(하위 폴더 미포함)를 합니다 — 새 대시보드 · 규칙은 폴더에 파일만 넣으면 됩니다
 - log-archive Lambda: 버킷 `sesac-gojigi-log-archive-4380`, SSM `/sesac-gojigi/dev/s3/log-archive-bucket`
 - **파드는 IRSA 없이는 AWS 권한이 없습니다**(IMDS 차단) — CloudWatch를 읽는 컴포넌트는 반드시 IRSA로
 
