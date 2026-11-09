@@ -131,7 +131,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 
 ## 7. 박지연 (로깅 · 관측성) 연결점
 
-- **grafana IRSA**는 `cluster/irsa_grafana.tf`(`sesac-gojigi-grafana-irsa`, 11/6) — 클러스터와 함께 매일 재생성됩니다. Lambda 로그 · CloudWatch 지표 읽기 전용이고, `grafana.yaml` 의 ServiceAccount 연결 · CloudWatch 데이터소스는 역할이 생긴 뒤 추가합니다
+- **grafana IRSA**는 `cluster/irsa_grafana.tf`(`sesac-gojigi-grafana-irsa`, 11/6) — 클러스터와 함께 매일 재생성됩니다. Lambda 로그 · CloudWatch 지표 읽기 전용이고, `grafana.yaml` 의 ServiceAccount 어노테이션 · CloudWatch 데이터소스(uid `cloudwatch`)로 연결합니다
 
 - PR로 올리면 plan은 CI가, apply는 다음 08:00 스케줄(또는 구지훈)이 합니다
 - Prometheus · Loki 볼륨: `storageClassName: ebs-sc` (gp3 · 암호화 · `WaitForFirstConsumer`) · 노드 `tier=app`
