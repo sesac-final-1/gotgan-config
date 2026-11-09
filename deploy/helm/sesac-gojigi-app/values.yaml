@@ -110,7 +110,7 @@ services:
   # ── admin (jihoon-devstu)
   admin-service:
     repository: sesac-gojigi-admin
-    tag: "d6653d1"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8088
     env:
       - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=41 -XX:+ExitOnOutOfMemoryError" }   # 라이브 138Mi × 2 → 힙 320Mi. 11/5 S5 에서 75%(557Mi)까지 커지며 OOMKilled
