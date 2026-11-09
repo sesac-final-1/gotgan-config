@@ -72,7 +72,7 @@
       "id": 2,
       "type": "stat",
       "title": "DB 커넥션 수 (전체)",
-      "description": "모든 서비스가 MySQL에 열어 둔 DB 커넥션(HikariCP)의 합계입니다. MySQL은 최대 151개까지 받고 Keycloak 연결도 여기에 더해지므로, 120을 넘으면 노랑, 140을 넘으면 빨강으로 바뀝니다. 레플리카를 늘리면 파드마다 풀 크기(기본 10)만큼 늘어납니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
+      "description": "모든 서비스가 MySQL에 열어 둔 DB 커넥션(HikariCP)의 합계입니다. MySQL은 최대 300개까지 받고 Keycloak 연결도 여기에 더해지므로, 240을 넘으면 노랑, 270을 넘으면 빨강으로 바뀝니다. 레플리카를 늘리면 파드마다 풀 크기(기본 10)만큼 늘어납니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -111,11 +111,11 @@
               },
               {
                 "color": "yellow",
-                "value": 120
+                "value": 240
               },
               {
                 "color": "red",
-                "value": 140
+                "value": 270
               }
             ]
           },
@@ -1077,7 +1077,7 @@
       "id": 18,
       "type": "timeseries",
       "title": "Pending 커넥션",
-      "description": "DB 커넥션을 기다리는 요청 수입니다. 0보다 크면 풀이 모자란 것입니다. 풀을 키우기 전에, 위쪽 DB 커넥션 수 (전체)가 MySQL 한도 151에 얼마나 가까운지 먼저 확인합니다.",
+      "description": "DB 커넥션을 기다리는 요청 수입니다. 0보다 크면 풀이 모자란 것입니다. 풀을 키우기 전에, 위쪽 DB 커넥션 수 (전체)가 MySQL 한도 300에 얼마나 가까운지 먼저 확인합니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
