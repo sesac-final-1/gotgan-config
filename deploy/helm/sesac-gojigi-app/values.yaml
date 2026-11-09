@@ -121,7 +121,7 @@ services:
   # ── chat (jihoon-devstu) — 1:1 채팅 (10/27). AWS 호출 없음 → IRSA 없음. WebSocket 연결 수는 지표 chat_ws_sessions
   chat-service:
     repository: sesac-gojigi-chat
-    tag: "2748b04"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8089
     resources:
       requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
