@@ -3,7 +3,8 @@
 #   enable_cluster_creator_admin_permissions = false — 매일 08:00 클러스터를 만드는 주체가 Actions 역할이라 true 면 그 역할만 관리자가 된다. 생성자를 access_entries 에도 적으면 중복 오류
 # 노드 그룹 2개 (3티어, 10/13 3차 · 10/14 사이징 조정):
 #   app = t3.xlarge ×2 (4 vCPU · 16GiB · 파드 58/노드, AL2023, min 0 · max 3 · desired 2, 프라이빗 2a · 2c, gp3 40GiB 암호화, 라벨 tier=app)
-#         — gateway ×2 · 업무 서비스 8 · Keycloak · 관측성 5 · ArgoCD 5 · 시스템 ≈ 35 파드 · requests 약 9.8Gi · 실사용 약 12~13Gi (할당 약 30Gi, 노드 1대로도 수용)
+#         — 처음 계획(10/14): gateway ×2 · 업무 서비스 8 · Keycloak · 관측성 5 · ArgoCD 5 · 시스템 ≈ 35 파드 · requests 약 9.8Gi
+#         — 11/10 실측: 구매 경로 5개 · gateway 레플리카 2(11/5) · chat 추가 · ArgoCD 7 로 app 노드 파드 43개 · requests 약 11.6Gi (할당 약 28.9Gi) · CPU requests 합 약 4.23 vCPU 라 노드 1대(할당 약 3.9 vCPU)로는 부족 — 2대 유지
 #         — 10/14 t3.large ×2 에서 조정: 실사용 여유 1~2Gi · 08:00 JVM 동시 기동 CPU 크레딧 · N-1 시연 불가. 약 $0.208/h × 2 → 6주 약 $245
 #   db  = t3.medium ×1 (AL2023, min 0 · max 1 · desired 1, 프라이빗 2a 고정, gp3 20GiB 암호화, 라벨 tier=db + 테인트 tier=db:NoSchedule)
 #         — MySQL · Redis 만 (toleration). EBS gp3 PVC 가 2a 에 묶이므로 서브넷은 private_subnets[0](2a) 하나. 약 $0.052/h → 6주 약 $31
