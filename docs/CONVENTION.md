@@ -57,7 +57,7 @@
 | 항목 | 확정 규칙 | 관련 절 |
 |---|---|---|
 | 서비스 구성 | Spring 10개(gateway · user · store · product · order · payment · review · settlement · admin · chat — chat 은 10/27 추가) + Keycloak | 2-1 · 3-2 |
-| admin-service | 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합. 자기 DB는 신고 · 조치 이력(admindb, ADR-0001 예외 10/26)만 · 실시간 알림 센터(10/27) | 2-1 · 2-4 · 2-7 |
+| admin-service | 조합 계층 — 관리자 API 진입점, 각 서비스 `/internal/**`을 호출해 조합. 자기 DB는 신고 · 조치 이력(admindb, ADR-0001 예외 10/26) · 장애 시연 내리기 기록(`chaos_event`, 11/7)만 · 실시간 알림 센터(10/27) | 2-1 · 2-4 · 2-7 |
 | 카테고리 · 수수료 | 카테고리는 product-service, 카테고리별 수수료는 settlement-service | 2-1 · 3-2 |
 | 대시보드 | 판매자는 store, 관리자는 admin 안에서 조합 — 병렬 호출 + 실패 영역만 빼고 부분 응답 | 2-7 |
 | 서비스 간 호출 | Resilience4j 표준 (타임아웃 · 서킷 브레이커 · 멱등 GET만 재시도 · 폴백) | 2-7 |
@@ -78,7 +78,7 @@
 
 ### 1-1. 브랜치
 
-- `main` — 보호 브랜치. 직접 push 금지, PR + 승인 1명 + CI 통과 후 Squash merge
+- `main` — 보호 브랜치(Rulesets `pull_request_ruleset`). 직접 push 금지, PR + 승인 1명 + 필수 검사(backend · frontend `ci-ok`, config `SonarCloud Code Analysis`) 통과 후 머지 — 저장소 규칙은 merge · squash · rebase 모두 허용, 실제 `main` 이력은 머지 커밋(Merge pull request)
 - 작업 브랜치: `feat/{도메인}-{작업}` (예: `feat/order-payment-verify`, `feat/infra-eks-cluster`)
 - 그 외: `fix/` · `refactor/` · `docs/` · `chore/`(빌드 · 설정)
 - 도메인 값: `auth` `user` `store` `product` `order` `payment` `review` `settlement` `admin` `chat`(10/27) `gateway` `front`(프론트 공통) `infra`(Keycloak 설정 포함, 예: `feat/infra-keycloak-realm`) `cicd` `obs`(관측성) `sls`(서버리스)
@@ -95,11 +95,10 @@
 
 - 이슈 제목: `[요구사항 ID] 작업` — 예: `[ORD-06] 결제 검증`
 - PR 제목: 커밋 메시지 형식과 동일
-- PR 본문 템플릿:
-  - 개요 — 관련 요구사항 ID · 이슈 링크
-  - 작업 내용 — 변경 사항 개조식
-  - 테스트 — 확인 방법 (curl · 화면 · 테스트 코드)
-  - 팀원 확인 사항 — 다른 팀원이 알아야 할 것
+- PR 본문 템플릿(`.github/pull_request_template.md`, 세 저장소 같음):
+  - 🚀 개요 — 관련 요구사항 ID · 이슈 링크 · 무엇을 · 왜 바꿨나
+  - 🛠️ 작업 내용 — 변경마다 이전 → 이후 · 이유 · 파일 표
+  - 📋 팀원 가이드 — 담당자별 알아야 할 것 · 로컬 환경 · 검증(확인 방법 → 기대 결과) · 리스크
 - **프론트 · 다른 서비스에 영향 있는 변경(응답 형식 · 에러 코드 · 이벤트 payload · API 경로)은 PR 제목에 `[영향]` 표시**, 영향받는 담당자 리뷰 필수
 - PR 하나에 기능 하나, 변경 300줄 이하 권장
 - main 대상 PR은 CI에서 **SonarQube Cloud 품질 게이트**를 통과해야 머지 (이슈는 PR 코멘트로 확인)
@@ -136,7 +135,7 @@
 - 로그 메시지에 업무 키 포함: `orderNo` · `sagaId`는 MDC(order · payment), 그 외(`paymentId` 등)는 메시지
 - 예외 로그는 `GlobalExceptionHandler` 한 곳에서 남김
 - **비밀번호 · 토큰 · 포트원 키 · 카드 정보 · 이메일 · 전화 · 주소는 info 이상에 남기지 않음**
-- 형식은 공통 `logback-spring.xml` — 콘솔 `[traceId,spanId,userId]`, k8s는 Loki 전송(본문 JSON · 라벨 `app` · `namespace` · `level` · 배치 10초). 형식 임의 변경 금지
+- 형식은 공통 모듈 `libs/common-logging`의 `logback-base.xml`(서비스 `logback-spring.xml`은 include만) — 콘솔 `[traceId,spanId,userId]`, k8s는 Loki 전송(본문 JSON · 라벨 `app` · `namespace` · `level` · 배치 10초). 형식 임의 변경 금지
 
 ---
 
@@ -155,7 +154,7 @@
 | SQS 큐 | `sesac-gojigi-{소비자}-{도메인}-events` | `sesac-gojigi-settlement-order-events` |
 | DLQ | 큐 이름 + `-dlq` | `sesac-gojigi-settlement-order-events-dlq` |
 | IAM 역할 (IRSA) | `sesac-gojigi-{service}-irsa` | `sesac-gojigi-order-irsa` |
-| SSM 파라미터 | `/sesac-gojigi/dev/{종류}/{이름}` | `/sesac-gojigi/dev/sqs/notification-queue-arn` |
+| SSM 파라미터 | `/sesac-gojigi/dev/{종류}/{이름}` | `/sesac-gojigi/dev/sqs/notification-order-queue-arn` |
 | S3 버킷 | `sesac-gojigi-{용도}-{계정ID 끝 4자리}` (전역 유일) | `sesac-gojigi-images-1234`(prefix `products/` · `reviews/` · `stores/`) · `sesac-gojigi-seller-docs-1234` · `sesac-gojigi-reports-1234` · `sesac-gojigi-log-archive-1234` |
 | DynamoDB | `sesac-gojigi-{용도}` | `sesac-gojigi-notifications` · `sesac-gojigi-settlement-reports` · `sesac-gojigi-inbox`(알림 센터 알림함, 10/27) (그 외 테이블 없음) |
 
