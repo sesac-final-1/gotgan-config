@@ -10,12 +10,12 @@ JSON 으로 내보내 여기에 커밋하고 ConfigMap 으로 프로비저닝 �
 | `jvm.json` | **JVM · 자원 (측정용)** — k6 부하 측정 때 한 화면에서: 요약 Stat(DB 커넥션 수 (전체) / 300 · 메모리 사용률 (최대) · Pending 커넥션 (최대) · 재시작 (1h) · OOMKilled · 노드 CPU (최대)) · 메모리 사용률 (limit 대비) · Heap 사용률 · Non-heap 메모리 · Old Gen 사용률 (GC 후) · GC Pause 비율 · 최대 · Active · Pending 커넥션 · 커넥션 획득 시간 · Timeout · CPU 사용률 (requests 대비) · 노드 CPU · Live 스레드. `$app` 다중 선택. 쿼리는 grafana.com 4701 · 12900 · 15760 을 우리 라벨로 옮김(CPU limit 없어 throttling 패널 없음) | 13장 · 11/2 확장계획 5-5 |
 | `business.json` | **비즈니스** — 요약 Stat(주문 생성 · 주문 실패 · 결제 승인 · 결제 실패 · Saga 실패 · 결제 금액 불일치) · 분당 주문 · 결제(성공 · 실패) · 실패 상태 코드 · 분당 클레임 · Saga 보상 · 재시도 · 실패 · 결제 이상. order · payment 요청 지표와 `saga_*` · `payment_*` 로 계산. DLQ 적재 수는 `lambda.json` | 13장 · 스펙 비즈니스 대시보드 |
 | `cluster.json` | **클러스터** — 요약 Stat(노드 수 · NotReady 노드 · 노드 CPU · 메모리 최대 · 메모리 requests 최대 · 비정상 파드) · 노드별 CPU · 메모리 사용률 · CPU · 메모리 requests 비율 · 실행 중 파드 수 · 파드별 CPU · 메모리 · 파드 배치 표 · 네임스페이스별 CPU · 메모리 · 컨테이너 재시작 · 파드 상태 사유. `$namespace` 는 파드 패널에만 적용. node-exporter 없이 cAdvisor(`id="/"`) · kube-state-metrics 로 계산, 네임스페이스 패널 쿼리는 grafana.com 15757 을 우리 라벨로 옮김 | 13장 |
-| `lambda.json` | **Lambda · DLQ** — 요약 Stat(Lambda 호출 · 오류 · 스로틀 · DLQ 쌓인 메시지) · 함수별 호출 · 오류 · 최대 소요 시간 · 스로틀 · 큐별 DLQ 메시지 · 최근 오류 로그(Logs Insights). 데이터소스 `cloudwatch`(IRSA, 11/10) |
+| `lambda.json` | **Lambda · DLQ** — 요약 Stat(Lambda 호출 · 오류 · 스로틀 · DLQ 쌓인 메시지) · 함수별 호출 · 오류 · 최대 소요 시간 · 스로틀 · 큐별 DLQ 메시지 · 최근 오류 로그(Logs Insights). 데이터소스 `cloudwatch`(IRSA, 11/10) | config #101 · #104 |
 
 ## 추가 · 수정 · 반영
 
 - 올리는 방법: bootstrap 이 이 폴더를 `grafana-dashboards` ConfigMap 으로 만든다(`--from-file`, 이 README 도 들어가지만 Grafana 는 `.json` 만 읽음) → `grafana.yaml` provider 가 `/etc/grafana/dashboards` 에서 등록
-- 화면에서 만든 · 고친 대시보드는 Grafana 가 다시 뜨면 사라진다(emptyDir) → 오른쪽 위 Export → JSON 으로 내보내 여기 커밋. 데이터소스는 uid(`prometheus` · `loki` · `zipkin`)로 지정
+- 화면에서 만든 · 고친 대시보드는 Grafana 가 다시 뜨면 사라진다(emptyDir) → 오른쪽 위 Export → JSON 으로 내보내 여기 커밋. 데이터소스는 uid(`prometheus` · `loki` · `zipkin` · `cloudwatch`)로 지정
 - 낮에 클러스터에서 바로 확인할 때:
 
 ```bash

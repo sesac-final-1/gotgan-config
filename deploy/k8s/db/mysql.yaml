@@ -57,7 +57,7 @@ spec:
             - --innodb-buffer-pool-size=256M             # requests 1Gi 안에서
             - --max-connections=300                      # 기본 151 은 11/4 k6 에서 닿음(이슈 21). 앱 풀 10 × (레플리카 + 롤링 1) 합 230 + Keycloak 30 + 여유 20 → 280 → 300 (11/5 구매 경로 이중화)
           envFrom:
-            - secretRef: { name: mysql-secret }        # MYSQL_ROOT_PASSWORD + *_DB_PASSWORD 8개 → init-schemas.sh 가 읽음
+            - secretRef: { name: mysql-secret }        # MYSQL_ROOT_PASSWORD + *_DB_PASSWORD 10개 → init-schemas.sh 가 읽음
           env:
             - { name: TZ, value: Asia/Seoul }
           ports:
@@ -83,7 +83,7 @@ spec:
             failureThreshold: 3
           volumeMounts:
             - { name: data, mountPath: /var/lib/mysql }
-            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }   # 최초 1회 — 스키마 8개 · 계정
+            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }   # 최초 1회 — 스키마 10개 · 계정
       volumes:
         - name: init
           configMap:

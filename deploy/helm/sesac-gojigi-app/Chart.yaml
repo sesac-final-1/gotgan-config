@@ -1,6 +1,6 @@
 apiVersion: v2
 name: sesac-gojigi-app
-description: 곳간 GOTGAN 업무 서비스 9개 — Deployment · Service · ServiceAccount (ArgoCD 가 이 차트를 동기화)
+description: 곳간 GOTGAN 서비스 10개(gateway + 업무 9) — Deployment · Service · ServiceAccount · PDB · 장애 시연 Role (ArgoCD 가 이 차트를 동기화)
 type: application
 version: 0.1.0
 appVersion: "0.0.1"

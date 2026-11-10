@@ -33,6 +33,7 @@
 | `OrderItemConfirmed` | order-events | order | settlement(정산 적재) · review(리뷰 작성 자격) · user(5% 포인트 적립 · 누적 구매액 → 등급) | orderItemId · orderNo · buyerId · storeId · productId · productName · categoryId(하위) · topCategoryId(상위 — 판매수수료 기준) · itemAmt · earnedPoint · confirmedAt · buyerDisplayName · optionName · thumbnailUrl — productName · topCategoryId 는 10/16 추가(settlement 정산 상세 · 수수료율, settlement 는 product 를 동기 호출하지 않음). earnedPoint(상품주문 적립 포인트, 주문 시점 계산)는 10/27 추가 — user 가 이 값대로 적립, settlement 는 쓰지 않음(모르는 필드 무시). buyerDisplayName(orders.orderer_display_name — 닉네임, 없으면 마스킹 실명) · optionName · thumbnailUrl(order_item 주문 시점 스냅샷, 옵션 없는 상품 · 썸네일 없으면 null)은 10/28 추가 — review 작성 자격 스냅샷(공개 리뷰 작성자 이름 · 마이페이지 리뷰 화면, review 는 order · user · product 를 호출하지 않음), settlement · user 는 쓰지 않음 |
 | `OrderItemCancelled` · `OrderItemReturned` | order-events | order | 알림 Lambda(취소/반품 완료 메일) · admin 알림 센터(`ORDER_CANCELLED` · `ORDER_RETURNED`, 10/27) | orderItemId · orderNo · buyerId · ordererEmail · ordererName · productName · optionName · refundAmt · restoredPoint · revokedPoint — buyerId · ordererName · productName · optionName · restoredPoint · revokedPoint 는 10/21 추가(취소/반품 완료 메일) |
 | `OrderClaimRequested` | order-events | order | admin 알림 센터(판매자에게 `CLAIM_REQUESTED` 화면 알림 — 3영업일 내 처리) — 11/03 추가(QA Q-구-15) | claimId · claimType(`RETURN` · `EXCHANGE`) · orderItemId · itemNo · orderNo · storeId · storeName · productName · optionName · reasonCode · requestedAt — 구매자 반품 · 교환 신청 때만(취소는 판매자 확인 없이 바로 끝나 `OrderItemCancelled`, 철회는 발행 안 함). requestedAt 은 Asia/Seoul 오프셋 ISO-8601. 철회 후 다시 신청하면 새 claimId 로 또 발행 |
+| `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda · admin 알림 센터(스토어에 `SETTLEMENT_PAID`, 10/27) | settlementId · storeId · week · payoutAmt · sellerEmail · storeName · weekStart · weekEnd · paidAt · salesAmt · commissionAmt · paymentFeeAmt · items[{orderNo · productName · confirmedAt · itemAmt · commissionRate · commissionAmt · paymentFeeAmt · payoutAmt}] — 명세서 내용을 모두 담음(10/21 방식 B, backend #57). 뒤 필드는 추가분. 항목 JSON 이 200KB 를 넘으면 `items` 대신 `itemsGzip`(gzip + Base64) — SNS 한도 256KB, 약 900건부터(11/5, backend #240) |
 
 order 이벤트 필드 (10/21 추가분, 값은 모두 주문 시점 스냅샷)
 
@@ -40,7 +41,6 @@ order 이벤트 필드 (10/21 추가분, 값은 모두 주문 시점 스냅샷)
 - `optionName`: 옵션 없는 상품이면 `null`
 - `usedPoint`(OrderPaid): 주문 전체 사용 포인트(`orders.used_point`) · `itemAmt`: 상품주문 금액(`order_item.item_amt`)
 - `restoredPoint`: 돌려준 사용 포인트(`order_item.used_point`) · `revokedPoint`: 회수한 적립 포인트 — 10/27부터 항상 0 (적립이 구매확정 때이고 취소 · 반품은 구매확정 전에만 되므로 회수할 적립이 없다)
-| `SettlementPaid` | settlement-events | settlement | 정산 명세서 Lambda · admin 알림 센터(스토어에 `SETTLEMENT_PAID`, 10/27) | settlementId · storeId · week · payoutAmt · sellerEmail · storeName · weekStart · weekEnd · paidAt · salesAmt · commissionAmt · paymentFeeAmt · items[{orderNo · productName · confirmedAt · itemAmt · commissionRate · commissionAmt · paymentFeeAmt · payoutAmt}] — 명세서 내용을 모두 담음(10/21 방식 B, backend #57). 뒤 필드는 추가분. 항목 JSON 이 200KB 를 넘으면 `items` 대신 `itemsGzip`(gzip + Base64) — SNS 한도 256KB, 약 900건부터(11/5, backend #240) |
 
 ## 순서 규칙 (10/15 결정 — A안)
 
