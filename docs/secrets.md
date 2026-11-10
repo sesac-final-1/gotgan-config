@@ -29,6 +29,7 @@
 | `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET` | 소셜 로그인 — realm IdP `naver` (OAuth 2.0) | 〃 | NAVER Developers → 애플리케이션 → Client ID · Client Secret | 이경석 |
 | `PORTONE_API_SECRET` | payment-service (포트원 V2 API) | `payment-service-secret` → `PORTONE_API_SECRET` | 포트원 콘솔 → 결제 연동 → API Secret (테스트 채널) | 구지훈 |
 | `PORTONE_WEBHOOK_SECRET` | payment-service 웹훅 서명 검증 | `payment-service-secret` → `PORTONE_WEBHOOK_SECRET` | 포트원 콘솔 → 웹훅 설정 | 구지훈 |
+| `ARGOCD_ADMIN_PASSWORD` | ArgoCD admin 비밀번호 고정 — bootstrap 5-1 단계가 bcrypt 해시로 `argocd-secret` 에 넣음 (없으면 초기 랜덤 비밀번호 유지) | — (`argocd-secret` 의 `admin.password` 를 bootstrap 이 직접 패치, secrets-sync 아님) | 팀이 정함 | 이경석 |
 | `GRAFANA_ADMIN_PASSWORD` | Grafana 로그인 | `grafana-secret`(monitoring) → `admin-password` | 무작위 24자 | 박지연 |
 | `ALERT_WEBHOOK_URL` | Grafana Alerting → Discord/Slack | `alert-webhook-secret`(monitoring) → `url` | Discord 채널 → 연동 → 웹훅 URL | 박지연 |
 

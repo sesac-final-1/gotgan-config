@@ -2,7 +2,7 @@
 
 - `realm-gotgan.json`: 콘솔에서 export 한 realm 을 커밋하되 **gotgan-backend 의 client secret 값은 넣지 않는다**. JSON 에는 자리표시자 `"secret": "${GOTGAN_BACKEND_CLIENT_SECRET}"` 만 있고, Keycloak 이 `--import-realm` 할 때 같은 이름의 환경 변수로 치환한다. 그 환경 변수는 K8s Secret `keycloak-secret`(envFrom) 에서 오고, `keycloak-secret` 은 GitHub Secret `KEYCLOAK_CLIENT_SECRET` 을 `secrets-sync` 워크플로가 만든다. user-service 는 같은 값을 `user-service-secret` 의 `KEYCLOAK_CLIENT_SECRET` 으로 받는다 (목록: `docs/secrets.md`).
 - 시연 계정(ADMIN 포함)은 JSON 이 아니라 `scripts/keycloak-seed.sh` 로 만든다 (비밀 값 커밋 금지 — 아래 "시드 계정"). 클러스터는 매일 빈 DB 에서 다시 뜨므로 realm import + 시드 스크립트가 매일 실행된다.
-- 클러스터: `bootstrap` 워크플로가 `kubectl create configmap keycloak-realm --from-file=realm-gotgan.json` → `keycloak.yaml` 적용. 관리 콘솔은 `kubectl port-forward svc/keycloak 8080:8080 -n sesac-gojigi` → http://localhost:8080/admin (로컬 포트는 8080 고정 — `KC_HOSTNAME_ADMIN`)
+- 클러스터: 이미지 `quay.io/keycloak/keycloak:26.8.2` — 패치 번호까지 고정(`26.8` 은 움직이는 태그라 11/6 26.8.2 가 받아져 Admin API 401, config #89). `bootstrap` 워크플로가 `kubectl create configmap keycloak-realm --from-file=realm-gotgan.json` → `keycloak.yaml` 적용. 관리 콘솔은 `kubectl port-forward svc/keycloak 8080:8080 -n sesac-gojigi` → http://localhost:8080/admin (로컬 포트는 8080 고정 — `KC_HOSTNAME_ADMIN`)
 - 로컬: docker compose 가 `start-dev --import-realm` 으로 같은 파일을 읽는다 → http://localhost:8180 (admin / admin). `GOTGAN_BACKEND_CLIENT_SECRET` 은 compose 기본값(`local-client-secret`) 으로 치환된다
 - ⚠️ `--import-realm` 은 **realm 이 이미 있으면 건너뛴다**. JSON 을 바꾼 뒤 로컬에 반영하려면 keycloakdb 를 비우거나(compose 볼륨 삭제) 콘솔에서 realm 을 지우고 재기동. 클러스터는 매일 새 DB 라 다음 생성 때 자동 반영
 
@@ -16,7 +16,7 @@
 | Brute Force | 연속 5회 실패 시 임시 잠금 (1분부터 늘어나 최대 15분, 영구 잠금 없음) |
 | Realm 역할 | `BUYER`(기본 역할 `default-roles-gotgan` 에 포함 → 새 사용자 자동 부여) · `SELLER`(입점 승인 시 user-service 가 추가) · `ADMIN`(시드로만) |
 | User Profile | `user_id` · `store_id` 선언 — **관리자만 보기 · 편집** (Keycloak 24+ 는 선언 안 된 속성을 저장하지 않음). 이름(firstName · lastName)은 선택값 — 주인은 userdb |
-| 클라이언트 `gotgan-backend` | confidential · Direct Access Grants 켬 · Standard Flow 끔 · 서비스 계정 켬 |
+| 클라이언트 `gotgan-backend` | confidential · Direct Access Grants 켬 · Standard Flow 켬(소셜 로그인 — 아래 절, PKCE S256) · 서비스 계정 켬 |
 | 서비스 계정 권한 | `realm-management` 의 `manage-users` · `view-realm` — 가입(계정 생성) · SELLER 부여 · 이용정지(enabled) · store_id 저장 |
 | Access Token 클레임 | `user_id`(long) · `store_id`(long, 판매자만) · `roles`(realm 역할 목록) |
 
@@ -48,6 +48,7 @@
 - 실행: bootstrap 3-1 단계 `kubectl exec -i -n sesac-gojigi deploy/keycloak -- bash -s < scripts/keycloak-seed.sh` — 파드 안 `kcadm.sh` 와 환경 변수(`keycloak-secret`)를 쓴다. 로컬은 `docker compose exec -T keycloak bash -s < ../gotgan-config/scripts/keycloak-seed.sh`
 - 비밀번호: GitHub Secret `SEED_ADMIN_PASSWORD` · `SEED_DEMO_PASSWORD` → secrets-sync → `keycloak-secret`. 비어 있으면 시드를 건너뛴다 (bootstrap 실패 아님). 비밀번호 정책(8자 · 영문 · 특수문자)을 지켜야 한다
 - 멱등: 이미 있는 계정은 비밀번호를 건드리지 않고 속성 · 역할만 맞춘다 — bootstrap 을 다시 돌려도 안전
+- 계정 외에 매일 하는 설정: master realm `frontendUrl`(아래 관리 콘솔) · `gotgan-backend` 기본 스코프에 `kc-admin-api` 추가 — 26.8.2 부터 Admin API 토큰에 이 스코프가 있어야 한다(없으면 가입 · 탈퇴 · 정지 401, config #90). 시드 비밀번호가 없어도 이 두 가지는 실행
 - 이미 떠 있는 클러스터에 시크릿을 새로 넣었다면 Keycloak 파드 환경 변수 갱신이 필요 (`kubectl rollout restart deployment/keycloak -n sesac-gojigi`). 매일 생성되는 클러스터는 secrets-sync 가 먼저 돌아 자동 반영
 - 검증 (Keycloak 26.8 임시 컨테이너, 2026-10-19): 1회차 6개 생성 · 2회차 전부 "이미 있음" · 시드 비밀번호 없으면 건너뜀 · 6개 계정 로그인 토큰의 `user_id` · `store_id` · 역할 확인
 
