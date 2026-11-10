@@ -60,7 +60,7 @@ services:
   # ── product (VoC-100)
   product-service:
     repository: sesac-gojigi-product
-    tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "b93975f"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8083
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
     resources:
