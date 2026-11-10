@@ -8,8 +8,9 @@ JSON 으로 내보내 여기에 커밋하고 ConfigMap 으로 프로비저닝 �
 | `logs.json` | **로그 대시보드** — `$app`(서비스) · `$level` · 검색어 · traceId · userId 로 골라 보기. 레벨별 로그량 · 서비스별 ERROR · WARN/ERROR 많이 낸 로거 Top 10 · 응답 오류 코드 Top 10 · 로그 목록 · 사용자 한 명의 요청. 기본 1시간 | 10/22 노션 로깅 공유 4절 |
 | `services.json` | **서비스 (RED)** — 요약 Stat(게이트웨이 기준 RPS · 에러율 (5xx) · 요청 제한 (429) · 평균 · p95 응답 시간) · 서비스별 RPS · 에러율 (5xx) · p95 · 평균 · 최대 응답 시간(선 → Logs 링크) · 느린 API · 오류 많은 API Top 10 · 게이트웨이 라우트별 RPS · **429** · p95 · 채팅 WebSocket 세션. `$app` 다중 선택, `/actuator` 제외. p95 는 backend slo 구간 8개(`_bucket`)로 계산 — backend 배포 전에는 비어 있음 | 13장 · 노션 11/02 게이트웨이 요청 제한 |
 | `jvm.json` | **JVM · 자원 (측정용)** — k6 부하 측정 때 한 화면에서: 요약 Stat(DB 커넥션 수 (전체) / 300 · 메모리 사용률 (최대) · Pending 커넥션 (최대) · 재시작 (1h) · OOMKilled · 노드 CPU (최대)) · 메모리 사용률 (limit 대비) · Heap 사용률 · Non-heap 메모리 · Old Gen 사용률 (GC 후) · GC Pause 비율 · 최대 · Active · Pending 커넥션 · 커넥션 획득 시간 · Timeout · CPU 사용률 (requests 대비) · 노드 CPU · Live 스레드. `$app` 다중 선택. 쿼리는 grafana.com 4701 · 12900 · 15760 을 우리 라벨로 옮김(CPU limit 없어 throttling 패널 없음) | 13장 · 11/2 확장계획 5-5 |
-| `business.json` | **비즈니스** — 요약 Stat(주문 생성 · 주문 실패 · 결제 승인 · 결제 실패 · Saga 실패 · 결제 금액 불일치) · 분당 주문 · 결제(성공 · 실패) · 실패 상태 코드 · 분당 클레임 · Saga 보상 · 재시도 · 실패 · 결제 이상. order · payment 요청 지표와 `saga_*` · `payment_*` 로 계산. DLQ 적재 수는 CloudWatch 연결 뒤 추가 | 13장 · 스펙 비즈니스 대시보드 |
+| `business.json` | **비즈니스** — 요약 Stat(주문 생성 · 주문 실패 · 결제 승인 · 결제 실패 · Saga 실패 · 결제 금액 불일치) · 분당 주문 · 결제(성공 · 실패) · 실패 상태 코드 · 분당 클레임 · Saga 보상 · 재시도 · 실패 · 결제 이상. order · payment 요청 지표와 `saga_*` · `payment_*` 로 계산. DLQ 적재 수는 `lambda.json` | 13장 · 스펙 비즈니스 대시보드 |
 | `cluster.json` | **클러스터** — 요약 Stat(노드 수 · NotReady 노드 · 노드 CPU · 메모리 최대 · 메모리 requests 최대 · 비정상 파드) · 노드별 CPU · 메모리 사용률 · CPU · 메모리 requests 비율 · 실행 중 파드 수 · 파드별 CPU · 메모리 · 파드 배치 표 · 네임스페이스별 CPU · 메모리 · 컨테이너 재시작 · 파드 상태 사유. `$namespace` 는 파드 패널에만 적용. node-exporter 없이 cAdvisor(`id="/"`) · kube-state-metrics 로 계산, 네임스페이스 패널 쿼리는 grafana.com 15757 을 우리 라벨로 옮김 | 13장 |
+| `lambda.json` | **Lambda · DLQ** — 요약 Stat(Lambda 호출 · 오류 · 스로틀 · DLQ 쌓인 메시지) · 함수별 호출 · 오류 · 최대 소요 시간 · 스로틀 · 큐별 DLQ 메시지 · 최근 오류 로그(Logs Insights). 데이터소스 `cloudwatch`(IRSA, 11/10) |
 
 ## 추가 · 수정 · 반영
 
