@@ -1,0 +1,885 @@
+{
+  "id": null,
+  "uid": "lambda",
+  "title": "Lambda · DLQ",
+  "description": "메일 · 정산서 · 업로드 검사 · 로그 보관 · 인프라 스케줄 Lambda 5개와 이벤트 큐 DLQ 를 봅니다. 데이터는 CloudWatch(IRSA 읽기 전용)이고 지표는 약 1 ~ 5분 늦게 들어옵니다. 쿠버네티스 서비스는 「서비스 (RED)」에서 봅니다.",
+  "tags": [
+    "gotgan",
+    "observability"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 41,
+  "version": 1,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "요약",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Lambda 호출 수",
+      "description": "선택한 기간에 우리 Lambda 5개가 실행된 횟수의 합입니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SUM(SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Invocations\" sesac-gojigi', 'Sum', $__period_auto))",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": "Lambda 호출 수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Lambda 오류 수",
+      "description": "선택한 기간에 실행 중 실패한 횟수의 합입니다. 1 이상이면 빨강이고, 아래 「최근 오류 로그」에서 원인을 봅니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SUM(SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Errors\" sesac-gojigi', 'Sum', $__period_auto))",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": "Lambda 오류 수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Lambda 스로틀 수",
+      "description": "동시 실행 한도를 넘어 AWS 가 실행을 거절한 횟수입니다. 0 이 정상이고, 1 이상이면 처리하지 못한 요청이 있었다는 뜻입니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SUM(SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Throttles\" sesac-gojigi', 'Sum', $__period_auto))",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": "Lambda 스로틀 수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "DLQ 쌓인 메시지",
+      "description": "재시도해도 처리하지 못해 DLQ 로 옮겨진 이벤트 수의 현재 합입니다. 0 이 정상이고, 1 이상이면 어떤 알림 · 처리가 빠졌다는 뜻이라 아래 「큐별 DLQ」에서 큐를 확인합니다. 1건부터 CloudWatch 알람 메일도 갑니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SUM(SEARCH('{AWS/SQS,QueueName} MetricName=\"ApproximateNumberOfMessagesVisible\" sesac-gojigi dlq', 'Maximum', $__period_auto))",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": "DLQ 쌓인 메시지"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Lambda",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "함수별 호출 수",
+      "description": "함수마다 실행된 횟수입니다. 메일 · 정산서 · 업로드 검사는 이벤트가 있을 때, log-archive 와 infra-dispatch 는 정해진 시각에 실행됩니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Invocations\" sesac-gojigi', 'Sum', $__period_auto)",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+?)(-dev-[a-z]+)?$",
+            "renamePattern": "$1"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+-events-dlq)$",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": true,
+            "showPoints": "auto"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "max",
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "함수별 오류",
+      "description": "함수마다 실패한 횟수입니다. 0 이 아닌 구간이 있으면 「최근 오류 로그」에서 같은 시각을 찾습니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 6,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Errors\" sesac-gojigi', 'Sum', $__period_auto)",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+?)(-dev-[a-z]+)?$",
+            "renamePattern": "$1"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+-events-dlq)$",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": true,
+            "showPoints": "auto"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "max",
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "함수별 최대 소요 시간",
+      "description": "가장 오래 걸린 실행 시간입니다. 제한 시간(upload-guard 10초 · 나머지 30초)에 가까워지면 시간 초과로 실패할 수 있습니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Duration\" sesac-gojigi', 'Maximum', $__period_auto)",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+?)(-dev-[a-z]+)?$",
+            "renamePattern": "$1"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+-events-dlq)$",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "noValue": "0",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": true,
+            "showPoints": "auto"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "함수별 스로틀",
+      "description": "동시 실행 한도로 거절된 횟수입니다. 0 이 정상입니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Throttles\" sesac-gojigi', 'Sum', $__period_auto)",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+?)(-dev-[a-z]+)?$",
+            "renamePattern": "$1"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+-events-dlq)$",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": true,
+            "showPoints": "auto"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "max",
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "DLQ",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 12,
+      "type": "bargauge",
+      "title": "큐별 DLQ 메시지",
+      "description": "DLQ 마다 지금 쌓여 있는 메시지 수입니다. 이름은 「받는 서비스-이벤트 출처-events-dlq」입니다. 예: admin-order-events-dlq 는 admin 이 주문 이벤트를 처리하지 못한 것. 빈 큐는 CloudWatch 가 지표를 보내지 않아 목록에 없을 수 있습니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "region": "default",
+          "id": "qa",
+          "expression": "SEARCH('{AWS/SQS,QueueName} MetricName=\"ApproximateNumberOfMessagesVisible\" sesac-gojigi dlq', 'Maximum', $__period_auto)",
+          "metricQueryType": 0,
+          "metricEditorMode": 1,
+          "namespace": "",
+          "metricName": "",
+          "dimensions": {},
+          "statistic": "Sum",
+          "period": "",
+          "matchExact": true,
+          "label": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+?)(-dev-[a-z]+)?$",
+            "renamePattern": "$1"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^.*sesac-gojigi-([a-z-]+-events-dlq)$",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "minVizHeight": 16,
+        "maxVizHeight": 24
+      }
+    },
+    {
+      "id": 13,
+      "type": "row",
+      "title": "로그",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 14,
+      "type": "logs",
+      "title": "최근 오류 로그",
+      "description": "Lambda 5개 로그에서 ERROR 와 시간 초과만 최신순으로 50건 보여 줍니다. 비어 있으면 그 기간에 오류가 없는 것입니다. 로그 보존은 14일입니다.",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "queryMode": "Logs",
+          "region": "default",
+          "id": "",
+          "logGroups": [
+            {
+              "arn": "arn:aws:logs:ap-northeast-2:694951014380:log-group:/aws/lambda/sesac-gojigi-order-notification-dev-notify:*",
+              "name": "/aws/lambda/sesac-gojigi-order-notification-dev-notify",
+              "accountId": "694951014380"
+            },
+            {
+              "arn": "arn:aws:logs:ap-northeast-2:694951014380:log-group:/aws/lambda/sesac-gojigi-settlement-report-dev-report:*",
+              "name": "/aws/lambda/sesac-gojigi-settlement-report-dev-report",
+              "accountId": "694951014380"
+            },
+            {
+              "arn": "arn:aws:logs:ap-northeast-2:694951014380:log-group:/aws/lambda/sesac-gojigi-upload-guard-dev-guard:*",
+              "name": "/aws/lambda/sesac-gojigi-upload-guard-dev-guard",
+              "accountId": "694951014380"
+            },
+            {
+              "arn": "arn:aws:logs:ap-northeast-2:694951014380:log-group:/aws/lambda/sesac-gojigi-infra-dispatch:*",
+              "name": "/aws/lambda/sesac-gojigi-infra-dispatch",
+              "accountId": "694951014380"
+            },
+            {
+              "arn": "arn:aws:logs:ap-northeast-2:694951014380:log-group:/aws/lambda/sesac-gojigi-log-archive-dev-archive:*",
+              "name": "/aws/lambda/sesac-gojigi-log-archive-dev-archive",
+              "accountId": "694951014380"
+            }
+          ],
+          "logGroupNames": [
+            "/aws/lambda/sesac-gojigi-order-notification-dev-notify",
+            "/aws/lambda/sesac-gojigi-settlement-report-dev-report",
+            "/aws/lambda/sesac-gojigi-upload-guard-dev-guard",
+            "/aws/lambda/sesac-gojigi-infra-dispatch",
+            "/aws/lambda/sesac-gojigi-log-archive-dev-archive"
+          ],
+          "expression": "fields @timestamp, @log, @message\n| filter @message like /ERROR|Task timed out/\n| sort @timestamp desc\n| limit 50",
+          "statsGroups": []
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "prettifyLogMessage": false
+      }
+    }
+  ]
+}
