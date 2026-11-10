@@ -199,5 +199,5 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 | 작업 | 시점 |
 | --- | --- |
 | 2차 측정 · 메모리 requests 판단 · QA | 11/6 완료 — 값 변경 없음(Helm 주석만 config #97) |
-| CSP 강제 전환 · 문서 최신화 | CSP 11/7 완료(frontend `vercel.json` `Content-Security-Policy`) · 문서 11/10 |
+| CSP 강제 전환 · 문서 최신화 | CSP 11/8 완료(frontend #108 `vercel.json` `Content-Security-Policy`) · 문서 11/10 |
 | AWS 자원 전체 삭제 | 11/20 발표 후 |
