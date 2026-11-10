@@ -114,7 +114,7 @@ services:
     port: 8088
     env:
       - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=41 -XX:+ExitOnOutOfMemoryError" }   # 라이브 138Mi × 2 → 힙 320Mi. 11/5 S5 에서 75%(557Mi)까지 커지며 OOMKilled
-      - { name: APP_CHAOS_ENABLED, value: "false" }   # F-1 장애 시연 — 파드 내리기. 평소 · 측정 때는 false, 시연 때만 "true" 로 바꿔 머지 (templates/chaos-rbac.yaml)
+      - { name: APP_CHAOS_ENABLED, value: "true" }    # F-1 장애 시연 — 파드 내리기. 11/10 ~ 11/20 리허설 · 발표 기간 켜 둠(k6 끝남). 발표 뒤 "false" 로 되돌림 (templates/chaos-rbac.yaml)
     secretName: admin-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (admindb, 10/26)
     serviceAccount:
       roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-admin-irsa   # Terraform cluster/irsa.tf — 알림 센터 SQS · DynamoDB inbox (10/27)
