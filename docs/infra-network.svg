@@ -37,7 +37,7 @@
 <rect data-kind="card" x="30" y="385" width="200" height="134" rx="14" fill="#f5f5f5" stroke="#9e9e9e" stroke-width="2.5"/>
 <text x="130" y="419" font-size="22" fill="#263238" text-anchor="middle" font-weight="bold">Vercel (React)</text>
 <text x="130" y="447" font-size="18" fill="#4a4a4a" text-anchor="middle">프론트 티어 · 외부</text>
-<text x="130" y="473" font-size="18" fill="#4a4a4a" text-anchor="middle">/api/* → DuckDNS</text>
+<text x="130" y="473" font-size="18" fill="#4a4a4a" text-anchor="middle">/api/* → api.gotgan.click</text>
 <text x="130" y="499" font-size="18" fill="#4a4a4a" text-anchor="middle">→ EIP (HTTPS 443)</text>
 <rect data-kind="card" x="30" y="560" width="200" height="100" rx="14" fill="#f5f5f5" stroke="#9e9e9e" stroke-width="2.5"/>
 <text x="130" y="598" font-size="22" fill="#263238" text-anchor="middle" font-weight="bold">포트원 (결제 API)</text>
@@ -131,6 +131,8 @@
 <text x="1227.9" y="1164.9" font-size="22" fill="#bf4800" text-anchor="middle" font-weight="bold">Zipkin</text>
 <rect data-kind="chip" x="956" y="1196" width="239.9" height="42" rx="9" fill="#fff" stroke="#f0a868" stroke-width="1.5"/>
 <text x="1076" y="1224.9" font-size="22" fill="#bf4800" text-anchor="middle" font-weight="bold">kube-state-metrics</text>
+<rect data-kind="chip" x="1211.9" y="1196" width="84" height="42" rx="9" fill="#fff" stroke="#f0a868" stroke-width="1.5"/>
+<text x="1253.9" y="1224.9" font-size="22" fill="#bf4800" text-anchor="middle" font-weight="bold">chat</text>
 <text x="956" y="1270" font-size="18" fill="#4a4a4a">t3.xlarge ×2 · min 0 · max 3</text>
 <rect data-kind="icon" x="450" y="1410" width="26" height="21" rx="3" fill="#c62828"/>
 <path data-kind="icon" d="M455,1410 V1404 a8,8 0 0 1 16,0 V1410" fill="none" stroke="#c62828" stroke-width="3"/>
@@ -145,7 +147,7 @@
 <rect data-kind="badge" x="671.3" y="1566" width="132.7" height="36" rx="18" fill="#fff3e0" stroke="#ef6c00" stroke-width="1.5"/>
 <text x="737.7" y="1590.5" font-size="18" fill="#e65100" text-anchor="middle" font-weight="bold">매일 재생성</text>
 <rect data-kind="chip" x="446" y="1622" width="212.5" height="42" rx="9" fill="#fff" stroke="#8c9eff" stroke-width="1.5"/>
-<text x="552.3" y="1650.9" font-size="22" fill="#283593" text-anchor="middle" font-weight="bold">MySQL · 스키마 8</text>
+<text x="552.3" y="1650.9" font-size="22" fill="#283593" text-anchor="middle" font-weight="bold">MySQL · 스키마 10</text>
 <use href="#ic-res-ebs-volume" x="674.5" y="1620" width="46" height="46"/>
 <text x="450" y="1690" font-size="18" fill="#4a4a4a">└ EBS 볼륨 (gp3 디스크)</text>
 <rect data-kind="chip" x="446" y="1714" width="212.5" height="42" rx="9" fill="#fff" stroke="#8c9eff" stroke-width="1.5"/>
@@ -181,16 +183,16 @@
 <text x="1466" y="338.5" font-size="23" fill="#1976d2" font-weight="bold">리전 서비스</text>
 <use href="#ic-ecr" x="1466" y="372" width="62" height="62"/>
 <text x="1540" y="396" font-size="22" fill="#263238" font-weight="bold">ECR</text>
-<text x="1540" y="424" font-size="18" fill="#4a4a4a">이미지 저장소 9개</text>
+<text x="1540" y="424" font-size="18" fill="#4a4a4a">이미지 저장소 10개</text>
 <use href="#ic-s3" x="1466" y="466" width="62" height="62"/>
 <text x="1540" y="490" font-size="22" fill="#263238" font-weight="bold">S3</text>
 <text x="1540" y="518" font-size="18" fill="#4a4a4a">버킷 4개</text>
 <use href="#ic-sns" x="1466" y="560" width="62" height="62"/>
 <text x="1540" y="584" font-size="22" fill="#263238" font-weight="bold">SNS · SQS</text>
-<text x="1540" y="612" font-size="18" fill="#4a4a4a">토픽 3 · 큐 9개</text>
+<text x="1540" y="612" font-size="18" fill="#4a4a4a">토픽 3 · 큐 12개</text>
 <use href="#ic-dynamodb" x="1466" y="654" width="62" height="62"/>
 <text x="1540" y="678" font-size="22" fill="#263238" font-weight="bold">DynamoDB</text>
-<text x="1540" y="706" font-size="18" fill="#4a4a4a">테이블 2개</text>
+<text x="1540" y="706" font-size="18" fill="#4a4a4a">테이블 3개</text>
 <use href="#ic-ses" x="1466" y="748" width="62" height="62"/>
 <text x="1540" y="772" font-size="22" fill="#263238" font-weight="bold">SES</text>
 <text x="1540" y="800" font-size="18" fill="#4a4a4a">메일 발송</text>
@@ -231,5 +233,5 @@
 <rect data-kind="icon" x="416.9" y="2269.6" width="20.8" height="16.8" rx="3" fill="#c62828"/>
 <path data-kind="icon" d="M420.9,2269.6 V2264.8 a6.4,6.4 0 0 1 12.8,0 V2269.6" fill="none" stroke="#c62828" stroke-width="3"/>
 <text x="464.9" y="2286" font-size="18" fill="#c62828">NetworkPolicy: DB 티어(3306 · 6379)는 백 티어 파드만 접근</text>
-<text x="900" y="2344" font-size="18" fill="#4a4a4a" text-anchor="middle">곳간(GOTGAN) 인프라 네트워크 도면 — sesac-gojigi · 2026-10-14</text>
+<text x="900" y="2344" font-size="18" fill="#4a4a4a" text-anchor="middle">곳간(GOTGAN) 인프라 네트워크 도면 — sesac-gojigi · 2026-10-14 · 11-12 갱신</text>
 </svg>
