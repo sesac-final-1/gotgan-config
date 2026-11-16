@@ -32,6 +32,7 @@
 | `ARGOCD_ADMIN_PASSWORD` | ArgoCD admin 비밀번호 고정 — bootstrap 5-1 단계가 bcrypt 해시로 `argocd-secret` 에 넣음 (없으면 초기 랜덤 비밀번호 유지) | — (`argocd-secret` 의 `admin.password` 를 bootstrap 이 직접 패치, secrets-sync 아님) | 팀이 정함 | 이경석 |
 | `GRAFANA_ADMIN_PASSWORD` | Grafana 로그인 | `grafana-secret`(monitoring) → `admin-password` | 무작위 24자 | 박지연 |
 | `ALERT_WEBHOOK_URL` | Grafana Alerting → Discord/Slack | `alert-webhook-secret`(monitoring) → `url` | Discord 채널 → 연동 → 웹훅 URL | 박지연 |
+| `LOADTEST_PASSWORD` | 관리자 화면 부하테스트 k6 Job 의 부하용 계정 로그인 (11/16) | `loadtest-secret` → `LOADTEST_PASSWORD` | 가입 규칙(8~64자 · 영문 · 특수문자) 맞춰 직접 정함. 계정은 `loadtest/k6/accounts.js` 로 생성 | 구지훈 |
 
 ## 2. gotgan-backend (CI) — Secrets
 
