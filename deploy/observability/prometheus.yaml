@@ -161,6 +161,7 @@ spec:
             - --storage.tsdb.path=/prometheus
             - --storage.tsdb.retention.time=7d
             - --storage.tsdb.retention.size=8GB   # 10Gi 디스크가 차기 전에 오래된 데이터부터 삭제
+            - --web.enable-remote-write-receiver  # 관리자 화면 부하테스트(11/16) — k6 Job 이 지표를 /api/v1/write 로 push (5초). 받는 것만 열고 수집 대상은 그대로
           ports:
             - { name: http, containerPort: 9090 }
           resources:
