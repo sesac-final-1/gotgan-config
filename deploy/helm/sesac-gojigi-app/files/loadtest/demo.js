@@ -7,8 +7,10 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import exec from 'k6/execution';
 
-const BASE = __ENV.BASE_URL || 'http://gateway-service.sesac-gojigi.svc:443';   // 클러스터 안 게이트웨이(NLB 가 TLS 를 끝내 Service 443 → 파드 8080 은 http)
+// BASE_URL 은 admin 이 넣는다(app.loadtest.target-url — 클러스터 안 게이트웨이. NLB 가 TLS 를 끝내 Service 443 → 파드 8080 은 평문)
+const BASE = __ENV.BASE_URL;
 const SCENARIO = __ENV.SCENARIO || 'browse';
+if (!BASE) exec.test.abort('BASE_URL 이 없습니다 — admin-service 가 Job 환경 변수로 넣습니다');
 
 export const options = {
   scenarios: {
@@ -28,11 +30,14 @@ const PRODUCTS = [101, 102, 103, 104, 201, 202, 203, 204, 1101, 1102, 1104, 1201
 const CART_OPTIONS = [10101, 10102, 10103, 10401, 10402, 10403, 120101, 120102, 120103, 120104, 120105, 120106, 120107, 120108,
   170101, 170102, 170103, 170104, 180101, 180102, 180201, 180301, 180302, 180303, 180401, 180402, 180403];
 
-const pick = (list) => list[Math.floor(Math.random() * list.length)];
-const think = (min = 1, max = 3) => sleep(min + Math.random() * (max - min));
+// 고르기 · 쉬는 시간은 VU 번호와 반복 횟수로 돌아가며 정한다(보안용 난수가 필요 없는 곳 — Sonar S2245 회피, 결과 분포는 고르게 섞임)
+const vu = () => exec.vu.idInTest;
+const turn = () => vu() * 7 + exec.vu.iterationInScenario;
+let picks = 0;
+const pick = (list) => list[(turn() + picks++) % list.length];
+const think = (min = 1, max = 3) => sleep(min + ((turn() % 10) / 10) * (max - min));
 
 // 비로그인 요청 출처 — VU 마다 고정 가상 IP(요청 제한 키). loadtest/k6/lib.js 와 같은 방식
-const vu = () => exec.vu.idInTest;
 const fakeIp = () => `10.${(vu() >> 16) & 255}.${(vu() >> 8) & 255}.${vu() & 255}`;
 const anon = () => ({ 'X-Vercel-Forwarded-For': fakeIp() });
 const get = (path, name, headers = anon()) => http.get(`${BASE}${path}`, { headers, tags: { name } });
@@ -64,7 +69,7 @@ function reviews() {
 const session = { token: null };
 
 function login() {
-  sleep(Math.random() * 5);   // 슬라이더로 사용자를 한꺼번에 늘릴 때 로그인이 Keycloak 에 몰리지 않게 흩뜨린다
+  sleep((vu() % 50) / 10);   // 슬라이더로 사용자를 한꺼번에 늘릴 때 로그인이 Keycloak 에 몰리지 않게 VU 번호로 0 ~ 4.9초 흩뜨린다
   const res = http.post(`${BASE}/api/auth/login`,
     JSON.stringify({ email: `loadtest+${vu()}@gotgan.test`, password: __ENV.LOADTEST_PASSWORD }),
     { headers: { 'Content-Type': 'application/json', ...anon() }, tags: { name: 'POST /api/auth/login' } });
