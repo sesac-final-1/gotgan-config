@@ -69,7 +69,9 @@ function reviews() {
 const session = { token: null };
 
 function login() {
-  sleep((vu() % 50) / 10);   // 슬라이더로 사용자를 한꺼번에 늘릴 때 로그인이 Keycloak 에 몰리지 않게 VU 번호로 0 ~ 4.9초 흩뜨린다
+  // 로그인을 VU 번호로 0 ~ 14.9초에 흩뜨린다 — 170명이면 초당 약 11건. 0 ~ 5초로는 초당 30 ~ 40건이 몰려 Keycloak 응답이 3초를 넘고
+  // user-service 서킷(keycloak)이 10초 열려 로그인 502 가 섞였다(11/16 장바구니 170명 확인). 장바구니 요청 자체는 전부 200
+  sleep((vu() % 150) / 10);
   const res = http.post(`${BASE}/api/auth/login`,
     JSON.stringify({ email: `loadtest+${vu()}@gotgan.test`, password: __ENV.LOADTEST_PASSWORD }),
     { headers: { 'Content-Type': 'application/json', ...anon() }, tags: { name: 'POST /api/auth/login' } });
