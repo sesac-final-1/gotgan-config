@@ -73,6 +73,7 @@ data:
     scrape_configs:
       # ① 어노테이션이 붙은 파드 — 업무 서비스 · gateway. 자기 자신에 대한 지표를 내므로 파드의 app · pod 라벨을 붙인다
       - job_name: kubernetes-pods
+        scrape_interval: 5s           # 관리자 화면 실시간 모니터링(11/16) — 서비스별 그래프가 5초 안에 반응하게. 파드 약 20개 × /actuator/prometheus, 보관 7일 · 8GB 상한 안
         kubernetes_sd_configs:
           - role: pod
             namespaces:
