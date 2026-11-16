@@ -1,0 +1,14 @@
+{{- $admin := index .Values.services "admin-service" }}
+{{- if and $admin $admin.serviceAccount }}
+---
+# 관리자 화면 부하테스트(11/16, 구지훈) — admin-service 가 만드는 k6 Job 이 /scripts/demo.js 로 마운트해 실행한다
+# 시나리오 · 사용자 수는 Job 환경 변수. 스크립트 원본은 files/loadtest/demo.js
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loadtest-scripts
+  namespace: {{ .Values.namespace }}
+data:
+  demo.js: |-
+{{ .Files.Get "files/loadtest/demo.js" | indent 4 }}
+{{- end }}
