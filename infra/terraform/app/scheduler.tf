@@ -1,13 +1,16 @@
 # 클러스터 일일 스케줄 — EventBridge Scheduler(Asia/Seoul) → Lambda infra-dispatch → GitHub infra-schedule workflow_dispatch. 담당 구지훈
 # GitHub 예약(schedule)은 정각 혼잡으로 1.5~4시간 늦게 시작돼(10/23~26 삭제 21:00 → 실제 00:10~01:22) 10/26 서버리스로 옮김 — 신호 → 잡 시작 3~5초.
 # 08:00 apply(약 27분 → 08:30 사용) · 22:00 destroy. app/ 은 상시 폴더라 스케줄러는 클러스터가 없어도 남는다.
+# 11/17 부터 24시간 운영(발표 피드백) — 두 스케줄 모두 DISABLED. 밤사이 지표 · 로그(PVC)를 남겨 장애 리포트로 본다.
+#   11/20 발표 후 정리는 infra-schedule 워크플로 수동 실행(action=destroy). 다시 켜려면 schedule_enabled = true
 # GitHub 토큰: SSM SecureString(AWS 관리형 키 aws/ssm) — "시크릿은 GitHub Secrets 단일 소스" 규칙의 예외 1건(10/26 팀 결정, docs/secrets.md).
 #   값은 Terraform 이 만들지 않는다(상태 파일에 남지 않게) → 구지훈이 CLI 로 직접 등록 (docs/secrets.md 7절)
 
 locals {
   infra_dispatch = {
-    name            = "sesac-gojigi-infra-dispatch"
-    token_parameter = "/sesac-gojigi/dev/github/infra-dispatch-token"
+    name             = "sesac-gojigi-infra-dispatch"
+    token_parameter  = "/sesac-gojigi/dev/github/infra-dispatch-token"
+    schedule_enabled = false # 11/17 24시간 운영
     schedules = {
       apply   = "cron(0 8 * * ? *)"  # 매일 08:00 KST
       destroy = "cron(0 22 * * ? *)" # 매일 22:00 KST
@@ -114,6 +117,7 @@ resource "aws_scheduler_schedule" "infra" {
   name                         = "sesac-gojigi-infra-${each.key}"
   schedule_expression          = each.value
   schedule_expression_timezone = "Asia/Seoul"
+  state                        = local.infra_dispatch.schedule_enabled ? "ENABLED" : "DISABLED"
 
   flexible_time_window {
     mode = "OFF" # 정각에 바로
