@@ -78,7 +78,7 @@ GitHub Secrets 는 GitHub 안에서만 읽을 수 있어, **AWS 에서 GitHub �
 
 | 이름 | 쓰는 곳 | 생성 방법 | 담당 |
 |---|---|---|---|
-| SSM `/sesac-gojigi/dev/github/infra-dispatch-token` (SecureString, AWS 관리형 키 `aws/ssm`) | Lambda `sesac-gojigi-infra-dispatch` — 매일 08:00 · 22:00 `infra-schedule` workflow_dispatch (`infra/terraform/app/scheduler.tf`) | GitHub fine-grained PAT — 저장소 `gotgan-config` 만 · 권한 **Actions: Read and write**(Metadata 읽기 자동). 만료일을 정하고 노션에 기록 | 구지훈 |
+| SSM `/sesac-gojigi/dev/github/infra-dispatch-token` (SecureString, AWS 관리형 키 `aws/ssm`) | Lambda `sesac-gojigi-infra-dispatch` — 매일 08:00 · 22:00 `infra-schedule` workflow_dispatch (`infra/terraform/app/scheduler.tf`) | GitHub fine-grained PAT — 저장소 `gotgan-config` 만 · 권한 **Actions: Read and write**(Metadata 읽기 자동). 만료일을 정하고 노션에 기록 | 구지훈 — **11/17 부터 스케줄 꺼짐, 수동 실행 때만 사용** |
 
 - Terraform 은 이 파라미터를 **만들지 않습니다**(값이 상태 파일에 남지 않게). 등록 · 교체는 CLI 로 직접:
   `aws ssm put-parameter --name /sesac-gojigi/dev/github/infra-dispatch-token --type SecureString --overwrite --value "<토큰>"` (값은 셸 기록에 남지 않게 직접 입력)
