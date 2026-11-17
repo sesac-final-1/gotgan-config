@@ -1,4 +1,4 @@
-# SSM 파라미터 /sesac-gojigi/dev/{종류}/{이름} — Lambda 가 읽을 큐 ARN · 테이블 이름 · 버킷 · SES 발신 주소 (serverless.yml 의 ${ssm:...})
+# SSM 파라미터 /sesac-gojigi/dev/{종류}/{이름} — Lambda 가 읽을 큐 ARN, 테이블 이름, 버킷, SES 발신 주소 (serverless.yml 의 ${ssm:...})
 
 # serverless.yml 이 ${ssm:...} 로 읽는 값 — 경로는 serverless/*/serverless.yml 과 정확히 같아야 한다
 locals {
@@ -22,6 +22,6 @@ resource "aws_ssm_parameter" "this" {
   for_each = local.ssm_parameters
 
   name  = "/sesac-gojigi/dev/${each.key}"
-  type  = "String" # 비밀 아님 — 이름 · ARN 만
+  type  = "String" # 비밀 아님 — 이름, ARN 만
   value = each.value
 }

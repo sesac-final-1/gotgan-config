@@ -152,7 +152,7 @@
       "id": 4,
       "type": "state-timeline",
       "title": "Scrape 상태 (up)",
-      "description": "Prometheus가 파드의 지표를 수집하는 데 성공했는지 보여 줍니다. 초록은 성공, 빨강은 실패이며 파드가 죽었다 살아나면 빨강에서 초록으로 바뀝니다. Keycloak · MySQL · Redis는 수집 대상이 아니므로 서비스 상태와 파드 Ready에서 확인합니다.",
+      "description": "Prometheus가 파드의 지표를 수집하는 데 성공했는지 보여 줍니다. 초록은 성공, 빨강은 실패이며 파드가 죽었다 살아나면 빨강에서 초록으로 바뀝니다. Keycloak, MySQL, Redis는 수집 대상이 아니므로 서비스 상태와 파드 Ready에서 확인합니다.",
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 10 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
@@ -333,7 +333,7 @@
       "id": 9,
       "type": "state-timeline",
       "title": "서킷 상태",
-      "description": "서비스 간 호출의 서킷 상태입니다. 초록은 정상(CLOSED), 노랑은 시험 호출 중(HALF_OPEN), 빨강은 호출 차단(OPEN)입니다. 왼쪽 이름은 「호출 서비스 → 서킷 이름」이고, 서킷 이름은 대상 서비스나 redisCart · portone · keycloak 같은 외부 의존성입니다. 파드가 여러 개면 가장 나쁜 상태를 표시합니다.",
+      "description": "서비스 간 호출의 서킷 상태입니다. 초록은 정상(CLOSED), 노랑은 시험 호출 중(HALF_OPEN), 빨강은 호출 차단(OPEN)입니다. 왼쪽 이름은 「호출 서비스 → 서킷 이름」이고, 서킷 이름은 대상 서비스나 redisCart, portone, keycloak 같은 외부 의존성입니다. 파드가 여러 개면 가장 나쁜 상태를 표시합니다.",
       "gridPos": { "x": 4, "y": 26, "w": 20, "h": 12 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [

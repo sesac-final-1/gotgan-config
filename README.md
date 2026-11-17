@@ -1,43 +1,43 @@
 # 곳간 GOTGAN — config
 
-곳간 프로젝트의 **인프라 · 배포 · 운영 설정** 저장소입니다. 코드는 [gotgan-backend](https://github.com/sesac-final-1/gotgan-backend) · [gotgan-frontend](https://github.com/sesac-final-1/gotgan-frontend), 설계 문서는 https://gotganguide.vercel.app/ 에 있습니다.
+곳간 프로젝트의 **인프라, 배포, 운영 설정** 저장소입니다. 코드는 [gotgan-backend](https://github.com/sesac-final-1/gotgan-backend), [gotgan-frontend](https://github.com/sesac-final-1/gotgan-frontend), 설계 문서는 https://gotganguide.vercel.app/ 에 있습니다.
 
 | 폴더 | 내용 | 실행 주체 | 담당 |
 |---|---|---|---|
-| `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `app` → `cluster` (apply 순서). `cicd/` 는 독립(이경석) | `infra-schedule` 워크플로(OIDC) · 구지훈 (`cicd/` 는 이경석) | 구지훈 · `cicd/` 이경석 |
-| `deploy/k8s/` | 기본 계층 — namespace · configmap · `02-networkpolicy`(DB · 업무 티어) · MySQL · Redis · Keycloak | `bootstrap` 워크플로 | 구지훈 · 이경석(keycloak) |
-| `deploy/observability/` | Prometheus · Loki · Zipkin · Grafana · kube-state-metrics · 대시보드 7개(System Status · Logs · 서비스 · JVM · 비즈니스 · 클러스터 · Lambda/DLQ — CloudWatch 데이터소스 · grafana IRSA) · 알림 규칙 12개(지표 9 · 로그 3) (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
-| `deploy/helm/sesac-gojigi-app/` | 서비스 10개 Deployment · Service · ServiceAccount · PDB(레플리카 2 이상 6개) · F-1 장애 시연 Role(admin-service 파드 조회 · 삭제) — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
+| `infra/terraform/` | AWS 자원 — `global/s3` → `vpc` → `ecr` → `app` → `cluster` (apply 순서). `cicd/` 는 독립(이경석) | `infra-schedule` 워크플로(OIDC), 구지훈 (`cicd/` 는 이경석) | 구지훈, `cicd/` 이경석 |
+| `deploy/k8s/` | 기본 계층 — namespace, configmap, `02-networkpolicy`(DB, 업무 티어), MySQL, Redis, Keycloak | `bootstrap` 워크플로 | 구지훈, 이경석(keycloak) |
+| `deploy/observability/` | Prometheus, Loki, Zipkin, Grafana, kube-state-metrics, 대시보드 7개(System Status, Logs, 서비스, JVM, 비즈니스, 클러스터, Lambda/DLQ — CloudWatch 데이터소스, grafana IRSA), 알림 규칙 12개(지표 9, 로그 3) (blackbox exporter 없음) | `bootstrap` 워크플로 | 박지연 |
+| `deploy/helm/sesac-gojigi-app/` | 서비스 10개 Deployment, Service, ServiceAccount, PDB(레플리카 2 이상 6개), F-1 장애 시연 Role(admin-service 파드 조회, 삭제) — `values.yaml` 태그는 backend CI가 커밋 | ArgoCD | 이경석 |
 | `deploy/argocd/` | ArgoCD Application ("이 저장소의 helm 폴더를 감시하라") | `bootstrap` 워크플로 | 이경석 |
-| `scripts/` | scale-nodes · build-and-push (수동 보조) · keycloak-seed (Keycloak 시드 계정 · 스코프) | 사람 · keycloak-seed 는 `bootstrap` | 구지훈 · keycloak-seed 이경석 |
-| `loadtest/` | k6 부하 측정 S1 ~ S8 · 측정 직전 데이터 `prep-data.sh`(stock · settlement · status) · 계정보다 VU 가 많으면 `ACCOUNTS` 로 돌려 씀 | 사람(측정 공지 뒤) | 구지훈 |
-| `docs/` | ADR · 이벤트 목록 · 시크릿 목록(값 없음) · 인프라 · 로그 컨벤션 | 전원 | 전원 |
-| `.github/workflows/` | `infra`(plan) · `infra-schedule`(08:00 apply · 22:00 destroy — EventBridge Scheduler → Lambda 가 실행) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 — **11/17 부터 스케줄 꺼짐(24시간 운영), 수동 실행만** |
+| `scripts/` | scale-nodes, build-and-push (수동 보조), keycloak-seed (Keycloak 시드 계정, 스코프) | 사람, keycloak-seed 는 `bootstrap` | 구지훈, keycloak-seed 이경석 |
+| `loadtest/` | k6 부하 측정 S1 ~ S8, 측정 직전 데이터 `prep-data.sh`(stock, settlement, status), 계정보다 VU 가 많으면 `ACCOUNTS` 로 돌려 씀 | 사람(측정 공지 뒤) | 구지훈 |
+| `docs/` | ADR, 이벤트 목록, 시크릿 목록(값 없음), 인프라, 로그 컨벤션 | 전원 | 전원 |
+| `.github/workflows/` | `infra`(plan), `infra-schedule`(08:00 apply, 22:00 destroy — EventBridge Scheduler → Lambda 가 실행), `bootstrap`, `secrets-sync`, `security` | GitHub | 구지훈 — **11/17 부터 스케줄 꺼짐(24시간 운영), 수동 실행만** |
 
 ## 전체 아키텍처
 
 ![곳간 아키텍처 구조도](docs/aws-architecture.svg)
 
-**3티어**입니다 — 프론트 티어(Vercel) → 백 티어(EKS `app` 노드 그룹 t3.xlarge ×2: gateway · 업무 서비스 · Keycloak · 관측성 · ArgoCD) → DB 티어(EKS `db` 노드 그룹 t3.medium ×1: MySQL · Redis만, NetworkPolicy로 백 티어 파드만 3306 · 6379 접근). 프론트가 백 티어를 거치지 않는 유일한 예외는 파일 업로드(백엔드가 발급한 presigned URL로 브라우저 → S3 PUT). 주황 점선 프레임(EKS 클러스터 · 노드 · 파드 · EBS 볼륨)이 매일 08:00 생성 · 22:00 삭제되는 부분이고, 나머지(VPC · EIP · ECR · S3 · SNS/SQS · DynamoDB · IAM)는 상시입니다. 네트워크 · 서브넷 · 보안 그룹 상세는 [가이드라인 04장](https://gotganguide.vercel.app/guideline#s4).
+**3티어**입니다 — 프론트 티어(Vercel) → 백 티어(EKS `app` 노드 그룹 t3.xlarge ×2: gateway, 업무 서비스, Keycloak, 관측성, ArgoCD) → DB 티어(EKS `db` 노드 그룹 t3.medium ×1: MySQL, Redis만, NetworkPolicy로 백 티어 파드만 3306, 6379 접근). 프론트가 백 티어를 거치지 않는 유일한 예외는 파일 업로드(백엔드가 발급한 presigned URL로 브라우저 → S3 PUT). 주황 점선 프레임(EKS 클러스터, 노드, 파드, EBS 볼륨)이 매일 08:00 생성, 22:00 삭제되는 부분이고, 나머지(VPC, EIP, ECR, S3, SNS/SQS, DynamoDB, IAM)는 상시입니다. 네트워크, 서브넷, 보안 그룹 상세는 [가이드라인 04장](https://gotganguide.vercel.app/guideline#s4).
 
 ## 매일 돌아가는 것
 
 ```
-KST 08:00  infra-schedule(apply)  → DynamoDB inbox · settlement-reports 새로 만들기(app/) → terraform apply infra/terraform/cluster (약 16분)
-           └→ bootstrap           → secrets-sync(GitHub Secrets → K8s Secret) → k8s 기본 계층(namespace · configmap · networkpolicy) → MySQL · Redis(db 노드) · Keycloak(+ 시드)
+KST 08:00  infra-schedule(apply)  → DynamoDB inbox, settlement-reports 새로 만들기(app/) → terraform apply infra/terraform/cluster (약 16분)
+           └→ bootstrap           → secrets-sync(GitHub Secrets → K8s Secret) → k8s 기본 계층(namespace, configmap, networkpolicy) → MySQL, Redis(db 노드), Keycloak(+ 시드)
                                     → observability → ArgoCD 설치 + Application → 서비스 10개 배포 (약 11분)
 (11/17 부터 24시간 운영이라 아래 08:00, 22:00 자동 실행은 꺼짐, 같은 순서로 수동 실행)
-KST 22:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
+KST 22:00  infra-schedule(destroy) → ArgoCD 앱, LoadBalancer Service, PVC 삭제 → terraform destroy cluster
 ```
 
-- `vpc` · `ecr` · `cicd` · `app`(EIP · S3 · SNS/SQS · DynamoDB · SES · SSM)은 **상시 유지**(예외: 알림함 `sesac-gojigi-inbox` · 명세서 이력 `sesac-gojigi-settlement-reports` 표는 DB 와 수명을 맞추려고 08:00 apply 때 새로 만든다) — EIP · Route 53 레코드 · ACM 인증서가 남아 API 주소(`https://api.gotgan.click`)는 바뀌지 않습니다.
-- 클러스터 안의 데이터(MySQL · Keycloak 사용자 · Grafana 설정)는 매일 초기화됩니다. 시연 데이터는 Flyway 시드(`R__demo_seed.sql`) · realm import · 대시보드 JSON으로 복원됩니다.
+- `vpc`, `ecr`, `cicd`, `app`(EIP, S3, SNS/SQS, DynamoDB, SES, SSM)은 **상시 유지**(예외: 알림함 `sesac-gojigi-inbox`, 명세서 이력 `sesac-gojigi-settlement-reports` 표는 DB 와 수명을 맞추려고 08:00 apply 때 새로 만든다) — EIP, Route 53 레코드, ACM 인증서가 남아 API 주소(`https://api.gotgan.click`)는 바뀌지 않습니다.
+- 클러스터 안의 데이터(MySQL, Keycloak 사용자, Grafana 설정)는 매일 초기화됩니다. 시연 데이터는 Flyway 시드(`R__demo_seed.sql`), realm import, 대시보드 JSON으로 복원됩니다.
 - 시각은 **EventBridge Scheduler(Asia/Seoul) → Lambda `sesac-gojigi-infra-dispatch` → workflow_dispatch** 가 맞춥니다(`infra/terraform/app/scheduler.tf`, 10/26 — GitHub 예약은 1.5~4시간 늦어 뺌). 08:00 시작이라 사용 가능은 약 08:30.
 - 수동 실행: Actions → `infra-schedule` → Run workflow → `apply` / `destroy`.
 
 ## 시크릿
 
-모든 비밀 값은 **GitHub Secrets**(이 저장소 + gotgan-backend)에만 둡니다. 목록 · 용도 · 생성 방법은 [docs/secrets.md](docs/secrets.md), 실제 값은 노션(팀 비공개). `secrets-sync` 워크플로가 K8s Secret으로 만들어 파드에 주입합니다.
+모든 비밀 값은 **GitHub Secrets**(이 저장소 + gotgan-backend)에만 둡니다. 목록, 용도, 생성 방법은 [docs/secrets.md](docs/secrets.md), 실제 값은 노션(팀 비공개). `secrets-sync` 워크플로가 K8s Secret으로 만들어 파드에 주입합니다.
 
 ## 로컬에서 확인할 것
 
@@ -48,4 +48,4 @@ kubectl -n sesac-gojigi port-forward svc/keycloak 8080:8080    # Keycloak 콘솔
 kubectl -n monitoring port-forward svc/grafana 3000:3000       # Grafana
 ```
 
-규칙은 [docs/CONVENTION.md](docs/CONVENTION.md)(인프라 네이밍 · 로그), 결정 기록은 [docs/adr](docs/adr), 이벤트 계약은 [docs/events.md](docs/events.md).
+규칙은 [docs/CONVENTION.md](docs/CONVENTION.md)(인프라 네이밍, 로그), 결정 기록은 [docs/adr](docs/adr), 이벤트 계약은 [docs/events.md](docs/events.md).

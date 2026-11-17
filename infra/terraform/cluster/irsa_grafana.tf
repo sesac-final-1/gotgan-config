@@ -1,5 +1,5 @@
 # sesac-gojigi-grafana-irsa — Grafana CloudWatch 데이터소스 읽기 전용 (담당 박지연)
-# 대상: Lambda 로그(/aws/lambda/sesac-gojigi-*) · 지표(SQS DLQ 등). 쓰기 · 삭제 권한 없음
+# 대상: Lambda 로그(/aws/lambda/sesac-gojigi-*), 지표(SQS DLQ 등). 쓰기, 삭제 권한 없음
 # 역할 이름 고정 → ARN 불변. 신뢰 정책은 그날의 OIDC 공급자 — 클러스터와 함께 매일 재생성 (irsa.tf 와 같음)
 
 locals {

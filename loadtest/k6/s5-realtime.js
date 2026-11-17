@@ -1,7 +1,7 @@
-// S5 실시간 연결 — 채팅 WebSocket(STOMP) 연결 · 구독 유지 + 일부는 1초에 1건 전송, 알림 SSE 연결 유지
-// 통과: 연결 성공 > 99% · 메시지 왕복 p95 < 1s. 주로 보는 곳: chat · admin 메모리(연결당) · 스레드 · Redis
+// S5 실시간 연결 — 채팅 WebSocket(STOMP) 연결, 구독 유지 + 일부는 1초에 1건 전송, 알림 SSE 연결 유지
+// 통과: 연결 성공 > 99%, 메시지 왕복 p95 < 1s. 주로 보는 곳: chat, admin 메모리(연결당), 스레드, Redis
 // 사용자당 연결 5개 제한(파드마다)이라 VU 는 계정을 돌려 쓴다(계정 COUNT 개). 연결은 1분 유지 후 다시 — 단계 동안 연결 수가 VU 수만큼 유지
-//   k6 run -e LOADTEST_PASSWORD=... -e COUNT=200 loadtest/k6/s5-realtime.js     (채팅 50 → 200 → 500 · SSE 50 → 200)
+//   k6 run -e LOADTEST_PASSWORD=... -e COUNT=200 loadtest/k6/s5-realtime.js     (채팅 50 → 200 → 500, SSE 50 → 200)
 import http from 'k6/http';
 import { WebSocket } from 'k6/websockets';
 import { check } from 'k6';
@@ -32,7 +32,7 @@ const frame = (command, headers, body = '') => `${command}\n${Object.entries(hea
 
 let roomId = null;
 let loggedIn = false;
-const tokenOf = () => { if (!loggedIn) { login(account()); loggedIn = true; } return authHeaders().Authorization.slice(7); };   // 첫 반복에만 로그인, 이후 재사용 · 25분마다 refresh
+const tokenOf = () => { if (!loggedIn) { login(account()); loggedIn = true; } return authHeaders().Authorization.slice(7); };   // 첫 반복에만 로그인, 이후 재사용, 25분마다 refresh
 
 export function chat() {
   const token = tokenOf();

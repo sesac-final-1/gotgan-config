@@ -1,17 +1,17 @@
 #!/bin/bash
-# Keycloak 시연 계정 시드 — realm gotgan 에 관리자 · 판매자 · 구매자 계정을 만든다 (+ master realm 관리 콘솔 주소). 담당 이경석 · 가이드라인 08장 · 12장
+# Keycloak 시연 계정 시드 — realm gotgan 에 관리자, 판매자, 구매자 계정을 만든다 (+ master realm 관리 콘솔 주소). 담당 이경석, 가이드라인 08장, 12장
 # 클러스터는 매일 빈 keycloakdb 에서 시작하므로 bootstrap 이 매일 실행한다 (realm 설정은 realm-gotgan.json import, 사용자는 이 스크립트)
 #
 # Keycloak 파드 안에서 실행된다 — 파일을 표준 입력으로 넘기면 파드의 kcadm.sh 와 환경 변수(keycloak-secret)를 그대로 쓴다:
 #   클러스터: kubectl exec -i -n sesac-gojigi deploy/keycloak -- bash -s < scripts/keycloak-seed.sh   (bootstrap 워크플로)
 #   로컬:     docker compose exec -T keycloak bash -s < ../gotgan-config/scripts/keycloak-seed.sh
-# 필요한 환경 변수 (keycloak-secret · compose):
-#   KC_BOOTSTRAP_ADMIN_USERNAME · KC_BOOTSTRAP_ADMIN_PASSWORD — master 콘솔 admin (kcadm 로그인)
-#   SEED_ADMIN_PASSWORD — 곳간 관리자 계정 비밀번호 · SEED_DEMO_PASSWORD — 판매자 · 구매자 공용 비밀번호
-#   (비밀번호 정책: 8자 이상 · 영문 · 특수문자 — realm-gotgan.json passwordPolicy)
+# 필요한 환경 변수 (keycloak-secret, compose):
+#   KC_BOOTSTRAP_ADMIN_USERNAME, KC_BOOTSTRAP_ADMIN_PASSWORD — master 콘솔 admin (kcadm 로그인)
+#   SEED_ADMIN_PASSWORD — 곳간 관리자 계정 비밀번호, SEED_DEMO_PASSWORD — 판매자, 구매자 공용 비밀번호
+#   (비밀번호 정책: 8자 이상, 영문, 특수문자 — realm-gotgan.json passwordPolicy)
 #
-# 멱등 — 이미 있는 계정은 비밀번호를 건드리지 않고 속성 · 역할만 맞춘다. 실패하면 bootstrap 을 다시 실행해도 된다
-# user_id · store_id 는 userdb · storedb 의 R__demo_seed.sql 과 같은 값이어야 한다 (gateway 가 토큰 user_id 로 X-User-Id 를 만든다)
+# 멱등 — 이미 있는 계정은 비밀번호를 건드리지 않고 속성, 역할만 맞춘다. 실패하면 bootstrap 을 다시 실행해도 된다
+# user_id, store_id 는 userdb, storedb 의 R__demo_seed.sql 과 같은 값이어야 한다 (gateway 가 토큰 user_id 로 X-User-Id 를 만든다)
 set -euo pipefail
 
 KCADM=/opt/keycloak/bin/kcadm.sh
@@ -36,15 +36,15 @@ if [[ -n "${KC_HOSTNAME_ADMIN:-}" ]]; then
   echo "master realm frontendUrl = $KC_HOSTNAME_ADMIN"
 fi
 
-# Admin API 용 토큰 — 26.8.2 부터 토큰에 kc-admin-api 스코프 · audience 가 있어야 한다(CVE-2026-19688).
-# 없으면 가입 · 비밀번호 변경 · 탈퇴 · 회원 정지의 Admin API 호출이 401. 스코프는 realm 에 있지만 우리 client 에는 자동 할당되지 않는다
+# Admin API 용 토큰 — 26.8.2 부터 토큰에 kc-admin-api 스코프, audience 가 있어야 한다(CVE-2026-19688).
+# 없으면 가입, 비밀번호 변경, 탈퇴, 회원 정지의 Admin API 호출이 401. 스코프는 realm 에 있지만 우리 client 에는 자동 할당되지 않는다
 CLIENT_UUID=$(kc get clients -r gotgan -q clientId=gotgan-backend --fields id --format csv --noquotes)
 SCOPE_UUID=$(kc get client-scopes -r gotgan --fields id,name --format csv --noquotes | grep kc-admin-api | grep -oE '[0-9a-f-]{36}')
 kc update "clients/$CLIENT_UUID/default-client-scopes/$SCOPE_UUID" -r gotgan
 echo "gotgan-backend 기본 스코프에 kc-admin-api 추가"
 
 if [[ -z "${SEED_ADMIN_PASSWORD:-}" || -z "${SEED_DEMO_PASSWORD:-}" ]]; then
-  echo "SEED_ADMIN_PASSWORD · SEED_DEMO_PASSWORD 가 없어 시드 계정을 건너뜀" >&2
+  echo "SEED_ADMIN_PASSWORD, SEED_DEMO_PASSWORD 가 없어 시드 계정을 건너뜀" >&2
   rm -f "$CONFIG"
   exit 0
 fi
@@ -65,7 +65,7 @@ seed_user() {
     echo "  + $email 생성 (user_id=$user_id, store_id=$store_id)"
   else
     echo "{\"attributes\":{$attrs}}" | kc update "users/$id" -r "$REALM" -f - --merge
-    echo "  = $email 이미 있음 — 속성 · 역할만 확인"
+    echo "  = $email 이미 있음 — 속성, 역할만 확인"
   fi
   for role in "$@"; do
     kc add-roles -r "$REALM" --uid "$id" --rolename "$role"

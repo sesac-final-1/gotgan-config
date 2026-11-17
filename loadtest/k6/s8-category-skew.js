@@ -1,14 +1,14 @@
 // S8 카테고리 쏠림 (멘토링 F-3) — 한 카테고리에 트래픽이 몰릴 때 다른 카테고리 응답이 함께 느려지는가. 담당 구지훈
 // 앞 3분은 카테고리마다 고르게(기준), 30초 올린 뒤 5분은 HOT 카테고리에 몰아서(쏠림) 같은 "나머지 카테고리"의 p95 를 비교한다
 // 상품 조회는 카테고리와 관계없이 product 서비스 하나가 처리 — 격리는 없으므로 같이 느려지는 것이 예상. 결과는 있는 그대로 기록한다
-//   bash loadtest/run.sh s8 s8-category-skew.js                         (기본: HOT 식품 · 합 200 VU, 약 9분)
+//   bash loadtest/run.sh s8 s8-category-skew.js                         (기본: HOT 식품, 합 200 VU, 약 9분)
 //   bash loadtest/run.sh s8 s8-category-skew.js -e HOT=3 -e HOT_VUS=360 -e OTHER_VUS=40
 import { check, sleep } from 'k6';
 import exec from 'k6/execution';
 import { Trend } from 'k6/metrics';
 import { CATEGORIES, get, pick, think, summaryTo } from './lib.js';
 
-const HOT = Number(__ENV.HOT || 1);                  // 상위 카테고리 — 1 식품 · 2 리빙 · 3 패션의류 · 4 신발 · 가방 · 5 뷰티 · 6 디지털
+const HOT = Number(__ENV.HOT || 1);                  // 상위 카테고리 — 1 식품, 2 리빙, 3 패션의류, 4 신발, 가방, 5 뷰티, 6 디지털
 const OTHER_VUS = Number(__ENV.OTHER_VUS || 40);     // 나머지 카테고리 — 내내 같은 부하
 const HOT_VUS = Number(__ENV.HOT_VUS || 160);        // 쏠림 구간의 HOT 부하
 const BASE_VUS = Math.max(1, Math.round(OTHER_VUS / (CATEGORIES.length - 1)));   // 기준 구간 HOT = 나머지 카테고리 한 곳과 같은 몫

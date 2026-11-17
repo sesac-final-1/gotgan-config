@@ -2,7 +2,7 @@
   "id": null,
   "uid": "cluster",
   "title": "클러스터",
-  "description": "노드와 파드의 CPU · 메모리를 보는 대시보드입니다. 노드 여유, requests 예약량, 파드 배치를 확인할 때 씁니다. 서비스 내부의 Heap · GC · DB 커넥션은 「JVM · 자원」에서 봅니다.",
+  "description": "노드와 파드의 CPU, 메모리를 보는 대시보드입니다. 노드 여유, requests 예약량, 파드 배치를 확인할 때 씁니다. 서비스 내부의 Heap, GC, DB 커넥션은 「JVM, 자원」에서 봅니다.",
   "tags": [
     "gotgan",
     "observability"
@@ -410,7 +410,7 @@
       "id": 7,
       "type": "stat",
       "title": "비정상 파드",
-      "description": "Pending · Failed · Unknown 상태인 파드 수입니다. 0이면 정상입니다. Pending이 계속되면 kubectl describe pod로 노드 자원이 부족한지 확인합니다. 위쪽 네임스페이스 선택을 따릅니다.",
+      "description": "Pending, Failed, Unknown 상태인 파드 수입니다. 0이면 정상입니다. Pending이 계속되면 kubectl describe pod로 노드 자원이 부족한지 확인합니다. 위쪽 네임스페이스 선택을 따릅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1004,7 +1004,7 @@
       "id": 16,
       "type": "timeseries",
       "title": "파드 메모리 사용량",
-      "description": "파드별 실제 메모리 사용량(working set)입니다. limit 대비 비율은 「JVM · 자원 (측정용)」에서 봅니다. 위쪽 네임스페이스 선택을 따릅니다.",
+      "description": "파드별 실제 메모리 사용량(working set)입니다. limit 대비 비율은 「JVM, 자원 (측정용)」에서 봅니다. 위쪽 네임스페이스 선택을 따릅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1143,7 +1143,7 @@
       "id": 19,
       "type": "timeseries",
       "title": "네임스페이스 CPU 사용량",
-      "description": "네임스페이스별 CPU 사용량입니다. 단위는 밀리코어(mCPU)이며 1000 mCPU가 코어 1개입니다. 업무 서비스와 모니터링 · 시스템 파드가 각각 얼마나 쓰는지 비교합니다. 위쪽 네임스페이스 선택과 관계없이 전체를 봅니다.",
+      "description": "네임스페이스별 CPU 사용량입니다. 단위는 밀리코어(mCPU)이며 1000 mCPU가 코어 1개입니다. 업무 서비스와 모니터링, 시스템 파드가 각각 얼마나 쓰는지 비교합니다. 위쪽 네임스페이스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1331,7 +1331,7 @@
       "id": 22,
       "type": "timeseries",
       "title": "파드 상태 사유",
-      "description": "Evicted · NodeLost 같은 사유가 붙은 파드 수입니다. 비어 있으면 정상입니다.",
+      "description": "Evicted, NodeLost 같은 사유가 붙은 파드 수입니다. 비어 있으면 정상입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"

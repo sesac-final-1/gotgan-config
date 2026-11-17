@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "jvm",
-  "title": "JVM · 자원 (측정용)",
+  "title": "JVM, 자원 (측정용)",
   "description": "서비스별 메모리, Heap, GC, DB 커넥션, CPU, 재시작을 보는 대시보드입니다. 부하 측정 때 어떤 자원이 먼저 부족해지는지 찾을 때 씁니다. 노드 전체의 여유는 「클러스터」에서 봅니다.",
   "tags": [
     "gotgan",
@@ -35,7 +35,7 @@
           "refId": "app"
         },
         "definition": "label_values(jvm_memory_used_bytes{namespace=\"sesac-gojigi\"}, app)",
-        "description": "JVM 지표를 내는 서비스만 목록에 나옵니다. All은 업무 서비스 전체이며 MySQL · Redis · Keycloak은 빠집니다.",
+        "description": "JVM 지표를 내는 서비스만 목록에 나옵니다. All은 업무 서비스 전체이며 MySQL, Redis, Keycloak은 빠집니다.",
         "refresh": 2,
         "sort": 1,
         "multi": true,
@@ -497,7 +497,7 @@
       "id": 9,
       "type": "timeseries",
       "title": "메모리 사용률 (limit 대비)",
-      "description": "파드별 메모리 사용량을 메모리 limit(서비스는 768Mi)으로 나눈 비율입니다. 100%에 닿으면 OOMKilled로 재시작됩니다. Heap 사용률은 낮은데 이 값이 높으면 Heap 밖(Non-heap · 스레드 · 네이티브 메모리)이 원인입니다.",
+      "description": "파드별 메모리 사용량을 메모리 limit(서비스는 768Mi)으로 나눈 비율입니다. 100%에 닿으면 OOMKilled로 재시작됩니다. Heap 사용률은 낮은데 이 값이 높으면 Heap 밖(Non-heap, 스레드, 네이티브 메모리)이 원인입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -663,7 +663,7 @@
       "id": 11,
       "type": "timeseries",
       "title": "Non-heap 메모리",
-      "description": "JVM이 Heap 밖에 쓰는 메모리(메타스페이스 · 코드 캐시 등)입니다. 우리 서비스는 Heap보다 이 값이 큽니다. 주의: 스레드 스택과 다이렉트 버퍼는 여기에 잡히지 않으므로 메모리 사용률 (limit 대비)과 함께 봅니다.",
+      "description": "JVM이 Heap 밖에 쓰는 메모리(메타스페이스, 코드 캐시 등)입니다. 우리 서비스는 Heap보다 이 값이 큽니다. 주의: 스레드 스택과 다이렉트 버퍼는 여기에 잡히지 않으므로 메모리 사용률 (limit 대비)과 함께 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1297,7 +1297,7 @@
     {
       "id": 21,
       "type": "row",
-      "title": "CPU · 스레드",
+      "title": "CPU, 스레드",
       "collapsed": false,
       "gridPos": {
         "x": 0,

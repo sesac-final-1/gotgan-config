@@ -7,16 +7,16 @@ metadata:
   namespace: sesac-gojigi
 data:
   SPRING_PROFILES_ACTIVE: k8s
-  TZ: Asia/Seoul                                         # JVM 시간대 — DB · JDBC 와 함께 세 곳 모두 Asia/Seoul
+  TZ: Asia/Seoul                                         # JVM 시간대 — DB, JDBC 와 함께 세 곳 모두 Asia/Seoul
   DB_HOST: mysql.sesac-gojigi.svc.cluster.local
   REDIS_HOST: redis.sesac-gojigi.svc.cluster.local
-  KEYCLOAK_URI: http://keycloak:8080                    # 서버 간 호출(토큰 · Admin API · gateway 의 JWKS) — 내부 주소
+  KEYCLOAK_URI: http://keycloak:8080                    # 서버 간 호출(토큰, Admin API, gateway 의 JWKS) — 내부 주소
   # ── 소셜 로그인 (이경석) — Keycloak 공개 주소 = KC_HOSTNAME (deploy/k8s/keycloak/keycloak.yaml)
   KEYCLOAK_ISSUER: https://api.gotgan.click/realms/gotgan                         # gateway 가 검증하는 토큰 iss
   KEYCLOAK_PUBLIC_URL: https://api.gotgan.click                                   # user-service — 브라우저를 보낼 Keycloak 로그인 주소
   SOCIAL_CALLBACK_URL: https://gotgan-ashy.vercel.app/api/auth/social/callback    # Keycloak → 우리 콜백 (realm redirectUris 와 같게, vercel 리라이트로 쿠키가 프론트 도메인에)
   SOCIAL_RESULT_URL: https://gotgan-ashy.vercel.app/auth/callback                 # 로그인 후 프론트 페이지
-  # ── 서비스 주소 (CoreDNS 이름 — 게이트웨이 라우트 · 서비스 간 호출)
+  # ── 서비스 주소 (CoreDNS 이름 — 게이트웨이 라우트, 서비스 간 호출)
   USER_SERVICE_URI: http://user-service:8081
   STORE_SERVICE_URI: http://store-service:8082
   PRODUCT_SERVICE_URI: http://product-service:8083
@@ -25,17 +25,17 @@ data:
   PAYMENT_SERVICE_URI: http://payment-service:8086
   REVIEW_SERVICE_URI: http://review-service:8087
   ADMIN_SERVICE_URI: http://admin-service:8088
-  CHAT_SERVICE_URI: http://chat-service:8089                # 1:1 채팅 (10/27) — 게이트웨이 /api/chats/** · /ws/chat
+  CHAT_SERVICE_URI: http://chat-service:8089                # 1:1 채팅 (10/27) — 게이트웨이 /api/chats/**, /ws/chat
   # ── 관측성
   LOKI_URL: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
   ZIPKIN_ENDPOINT: http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans
   # ── order (데모용 단축, 가이드라인 10장)
-  AUTO_CONFIRM_AFTER: 1h                                 # 배송완료 후 자동 구매확정 (운영 기본 7d) — 11/3 2m → 1h: QA · 시연에서 반품 · 교환 신청할 여유
+  AUTO_CONFIRM_AFTER: 1h                                 # 배송완료 후 자동 구매확정 (운영 기본 7d) — 11/3 2m → 1h: QA, 시연에서 반품, 교환 신청할 여유
   PAYMENT_TIMEOUT: 15m
   AUTO_DELIVER_AFTER: 10m                                # 발송 후 자동 배송완료 (DLV-04, 운영 기본 1h — backend #99) — 11/3 1m → 10m: 판매자 배송완료 처리를 직접 해 볼 여유
   # ── AWS 자원 (구지훈 — Terraform app/ output, 비밀 아님). 권한은 서비스별 IRSA(cluster/irsa.tf) 가 준다
   AWS_REGION: ap-northeast-2
-  # SNS 토픽 — 발행: store · order · settlement 서비스 (app output topic_arns)
+  # SNS 토픽 — 발행: store, order, settlement 서비스 (app output topic_arns)
   STORE_EVENTS_TOPIC_ARN: arn:aws:sns:ap-northeast-2:694951014380:sesac-gojigi-store-events
   ORDER_EVENTS_TOPIC_ARN: arn:aws:sns:ap-northeast-2:694951014380:sesac-gojigi-order-events
   SETTLEMENT_EVENTS_TOPIC_ARN: arn:aws:sns:ap-northeast-2:694951014380:sesac-gojigi-settlement-events

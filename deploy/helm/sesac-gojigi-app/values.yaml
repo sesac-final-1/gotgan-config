@@ -11,9 +11,9 @@ defaults:
     requests: { cpu: 100m, memory: 512Mi }  # 메모리 requests 는 힙 조정 뒤 재측정해 결정 (사이징 계획 11/5)
     limits: { memory: 768Mi }               # 힙 256 + 힙 밖 최대 255 + 128 = 639 → 최소 768 유지
   env:
-    - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=33 -XX:+ExitOnOutOfMemoryError" }   # 힙 = max(256Mi, 라이브 × 2) → 768 의 33%. 이미지 기본값 75% 를 덮는다 · 힙 + 힙 밖 + 스레드 · 네이티브 약 180Mi ≤ 768
+    - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=33 -XX:+ExitOnOutOfMemoryError" }   # 힙 = max(256Mi, 라이브 × 2) → 768 의 33%. 이미지 기본값 75% 를 덮는다, 힙 + 힙 밖 + 스레드, 네이티브 약 180Mi ≤ 768
   terminationGracePeriodSeconds: 60
-  hpa:                                      # HPA(11/17, 24시간 운영 · 비용 제약 해제) — 서비스에 hpa 가 있으면 replicas 가 최소, hpa.maxReplicas 가 최대
+  hpa:                                      # HPA(11/17, 24시간 운영, 비용 제약 해제) — 서비스에 hpa 가 있으면 replicas 가 최소, hpa.maxReplicas 가 최대
     cpu: 70                                 # 목표 CPU = requests 의 70%. 넘으면 늘리고(15초에 최대 2개), 5분 동안 낮으면 줄인다
 
 services:
@@ -23,14 +23,14 @@ services:
     tag: "71de686"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8080
     resources:
-      requests: { cpu: 200m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 200m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7, S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     replicas: 2                             # 입구는 2개 — 하나가 죽어도 접속 유지
     hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     service:
       type: LoadBalancer
       port: 443                             # NLB 리스너 443(TLS 종료) → 파드 8080 — vercel.json 이 https://api.gotgan.click 로 호출. NLB 는 HTTP→HTTPS 리다이렉트 불가라 80 은 열지 않음
-      annotations:                          # NLB · EIP · 퍼블릭 서브넷 (가이드라인 05장, 구지훈 — 10/14 실클러스터 검증)
+      annotations:                          # NLB, EIP, 퍼블릭 서브넷 (가이드라인 05장, 구지훈 — 10/14 실클러스터 검증)
         service.beta.kubernetes.io/aws-load-balancer-type: external
         service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
         service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
@@ -44,7 +44,7 @@ services:
     repository: sesac-gojigi-user
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8081
-    replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
+    replicas: 2                             # 구매 경로 — 주문 한 건이 product, store, user, payment 를 거친다. 파드, 노드 하나가 죽어도 끊기지 않게 (11/5)
     hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     secretName: user-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -54,10 +54,10 @@ services:
     repository: sesac-gojigi-store
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8082
-    replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
+    replicas: 2                             # 구매 경로 — 주문 한 건이 product, store, user, payment 를 거친다. 파드, 노드 하나가 죽어도 끊기지 않게 (11/5)
     hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     resources:
-      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7, S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: store-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -67,10 +67,10 @@ services:
     repository: sesac-gojigi-product
     tag: "b93975f"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8083
-    replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
+    replicas: 2                             # 구매 경로 — 주문 한 건이 product, store, user, payment 를 거친다. 파드, 노드 하나가 죽어도 끊기지 않게 (11/5)
     hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     resources:
-      requests: { cpu: 250m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 250m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7, S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: product-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -80,10 +80,10 @@ services:
     repository: sesac-gojigi-order
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8084
-    replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
+    replicas: 2                             # 구매 경로 — 주문 한 건이 product, store, user, payment 를 거친다. 파드, 노드 하나가 죽어도 끊기지 않게 (11/5)
     hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     resources:
-      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7, S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: order-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -101,7 +101,7 @@ services:
     repository: sesac-gojigi-payment
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8086
-    replicas: 2                             # 결제 경로 — 파드 하나가 죽거나 재시작해도 결제 확인 · 웹훅 · 취소가 끊기지 않게 (10/21 장애 대비 12번). 취소 복구 스케줄러는 ShedLock 이라 한 파드만
+    replicas: 2                             # 결제 경로 — 파드 하나가 죽거나 재시작해도 결제 확인, 웹훅, 취소가 끊기지 않게 (10/21 장애 대비 12번). 취소 복구 스케줄러는 ShedLock 이라 한 파드만
     secretName: payment-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
   # ── review (perish95)
   review-service:
@@ -109,7 +109,7 @@ services:
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8087
     resources:
-      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7, S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: review-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
@@ -121,17 +121,17 @@ services:
     port: 8088
     env:
       - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=41 -XX:+ExitOnOutOfMemoryError" }   # 라이브 138Mi × 2 → 힙 320Mi. 11/5 S5 에서 75%(557Mi)까지 커지며 OOMKilled
-      - { name: APP_CHAOS_ENABLED, value: "true" }    # F-1 장애 시연 — 파드 내리기. 11/10 ~ 11/20 리허설 · 발표 기간 켜 둠(k6 끝남). 발표 뒤 "false" 로 되돌림 (templates/chaos-rbac.yaml)
+      - { name: APP_CHAOS_ENABLED, value: "true" }    # F-1 장애 시연 — 파드 내리기. 11/10 ~ 11/20 리허설, 발표 기간 켜 둠(k6 끝남). 발표 뒤 "false" 로 되돌림 (templates/chaos-rbac.yaml)
       - { name: APP_LOADTEST_ENABLED, value: "true" } # 관리자 화면 부하테스트(11/16) — k6 Job(templates/loadtest-configmap.yaml). 발표 기간만 켜 둠, 발표 뒤 "false"
     secretName: admin-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (admindb, 10/26)
     serviceAccount:
-      roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-admin-irsa   # Terraform cluster/irsa.tf — 알림 센터 SQS · DynamoDB inbox (10/27)
+      roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-admin-irsa   # Terraform cluster/irsa.tf — 알림 센터 SQS, DynamoDB inbox (10/27)
   # ── chat (jihoon-devstu) — 1:1 채팅 (10/27). AWS 호출 없음 → IRSA 없음. WebSocket 연결 수는 지표 chat_ws_sessions
   chat-service:
     repository: sesac-gojigi-chat
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8089
     resources:
-      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
+      requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7, S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     secretName: chat-service-secret          # secrets-sync 워크플로가 만든 Secret → envFrom (chatdb)

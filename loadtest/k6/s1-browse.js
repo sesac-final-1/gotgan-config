@@ -1,7 +1,7 @@
-// S1 둘러보기 (트래픽 대부분) — 비로그인. 카테고리 → 목록(카테고리 · 정렬 · 페이지) → 상세 → 리뷰 · 문의 → 스토어 홈
-// 통과: p95 < 500ms · 오류 < 1%. 주로 보는 곳: gateway · product · review · store 메모리 · CPU · 풀
+// S1 둘러보기 (트래픽 대부분) — 비로그인. 카테고리 → 목록(카테고리, 정렬, 페이지) → 상세 → 리뷰, 문의 → 스토어 홈
+// 통과: p95 < 500ms, 오류 < 1%. 주로 보는 곳: gateway, product, review, store 메모리, CPU, 풀
 //   k6 run loadtest/k6/s1-browse.js            (단계 10 → 50 → 100 → 200 VU, 각 3분)
-//   k6 run -e VUS=100 -e HOLD=30m ...           (S6 · S7 처럼 고정 부하로 쓸 때)
+//   k6 run -e VUS=100 -e HOLD=30m ...           (S6, S7 처럼 고정 부하로 쓸 때)
 import { sleep, group } from 'k6';
 import { check } from 'k6';
 import { CATEGORIES, SUB_CATEGORIES, PRODUCTS, STORES, get, pick, think, stages, thresholds, summaryTo } from './lib.js';

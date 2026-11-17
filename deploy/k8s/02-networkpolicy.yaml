@@ -1,7 +1,7 @@
-# DB 티어 NetworkPolicy (10/13 3차 · 가이드라인 04장 · 컨벤션 5-3). 담당 구지훈
-# - db-ingress-from-backend : tier=db 파드(MySQL 3306 · Redis 6379) 로 들어오는 트래픽은 같은 네임스페이스의 tier=backend 파드만
+# DB 티어 NetworkPolicy (10/13 3차, 가이드라인 04장, 컨벤션 5-3). 담당 구지훈
+# - db-ingress-from-backend : tier=db 파드(MySQL 3306, Redis 6379) 로 들어오는 트래픽은 같은 네임스페이스의 tier=backend 파드만
 # - db-egress-deny-except-dns : tier=db 파드는 밖으로 나가지 않는다 (kube-dns 53 만 허용 → NAT 경로 없음)
-# tier=backend 라벨은 Helm deployment.yaml(업무 서비스 · gateway) 과 keycloak.yaml 이 붙인다. 라벨이 없는 파드(디버그용 mysql 클라이언트 등)는 DB 에 닿지 못한다
+# tier=backend 라벨은 Helm deployment.yaml(업무 서비스, gateway) 과 keycloak.yaml 이 붙인다. 라벨이 없는 파드(디버그용 mysql 클라이언트 등)는 DB 에 닿지 못한다
 # bootstrap 워크플로가 01-configmap.yaml 직후 적용한다. VPC CNI 의 NetworkPolicy 는 EKS 애드온 설정 enableNetworkPolicy=true 가 필요 (cluster/main.tf)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -44,7 +44,7 @@ spec:
         - { protocol: UDP, port: 53 }
         - { protocol: TCP, port: 53 }
 ---
-# 업무 티어 — 같은 네임스페이스 tier=backend(서비스 간 호출 · gateway) + monitoring(Prometheus 수집)만. 다른 네임스페이스 파드가
+# 업무 티어 — 같은 네임스페이스 tier=backend(서비스 간 호출, gateway) + monitoring(Prometheus 수집)만. 다른 네임스페이스 파드가
 # /internal/** 을 직접 부르지 못하게 한다(코드리뷰 B-구-2). kubelet 프로브는 노드 → 파드라 VPC CNI 가 항상 허용
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

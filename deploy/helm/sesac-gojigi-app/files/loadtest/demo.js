@@ -2,7 +2,7 @@
 // 사용자 수는 실행 중에 admin 이 k6 REST API(6565, PATCH /v1/status)로 바꾼다 → externally-controlled 실행기.
 //   이 실행기는 k6 v2 에서 빠져 이미지는 grafana/k6:1.8.3 으로 고정한다(admin 설정 app.loadtest.image)
 // 지표는 Prometheus remote write(-o experimental-prometheus-rw, 5초)로 보내고 관리자 화면이 testid 태그로 조회한다
-// 상품 · 옵션 번호는 loadtest/k6/lib.js 와 같은 시드 기준(gotgan-backend scripts/seed-gen)
+// 상품, 옵션 번호는 loadtest/k6/lib.js 와 같은 시드 기준(gotgan-backend scripts/seed-gen)
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import exec from 'k6/execution';
@@ -30,7 +30,7 @@ const PRODUCTS = [101, 102, 103, 104, 201, 202, 203, 204, 1101, 1102, 1104, 1201
 const CART_OPTIONS = [10101, 10102, 10103, 10401, 10402, 10403, 120101, 120102, 120103, 120104, 120105, 120106, 120107, 120108,
   170101, 170102, 170103, 170104, 180101, 180102, 180201, 180301, 180302, 180303, 180401, 180402, 180403];
 
-// 고르기 · 쉬는 시간은 VU 번호와 반복 횟수로 돌아가며 정한다(보안용 난수가 필요 없는 곳 — Sonar S2245 회피, 결과 분포는 고르게 섞임)
+// 고르기, 쉬는 시간은 VU 번호와 반복 횟수로 돌아가며 정한다(보안용 난수가 필요 없는 곳 — Sonar S2245 회피, 결과 분포는 고르게 섞임)
 const vu = () => exec.vu.idInTest;
 const turn = () => vu() * 7 + exec.vu.iterationInScenario;
 let picks = 0;
@@ -44,7 +44,7 @@ const LOADTEST = { 'X-Gotgan-Loadtest': '1' };
 const anon = () => ({ 'X-Vercel-Forwarded-For': fakeIp(), ...LOADTEST });
 const get = (path, name, headers = anon()) => http.get(`${BASE}${path}`, { headers, tags: { name } });
 
-// ── ① 둘러보기 (R) — 목록 → 상세 → 리뷰 · 스토어
+// ── ① 둘러보기 (R) — 목록 → 상세 → 리뷰, 스토어
 function browse() {
   const list = get(`/api/products?categoryId=${pick(CATEGORIES)}&sort=NEW&page=0&size=24`, 'GET /api/products');
   check(list, { '목록 200': (r) => r.status === 200 });
@@ -66,8 +66,8 @@ function reviews() {
   think(0.5, 1.5);
 }
 
-// ── ③ 장바구니 CRUD (C · R · U · D) — VU 마다 부하용 계정 loadtest+{번호}@gotgan.test(아침에 accounts.js 로 생성)
-//   주문은 만들지 않는다(재고 · 결제 대기 정리 50분 — loadtest/README 2절)
+// ── ③ 장바구니 CRUD (C, R, U, D) — VU 마다 부하용 계정 loadtest+{번호}@gotgan.test(아침에 accounts.js 로 생성)
+//   주문은 만들지 않는다(재고, 결제 대기 정리 50분 — loadtest/README 2절)
 const session = { token: null };
 
 function login() {

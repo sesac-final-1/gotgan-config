@@ -1,5 +1,5 @@
 // S6 둘러보기 + 정산 집계 — S1 을 100 VU 로 돌리는 중(5분 뒤) 관리자 "이 주차 지금 집계"를 한 번
-// 통과: 집계 완료 시간 기록 · S1 p95 변화 < 20%(집계 전 ↔ 집계 중 구간 비교). 주로 보는 곳: settlement · MySQL
+// 통과: 집계 완료 시간 기록, S1 p95 변화 < 20%(집계 전 ↔ 집계 중 구간 비교). 주로 보는 곳: settlement, MySQL
 // 관리자 비밀번호는 실행하는 사람이 넣는다 — 관리자 계정은 시드 계정(문서에 비밀번호를 적지 않음)
 //   k6 run -e ADMIN_EMAIL=... -e ADMIN_PASSWORD=... loadtest/k6/s6-aggregate.js
 import http from 'k6/http';

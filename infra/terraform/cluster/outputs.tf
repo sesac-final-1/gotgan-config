@@ -1,4 +1,4 @@
-# 다른 폴더 · 사람이 쓸 값 — terraform_remote_state 로 읽힌다
+# 다른 폴더, 사람이 쓸 값 — terraform_remote_state 로 읽힌다
 
 output "cluster_name" {
   description = "EKS 클러스터 이름 — aws eks update-kubeconfig --name"
@@ -11,7 +11,7 @@ output "cluster_endpoint" {
 }
 
 output "oidc_provider_arn" {
-  description = "클러스터 OIDC 공급자 ARN — IRSA 신뢰 정책 (매일 바뀜, irsa.tf · irsa_grafana.tf 가 같은 apply 안에서 사용)"
+  description = "클러스터 OIDC 공급자 ARN — IRSA 신뢰 정책 (매일 바뀜, irsa.tf, irsa_grafana.tf 가 같은 apply 안에서 사용)"
   value       = module.eks.oidc_provider_arn
 }
 

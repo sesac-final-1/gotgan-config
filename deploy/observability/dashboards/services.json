@@ -2,7 +2,7 @@
   "id": null,
   "uid": "services",
   "title": "서비스 (RED)",
-  "description": "서비스별 요청 수, 오류율, 응답 시간을 보는 대시보드입니다. 게이트웨이 라우트별 요청 · 429와 채팅 세션도 함께 보여 줍니다. 어느 서비스가 느리거나 오류를 내는지 찾을 때 씁니다. 자원 사용량은 「JVM · 자원」, 원인이 되는 로그는 「Logs」에서 봅니다.",
+  "description": "서비스별 요청 수, 오류율, 응답 시간을 보는 대시보드입니다. 게이트웨이 라우트별 요청, 429와 채팅 세션도 함께 보여 줍니다. 어느 서비스가 느리거나 오류를 내는지 찾을 때 씁니다. 자원 사용량은 「JVM, 자원」, 원인이 되는 로그는 「Logs」에서 봅니다.",
   "tags": [
     "gotgan",
     "observability"
@@ -35,7 +35,7 @@
           "refId": "app"
         },
         "definition": "label_values(http_server_requests_seconds_count{namespace=\"sesac-gojigi\"}, app)",
-        "description": "서비스별 · 엔드포인트 줄에만 적용됩니다. 요약 · 게이트웨이 · 채팅 줄은 늘 전체를 봅니다.",
+        "description": "서비스별, 엔드포인트 줄에만 적용됩니다. 요약, 게이트웨이, 채팅 줄은 늘 전체를 봅니다.",
         "refresh": 2,
         "sort": 1,
         "multi": true,
@@ -206,7 +206,7 @@
       "id": 4,
       "type": "stat",
       "title": "요청 제한 (429)",
-      "description": "최근 1분 동안 요청 제한에 걸려 429로 거절된 요청 수입니다. 한도는 로그인 · 가입이 사용자(또는 IP)당 분당 30회, 그 밖의 API가 초당 20회입니다. 어느 라우트에서 걸렸는지는 아래 게이트웨이 줄에서 봅니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
+      "description": "최근 1분 동안 요청 제한에 걸려 429로 거절된 요청 수입니다. 한도는 로그인, 가입이 사용자(또는 IP)당 분당 30회, 그 밖의 API가 초당 20회입니다. 어느 라우트에서 걸렸는지는 아래 게이트웨이 줄에서 봅니다. 위쪽 서비스 선택과 관계없이 전체를 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -929,7 +929,7 @@
       "id": 15,
       "type": "table",
       "title": "오류 많은 API Top 10",
-      "description": "선택한 시간 범위에서 4xx · 5xx 응답이 가장 많은 API 10개입니다. 401(로그인 필요)이나 404(없는 데이터)처럼 정상적인 거절도 포함되니 상태 코드를 함께 봅니다.",
+      "description": "선택한 시간 범위에서 4xx, 5xx 응답이 가장 많은 API 10개입니다. 401(로그인 필요)이나 404(없는 데이터)처럼 정상적인 거절도 포함되니 상태 코드를 함께 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1010,7 +1010,7 @@
       "id": 17,
       "type": "timeseries",
       "title": "라우트별 요청 수 (RPS)",
-      "description": "게이트웨이 라우트별 초당 요청 수입니다. 요청이 한 번이라도 들어온 라우트만 보입니다. user 서비스는 user-auth-strict(로그인 · 가입), user-auth(그 밖의 인증), user-service로 나뉩니다.",
+      "description": "게이트웨이 라우트별 초당 요청 수입니다. 요청이 한 번이라도 들어온 라우트만 보입니다. user 서비스는 user-auth-strict(로그인, 가입), user-auth(그 밖의 인증), user-service로 나뉩니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"

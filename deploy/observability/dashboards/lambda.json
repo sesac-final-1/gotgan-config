@@ -1,8 +1,8 @@
 {
   "id": null,
   "uid": "lambda",
-  "title": "Lambda · DLQ",
-  "description": "메일 · 정산서 · 업로드 검사 · 로그 보관 · 인프라 스케줄 Lambda 5개와 이벤트 큐 DLQ 를 봅니다. 데이터는 CloudWatch(IRSA 읽기 전용)이고 지표는 약 1 ~ 5분 늦게 들어옵니다. 쿠버네티스 서비스는 「서비스 (RED)」에서 봅니다.",
+  "title": "Lambda, DLQ",
+  "description": "메일, 정산서, 업로드 검사, 로그 보관, 인프라 스케줄 Lambda 5개와 이벤트 큐 DLQ 를 봅니다. 데이터는 CloudWatch(IRSA 읽기 전용)이고 지표는 약 1 ~ 5분 늦게 들어옵니다. 쿠버네티스 서비스는 「서비스 (RED)」에서 봅니다.",
   "tags": [
     "gotgan",
     "observability"
@@ -265,7 +265,7 @@
       "id": 5,
       "type": "stat",
       "title": "DLQ 쌓인 메시지",
-      "description": "재시도해도 처리하지 못해 DLQ 로 옮겨진 이벤트 수의 현재 합입니다. 0 이 정상이고, 1 이상이면 어떤 알림 · 처리가 빠졌다는 뜻이라 아래 「큐별 DLQ」에서 큐를 확인합니다. 1건부터 CloudWatch 알람 메일도 갑니다.",
+      "description": "재시도해도 처리하지 못해 DLQ 로 옮겨진 이벤트 수의 현재 합입니다. 0 이 정상이고, 1 이상이면 어떤 알림, 처리가 빠졌다는 뜻이라 아래 「큐별 DLQ」에서 큐를 확인합니다. 1건부터 CloudWatch 알람 메일도 갑니다.",
       "datasource": {
         "type": "cloudwatch",
         "uid": "cloudwatch"
@@ -354,7 +354,7 @@
       "id": 7,
       "type": "timeseries",
       "title": "함수별 호출 수",
-      "description": "함수마다 실행된 횟수입니다. 메일 · 정산서 · 업로드 검사는 이벤트가 있을 때, log-archive 와 infra-dispatch 는 정해진 시각에 실행됩니다.",
+      "description": "함수마다 실행된 횟수입니다. 메일, 정산서, 업로드 검사는 이벤트가 있을 때, log-archive 와 infra-dispatch 는 정해진 시각에 실행됩니다.",
       "datasource": {
         "type": "cloudwatch",
         "uid": "cloudwatch"
@@ -524,7 +524,7 @@
       "id": 9,
       "type": "timeseries",
       "title": "함수별 최대 소요 시간",
-      "description": "가장 오래 걸린 실행 시간입니다. 제한 시간(upload-guard 10초 · 나머지 30초)에 가까워지면 시간 초과로 실패할 수 있습니다.",
+      "description": "가장 오래 걸린 실행 시간입니다. 제한 시간(upload-guard 10초, 나머지 30초)에 가까워지면 시간 초과로 실패할 수 있습니다.",
       "datasource": {
         "type": "cloudwatch",
         "uid": "cloudwatch"
