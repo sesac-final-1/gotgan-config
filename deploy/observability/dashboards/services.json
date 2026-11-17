@@ -497,7 +497,7 @@
       "id": 9,
       "type": "timeseries",
       "title": "에러율 (5xx)",
-      "description": "서비스별 응답 중 서버 오류(5xx)의 비율입니다. 값이 오른 서비스는 선을 눌러 로그에서 원인을 확인합니다. 요청이 없던 구간은 비어 보입니다.",
+      "description": "서비스별 응답 중 서버 오류(5xx)의 비율입니다. 값이 오른 서비스는 선을 눌러 로그에서 원인을 확인합니다. 요청이 없던 구간은 비어 보입니다. 세로축은 평소 0 ~ 10%로 보이고, 그보다 오르면 자동으로 늘어납니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -536,7 +536,8 @@
             "spanNulls": true,
             "thresholdsStyle": {
               "mode": "line+area"
-            }
+            },
+            "axisSoftMax": 0.1
           },
           "thresholds": {
             "mode": "absolute",
@@ -561,7 +562,6 @@
               "url": "/d/logs/logs?var-app=${__field.labels.app}&${__url_time_range}"
             }
           ],
-          "max": 1,
           "noValue": "요청 없음"
         },
         "overrides": []
