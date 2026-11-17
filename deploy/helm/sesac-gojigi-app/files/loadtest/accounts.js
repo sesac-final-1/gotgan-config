@@ -21,6 +21,6 @@ export default function () {
   const no = exec.scenario.iterationInTest + 1;
   const res = http.post(`${BASE}/api/auth/signup`, JSON.stringify({
     email: `loadtest+${no}@gotgan.test`, password: PASSWORD, name: `부하${no}`, phone: `010-9000-${String(no).padStart(4, '0')}`,
-  }), { headers: { 'Content-Type': 'application/json', 'X-Vercel-Forwarded-For': ip(no) }, tags: { name: 'POST /api/auth/signup' } });
+  }), { headers: { 'Content-Type': 'application/json', 'X-Vercel-Forwarded-For': ip(no), 'X-Gotgan-Loadtest': '1' }, tags: { name: 'POST /api/auth/signup' } });
   check(res, { '가입 201 · 이미 있음 409': (r) => r.status === 201 || r.status === 409 });
 }

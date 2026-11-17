@@ -39,7 +39,9 @@ const think = (min = 1, max = 3) => sleep(min + ((turn() % 10) / 10) * (max - mi
 
 // 비로그인 요청 출처 — VU 마다 고정 가상 IP(요청 제한 키). loadtest/k6/lib.js 와 같은 방식
 const fakeIp = () => `10.${(vu() >> 16) & 255}.${(vu() >> 8) & 255}.${vu() & 255}`;
-const anon = () => ({ 'X-Vercel-Forwarded-For': fakeIp() });
+// X-Gotgan-Loadtest: 게이트웨이 현재 접속자 집계(ActiveUserFilter)에서 부하테스트 요청을 빼는 표시(11/17)
+const LOADTEST = { 'X-Gotgan-Loadtest': '1' };
+const anon = () => ({ 'X-Vercel-Forwarded-For': fakeIp(), ...LOADTEST });
 const get = (path, name, headers = anon()) => http.get(`${BASE}${path}`, { headers, tags: { name } });
 
 // ── ① 둘러보기 (R) — 목록 → 상세 → 리뷰 · 스토어
@@ -85,7 +87,7 @@ function login() {
 
 function cart() {
   if (!session.token && !login()) return;
-  const headers = { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' };
+  const headers = { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json', ...LOADTEST };
   const optionId = pick(CART_OPTIONS);
   const add = http.post(`${BASE}/api/carts/items`, JSON.stringify({ items: [{ productOptionId: optionId, quantity: 1 }] }),
     { headers, tags: { name: 'POST /api/carts/items' } });
