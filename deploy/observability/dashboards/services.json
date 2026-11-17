@@ -58,7 +58,7 @@
     {
       "id": 1,
       "type": "row",
-      "title": "요약",
+      "title": "사용자 요청 요약 (게이트웨이 기준)",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -426,7 +426,7 @@
       "id": 8,
       "type": "timeseries",
       "title": "요청 수 (RPS)",
-      "description": "서비스별 초당 요청 수입니다. 서비스끼리 주고받는 내부 호출도 포함합니다. 선을 누르면 그 서비스의 로그(Logs 대시보드)로 이동합니다.",
+      "description": "서비스별 초당 요청 수입니다. 서비스끼리 주고받는 내부 호출도 포함합니다. 선을 누르면 그 서비스의 로그(Logs 대시보드)로 이동합니다. 게이트웨이는 모든 외부 요청이 지나가 다른 서비스 선을 가리므로 빼고, 위 요약과 아래 라우트별 패널로 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -444,7 +444,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=~\"$app\", uri!~\"/actuator.*\"}[$__rate_interval]))",
+          "expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=~\"$app\", app!=\"gateway-service\", uri!~\"/actuator.*\"}[$__rate_interval]))",
           "legendFormat": "{{app}}",
           "range": true,
           "instant": false
@@ -587,7 +587,7 @@
       "id": 10,
       "type": "timeseries",
       "title": "p95 응답 시간",
-      "description": "서비스별로 요청 100건 중 95건이 끝난 시간입니다. 평균보다 느린 요청이 잘 드러납니다. 응답 시간 구간(50ms부터 5s까지 8칸)으로 계산한 근삿값이며, 5초를 넘으면 5s로 표시됩니다. 알림 벨 실시간 연결(/api/notifications/stream)은 연결이 몇 분씩 열려 있어 뺐습니다.",
+      "description": "서비스별로 요청 100건 중 95건이 끝난 시간입니다. 평균보다 느린 요청이 잘 드러납니다. 응답 시간 구간(50ms부터 5s까지 8칸)으로 계산한 근삿값이며, 5초를 넘으면 5s로 표시됩니다. 알림 벨 실시간 연결(/api/notifications/stream)은 연결이 몇 분씩 열려 있어 뺐습니다. 게이트웨이는 경로 정보가 없어 실시간 연결을 거를 수 없으므로 빼고, 위 요약과 아래 라우트별 패널로 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -605,7 +605,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (app, le) (rate(http_server_requests_seconds_bucket{namespace=\"sesac-gojigi\", app=~\"$app\", uri!~\"/actuator.*|/api/notifications/stream\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (app, le) (rate(http_server_requests_seconds_bucket{namespace=\"sesac-gojigi\", app=~\"$app\", app!=\"gateway-service\", uri!~\"/actuator.*|/api/notifications/stream\"}[$__rate_interval])))",
           "legendFormat": "{{app}}",
           "range": true,
           "instant": false
@@ -675,7 +675,7 @@
       "id": 11,
       "type": "timeseries",
       "title": "평균 응답 시간",
-      "description": "서비스별 평균 응답 시간입니다. p95와 차이가 크면 일부 요청만 유독 느리다는 뜻입니다. 알림 벨 실시간 연결은 뺐습니다.",
+      "description": "서비스별 평균 응답 시간입니다. p95와 차이가 크면 일부 요청만 유독 느리다는 뜻입니다. 알림 벨 실시간 연결은 뺐습니다. 게이트웨이는 경로 정보가 없어 실시간 연결을 거를 수 없으므로 빼고, 위 요약과 아래 라우트별 패널로 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -693,7 +693,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (app) (rate(http_server_requests_seconds_sum{namespace=\"sesac-gojigi\", app=~\"$app\", uri!~\"/actuator.*|/api/notifications/stream\"}[$__rate_interval])) / (sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=~\"$app\", uri!~\"/actuator.*|/api/notifications/stream\"}[$__rate_interval])) > 0)",
+          "expr": "sum by (app) (rate(http_server_requests_seconds_sum{namespace=\"sesac-gojigi\", app=~\"$app\", app!=\"gateway-service\", uri!~\"/actuator.*|/api/notifications/stream\"}[$__rate_interval])) / (sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sesac-gojigi\", app=~\"$app\", app!=\"gateway-service\", uri!~\"/actuator.*|/api/notifications/stream\"}[$__rate_interval])) > 0)",
           "legendFormat": "{{app}}",
           "range": true,
           "instant": false
@@ -764,7 +764,7 @@
       "id": 12,
       "type": "timeseries",
       "title": "최대 응답 시간",
-      "description": "최근 1 ~ 2분 동안 가장 느렸던 요청 한 건의 응답 시간입니다. 평균은 낮은데 이 값만 튀면 특정 API나 GC 멈춤을 의심하고, 아래 엔드포인트 표와 JVM 대시보드를 함께 봅니다. 알림 벨 실시간 연결은 뺐습니다.",
+      "description": "최근 1 ~ 2분 동안 가장 느렸던 요청 한 건의 응답 시간입니다. 평균은 낮은데 이 값만 튀면 특정 API나 GC 멈춤을 의심하고, 아래 엔드포인트 표와 JVM 대시보드를 함께 봅니다. 알림 벨 실시간 연결은 뺐습니다. 게이트웨이는 경로 정보가 없어 실시간 연결을 거를 수 없으므로 빼고, 위 요약과 아래 라우트별 패널로 봅니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -782,7 +782,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (app) (http_server_requests_seconds_max{namespace=\"sesac-gojigi\", app=~\"$app\", uri!~\"/actuator.*|/api/notifications/stream\"})",
+          "expr": "max by (app) (http_server_requests_seconds_max{namespace=\"sesac-gojigi\", app=~\"$app\", app!=\"gateway-service\", uri!~\"/actuator.*|/api/notifications/stream\"})",
           "legendFormat": "{{app}}",
           "range": true,
           "instant": false
