@@ -1,7 +1,7 @@
 # API 공개 주소 api.{domain_name} — Route 53 A 레코드(EIP 2개) + ACM 인증서(DNS 검증) → gateway NLB 443 TLS 리스너 (DuckDNS 대체)
 # 도메인은 Route 53 에서 등록(호스팅 영역 자동 생성) → 여기서는 영역을 data 로 찾기만 한다 (영역을 새로 만들면 등록 기관 NS 와 어긋남)
-# domain_name 이 비어 있으면 아무것도 만들지 않는다 — 도메인 구입 전에도 plan · apply 가 무변경
-# 상시 폴더라 매일 NLB 가 다시 생겨도 레코드 · 인증서는 그대로 (EIP 가 고정이라 DNS 변경 없음)
+# domain_name 이 비어 있으면 아무것도 만들지 않는다 — 도메인 구입 전에도 plan, apply 가 무변경
+# 상시 폴더라 매일 NLB 가 다시 생겨도 레코드, 인증서는 그대로 (EIP 가 고정이라 DNS 변경 없음)
 
 locals {
   api_dns_enabled = var.domain_name != ""

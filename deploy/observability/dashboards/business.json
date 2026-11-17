@@ -2,7 +2,7 @@
   "id": null,
   "uid": "business",
   "title": "비즈니스",
-  "description": "주문과 결제가 정상으로 처리되는지 보는 대시보드입니다. 주문 · 결제 성공과 실패, 클레임, Saga 보상, 결제 이상을 보여 줍니다. 서비스 장애가 아닌데 결제만 실패하는 문제를 찾을 때 씁니다. 응답 시간과 오류율은 「서비스 (RED)」에서 봅니다.",
+  "description": "주문과 결제가 정상으로 처리되는지 보는 대시보드입니다. 주문, 결제 성공과 실패, 클레임, Saga 보상, 결제 이상을 보여 줍니다. 서비스 장애가 아닌데 결제만 실패하는 문제를 찾을 때 씁니다. 응답 시간과 오류율은 「서비스 (RED)」에서 봅니다.",
   "tags": [
     "gotgan",
     "observability"
@@ -424,7 +424,7 @@
     {
       "id": 8,
       "type": "row",
-      "title": "주문 · 결제",
+      "title": "주문, 결제",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -780,7 +780,7 @@
       "id": 13,
       "type": "timeseries",
       "title": "클레임 접수 (건/분)",
-      "description": "1분에 접수된 취소 · 반품 · 교환 신청 수입니다. 신청 API 응답이 2xx인 요청만 셉니다. 비어 있으면 신청이 없는 것입니다.",
+      "description": "1분에 접수된 취소, 반품, 교환 신청 수입니다. 신청 API 응답이 2xx인 요청만 셉니다. 비어 있으면 신청이 없는 것입니다.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -844,7 +844,7 @@
     {
       "id": 14,
       "type": "row",
-      "title": "Saga · 결제 이상",
+      "title": "Saga, 결제 이상",
       "collapsed": false,
       "gridPos": {
         "x": 0,

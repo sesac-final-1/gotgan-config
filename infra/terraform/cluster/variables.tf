@@ -1,5 +1,5 @@
 # 입력 변수 — snake_case + description 필수 (컨벤션 5-2)
-# team_iam_users — 클러스터 관리자 IAM 사용자 이름 목록, 기본값 ["sesac-a1", "sesac-a2", "sesac-a3", "sesac-a4"] (팀원 전원). ARN 은 data.aws_caller_identity 로 조합 — 계정 ID 하드코딩 금지 · *.tfvars 는 gitignore 라 CI 가 못 읽으므로 기본값으로 둔다
+# team_iam_users — 클러스터 관리자 IAM 사용자 이름 목록, 기본값 ["sesac-a1", "sesac-a2", "sesac-a3", "sesac-a4"] (팀원 전원). ARN 은 data.aws_caller_identity 로 조합 — 계정 ID 하드코딩 금지, *.tfvars 는 gitignore 라 CI 가 못 읽으므로 기본값으로 둔다
 
 variable "aws_region" {
   description = "AWS 리전 (서울)"
@@ -8,7 +8,7 @@ variable "aws_region" {
 }
 
 variable "cluster_name" {
-  description = "EKS 클러스터 이름 — GitHub Variable EKS_CLUSTER_NAME · vpc/ 서브넷 태그와 같은 값"
+  description = "EKS 클러스터 이름 — GitHub Variable EKS_CLUSTER_NAME, vpc/ 서브넷 태그와 같은 값"
   type        = string
   default     = "sesac-gojigi-eks-cluster"
 }

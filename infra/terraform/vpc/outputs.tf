@@ -1,4 +1,4 @@
-# 다른 폴더 · 사람이 쓸 값 — terraform_remote_state 로 읽힌다
+# 다른 폴더, 사람이 쓸 값 — terraform_remote_state 로 읽힌다
 
 output "vpc_id" {
   description = "VPC ID — cluster/ (EKS 모듈 vpc_id)"
@@ -6,7 +6,7 @@ output "vpc_id" {
 }
 
 output "vpc_cidr_block" {
-  description = "VPC CIDR — 보안 그룹 · NetworkPolicy 참고용"
+  description = "VPC CIDR — 보안 그룹, NetworkPolicy 참고용"
   value       = module.vpc.vpc_cidr_block
 }
 
@@ -21,7 +21,7 @@ output "private_subnets" {
 }
 
 output "azs" {
-  description = "서브넷 AZ 순서 — public_subnets · private_subnets 인덱스와 같다"
+  description = "서브넷 AZ 순서 — public_subnets, private_subnets 인덱스와 같다"
   value       = module.vpc.azs
 }
 

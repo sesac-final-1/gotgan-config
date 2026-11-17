@@ -292,8 +292,8 @@
     {
       "id": 3,
       "type": "table",
-      "title": "WARN · ERROR 많이 낸 곳 Top 10",
-      "description": "서비스 · 로거별 WARN · ERROR 수(선택한 시간 범위 전체). 메시지로 묶으면 주문번호 등이 섞여 값이 폭발하므로 logger_name 으로 묶는다",
+      "title": "WARN, ERROR 많이 낸 곳 Top 10",
+      "description": "서비스, 로거별 WARN, ERROR 수(선택한 시간 범위 전체). 메시지로 묶으면 주문번호 등이 섞여 값이 폭발하므로 logger_name 으로 묶는다",
       "gridPos": {
         "x": 0,
         "y": 8,
@@ -479,7 +479,7 @@
       "id": 5,
       "type": "logs",
       "title": "로그 목록",
-      "description": "서비스 · 레벨 · 검색어 · traceId 로 거른 로그. traceId 를 누르면 Zipkin 트레이스로 이동",
+      "description": "서비스, 레벨, 검색어, traceId 로 거른 로그. traceId 를 누르면 Zipkin 트레이스로 이동",
       "gridPos": {
         "x": 0,
         "y": 16,

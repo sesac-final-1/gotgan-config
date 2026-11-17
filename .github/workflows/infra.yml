@@ -1,4 +1,4 @@
-# Terraform fmt · validate · plan — PR 검증 전용 (apply 없음 — apply/destroy 는 infra-schedule.yml 또는 구지훈, 컨벤션 5-2). 담당 구지훈
+# Terraform fmt, validate, plan — PR 검증 전용 (apply 없음 — apply/destroy 는 infra-schedule.yml 또는 구지훈, 컨벤션 5-2). 담당 구지훈
 # 폴더마다 상태 파일이 따로라 matrix 로 폴더별 plan. plan 은 OIDC 역할(AWS_ROLE_ARN) 로 S3 backend 를 읽는다
 name: infra
 on:
@@ -8,7 +8,7 @@ on:
       - '.github/workflows/infra.yml'
   workflow_dispatch:
 
-# 권한은 잡마다(Sonar S8233) — 워크플로 기본은 읽기만. fmt 는 읽기만, plan 만 OIDC · PR 코멘트
+# 권한은 잡마다(Sonar S8233) — 워크플로 기본은 읽기만. fmt 는 읽기만, plan 만 OIDC, PR 코멘트
 permissions:
   contents: read
 
@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
-          terraform_version: '1.16.5'   # provider.tf required_version "~> 1.16.0" · 로컬과 같은 버전
+          terraform_version: '1.16.5'   # provider.tf required_version "~> 1.16.0", 로컬과 같은 버전
       - name: terraform fmt -check
         run: terraform fmt -check -recursive -diff infra/terraform
 

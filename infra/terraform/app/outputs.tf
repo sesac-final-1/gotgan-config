@@ -1,4 +1,4 @@
-# 다른 폴더 · 사람이 쓸 값 — terraform_remote_state 로 읽힌다. S3 · SQS · SNS ARN → cluster/irsa.tf · EIP allocation ID → Helm values(gateway NLB) · 공인 IP → Route 53 A 레코드(dns.tf)
+# 다른 폴더, 사람이 쓸 값 — terraform_remote_state 로 읽힌다. S3, SQS, SNS ARN → cluster/irsa.tf, EIP allocation ID → Helm values(gateway NLB), 공인 IP → Route 53 A 레코드(dns.tf)
 
 output "nlb_eip_allocation_ids" {
   description = "NLB 용 EIP allocation ID [2a, 2c] — Helm values gateway Service 어노테이션 aws-load-balancer-eip-allocations"
@@ -11,7 +11,7 @@ output "nlb_eip_public_ips" {
 }
 
 output "bucket_names" {
-  description = "S3 버킷 이름 (용도 → 이름) — 서비스 ConfigMap · presign 대상"
+  description = "S3 버킷 이름 (용도 → 이름) — 서비스 ConfigMap, presign 대상"
   value       = { for k, b in aws_s3_bucket.this : k => b.bucket }
 }
 
@@ -21,12 +21,12 @@ output "bucket_arns" {
 }
 
 output "images_base_url" {
-  description = "이미지 공개 URL 앞부분 — {base}/products/{key} · {base}/reviews/{key} · {base}/stores/{key}"
+  description = "이미지 공개 URL 앞부분 — {base}/products/{key}, {base}/reviews/{key}, {base}/stores/{key}"
   value       = "https://${aws_s3_bucket.this["images"].bucket_regional_domain_name}"
 }
 
 output "topic_arns" {
-  description = "SNS 토픽 ARN (도메인 → ARN) — 발행 서비스 ConfigMap · irsa.tf sns:Publish 대상"
+  description = "SNS 토픽 ARN (도메인 → ARN) — 발행 서비스 ConfigMap, irsa.tf sns:Publish 대상"
   value       = { for k, t in aws_sns_topic.events : k => t.arn }
 }
 

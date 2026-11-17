@@ -1,7 +1,7 @@
 # 클러스터 일일 스케줄 — EventBridge Scheduler(Asia/Seoul) → Lambda infra-dispatch → GitHub infra-schedule workflow_dispatch. 담당 구지훈
 # GitHub 예약(schedule)은 정각 혼잡으로 1.5~4시간 늦게 시작돼(10/23~26 삭제 21:00 → 실제 00:10~01:22) 10/26 서버리스로 옮김 — 신호 → 잡 시작 3~5초.
-# 08:00 apply(약 27분 → 08:30 사용) · 22:00 destroy. app/ 은 상시 폴더라 스케줄러는 클러스터가 없어도 남는다.
-# 11/17 부터 24시간 운영(발표 피드백) — 두 스케줄 모두 DISABLED. 밤사이 지표 · 로그(PVC)를 남겨 장애 리포트로 본다.
+# 08:00 apply(약 27분 → 08:30 사용), 22:00 destroy. app/ 은 상시 폴더라 스케줄러는 클러스터가 없어도 남는다.
+# 11/17 부터 24시간 운영(발표 피드백) — 두 스케줄 모두 DISABLED. 밤사이 지표, 로그(PVC)를 남겨 장애 리포트로 본다.
 #   11/20 발표 후 정리는 infra-schedule 워크플로 수동 실행(action=destroy). 다시 켜려면 schedule_enabled = true
 # GitHub 토큰: SSM SecureString(AWS 관리형 키 aws/ssm) — "시크릿은 GitHub Secrets 단일 소스" 규칙의 예외 1건(10/26 팀 결정, docs/secrets.md).
 #   값은 Terraform 이 만들지 않는다(상태 파일에 남지 않게) → 구지훈이 CLI 로 직접 등록 (docs/secrets.md 7절)
@@ -24,7 +24,7 @@ data "archive_file" "infra_dispatch" {
   output_path = "${path.module}/.build/infra-dispatch.zip"
 }
 
-# ── Lambda 실행 역할 — 로그 · 토큰 파라미터 읽기만
+# ── Lambda 실행 역할 — 로그, 토큰 파라미터 읽기만
 data "aws_iam_policy_document" "infra_dispatch_trust" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -66,7 +66,7 @@ resource "aws_cloudwatch_log_group" "infra_dispatch" {
 
 resource "aws_lambda_function" "infra_dispatch" {
   function_name    = local.infra_dispatch.name
-  description      = "08:00 apply · 22:00 destroy — GitHub infra-schedule workflow_dispatch"
+  description      = "08:00 apply, 22:00 destroy — GitHub infra-schedule workflow_dispatch"
   role             = aws_iam_role.infra_dispatch.arn
   runtime          = "nodejs22.x"
   handler          = "index.handler"
@@ -129,7 +129,7 @@ resource "aws_scheduler_schedule" "infra" {
     input    = jsonencode({ action = each.key })
 
     retry_policy {
-      maximum_event_age_in_seconds = 3600 # 1시간 안에 못 부르면 버림 — 늦은 apply · destroy 가 다음 일정과 엉키지 않게
+      maximum_event_age_in_seconds = 3600 # 1시간 안에 못 부르면 버림 — 늦은 apply, destroy 가 다음 일정과 엉키지 않게
       maximum_retry_attempts       = 2
     }
   }

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # 측정 직전 데이터 준비 — 시드는 매일 08:00 새로 만들어지므로 측정하는 날 한 번 (공지 뒤 실행). 담당 구지훈
-#   bash loadtest/prep-data.sh stock        # S3 · S7 부하용 옵션 재고 100,000 · S4 옵션 10201 재고 10
+#   bash loadtest/prep-data.sh stock        # S3, S7 부하용 옵션 재고 100,000, S4 옵션 10201 재고 10
 #   bash loadtest/prep-data.sh settlement   # S6 정산 대상 5,000건 — 지난주 구매확정분
 #   bash loadtest/prep-data.sh status       # 지금 값만 조회
-# settlement: 스토어 1(산골농부 · SES 인증 주소)에 2,500건 → 지급 때 항목 압축(itemsGzip) 경로,
+# settlement: 스토어 1(산골농부, SES 인증 주소)에 2,500건 → 지급 때 항목 압축(itemsGzip) 경로,
 #             나머지 7개 스토어에 약 357건씩 → 아웃박스 64KB 를 넘는 평문 경로. 둘 다 11/5 수정(backend #240) 확인용
 # 비밀번호는 파드 환경 변수에서 파드 안에서만 읽고 출력하지 않는다
 set -eu
@@ -14,7 +14,7 @@ sql() { kubectl -n "$NS" exec -i mysql-0 -- sh -c 'mysql -uroot -p"$MYSQL_ROOT_P
 
 status() {
   sql <<EOF
-SELECT 'S3 · S7 옵션' AS what, COUNT(*) AS cnt, MIN(stock) AS min_stock FROM productdb.product_option WHERE product_option_id IN ($OPTS)
+SELECT 'S3, S7 옵션' AS what, COUNT(*) AS cnt, MIN(stock) AS min_stock FROM productdb.product_option WHERE product_option_id IN ($OPTS)
 UNION ALL SELECT 'S4 옵션 10201', 1, stock FROM productdb.product_option WHERE product_option_id = 10201
 UNION ALL SELECT '정산 대상(미집계)', COUNT(*), NULL FROM settlementdb.settlement_item WHERE settlement_id IS NULL
 UNION ALL SELECT '부하용 계정', COUNT(*), NULL FROM userdb.users WHERE email LIKE 'loadtest+%';

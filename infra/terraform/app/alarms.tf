@@ -63,11 +63,11 @@ resource "aws_cloudwatch_metric_alarm" "dlq_not_empty" {
   ok_actions          = [aws_sns_topic.alerts.arn] # 재처리로 비면 해제 알림
 }
 
-# 일일 스케줄 감시 (10/29 코드리뷰 A-구-7) — Lambda infra-dispatch 가 GitHub workflow_dispatch 를 못 보내면(토큰 만료 · GitHub 장애 등)
-# 08:00 apply · 22:00 destroy 가 아예 시작되지 않는다. destroy 가 빠지면 밤새 EKS · NAT 과금 — 워크플로 안의 실패는 infra-schedule.yml notify-failure 잡이 같은 토픽으로
+# 일일 스케줄 감시 (10/29 코드리뷰 A-구-7) — Lambda infra-dispatch 가 GitHub workflow_dispatch 를 못 보내면(토큰 만료, GitHub 장애 등)
+# 08:00 apply, 22:00 destroy 가 아예 시작되지 않는다. destroy 가 빠지면 밤새 EKS, NAT 과금 — 워크플로 안의 실패는 infra-schedule.yml notify-failure 잡이 같은 토픽으로
 resource "aws_cloudwatch_metric_alarm" "infra_dispatch_errors" {
   alarm_name          = "sesac-gojigi-infra-dispatch-errors"
-  alarm_description   = "Lambda ${local.infra_dispatch.name} 실패 — 일일 apply · destroy 가 시작되지 않았을 수 있음. CloudWatch Logs 확인 후 Actions → infra-schedule 수동 실행"
+  alarm_description   = "Lambda ${local.infra_dispatch.name} 실패 — 일일 apply, destroy 가 시작되지 않았을 수 있음. CloudWatch Logs 확인 후 Actions → infra-schedule 수동 실행"
   namespace           = "AWS/Lambda"
   metric_name         = "Errors"
   dimensions          = { FunctionName = aws_lambda_function.infra_dispatch.function_name }

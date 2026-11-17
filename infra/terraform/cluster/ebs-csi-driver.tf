@@ -1,4 +1,4 @@
-# EBS CSI 애드온 + IRSA 역할 sesac-gojigi-ebs-csi-irsa (MySQL · Redis · Prometheus · Loki 볼륨)
+# EBS CSI 애드온 + IRSA 역할 sesac-gojigi-ebs-csi-irsa (MySQL, Redis, Prometheus, Loki 볼륨)
 
 # IRSA — kube-system/ebs-csi-controller-sa 가 EBS 볼륨을 만들고 붙인다. 이름 고정 → ARN 불변
 module "ebs_csi_irsa" {

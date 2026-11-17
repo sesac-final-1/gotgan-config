@@ -1,12 +1,12 @@
-# kube-state-metrics v2.19.1 — 쿠버네티스 오브젝트 상태(원하는/가용 레플리카 · 파드 Ready · 재시작 수)를 Prometheus 지표로 바꾼다. 담당 박지연 · 가이드라인 13장
+# kube-state-metrics v2.19.1 — 쿠버네티스 오브젝트 상태(원하는/가용 레플리카, 파드 Ready, 재시작 수)를 Prometheus 지표로 바꾼다. 담당 박지연, 가이드라인 13장
 # - System Status 대시보드의 데이터 원천 (blackbox exporter 없음 — 10/13 3차). 저장은 하지 않으므로 PVC 없음
 # - 버전: EKS 1.35 에 맞춰 빌드된 v2.19.x (공식 호환표). EKS 버전을 업그레이드하면 이 이미지도 호환표에 맞춰 올릴 것
-# - 수집 범위: System Status · 클러스터 대시보드에 쓰는 5종만 (--resources). 권한도 이 5종 읽기로 한정 — Secret 등은 보지 않는다
-# - metrics-server(kubectl top 용 현재 CPU · 메모리) 와는 다른 도구. 둘 다 필요
+# - 수집 범위: System Status, 클러스터 대시보드에 쓰는 5종만 (--resources). 권한도 이 5종 읽기로 한정 — Secret 등은 보지 않는다
+# - metrics-server(kubectl top 용 현재 CPU, 메모리) 와는 다른 도구. 둘 다 필요
 #
 # 구성 (위에서부터):
 #   1. ServiceAccount     — 이 파드의 신분
-#   2. ClusterRole        — 5종 오브젝트 읽기 권한 (list · watch)
+#   2. ClusterRole        — 5종 오브젝트 읽기 권한 (list, watch)
 #   3. ClusterRoleBinding — 1 에 2 를 부여
 #   4. Deployment         — kube-state-metrics 컨테이너 1개 (app 노드)
 #   5. Service            — 고정 주소 kube-state-metrics.monitoring.svc:8080 (Prometheus 수집 경로)
@@ -85,10 +85,10 @@ spec:
             - --resources=deployments,replicasets,statefulsets,pods,nodes
           ports:
             - { name: http-metrics, containerPort: 8080 }   # 클러스터 오브젝트 지표 (/metrics)
-            - { name: telemetry, containerPort: 8081 }      # kube-state-metrics 자기 자신의 지표 · readiness
+            - { name: telemetry, containerPort: 8081 }      # kube-state-metrics 자기 자신의 지표, readiness
           resources:
             requests: { cpu: 50m, memory: 64Mi, ephemeral-storage: 64Mi }
-            limits: { memory: 128Mi, ephemeral-storage: 128Mi }   # 메모리: 노드 3대 · 파드 약 35개 규모(공식 권장 250Mi 는 대규모 기준). 임시 공간: 로그(EKS 회전 최대 약 50Mi) + 여유
+            limits: { memory: 128Mi, ephemeral-storage: 128Mi }   # 메모리: 노드 3대, 파드 약 35개 규모(공식 권장 250Mi 는 대규모 기준). 임시 공간: 로그(EKS 회전 최대 약 50Mi) + 여유
           livenessProbe:
             httpGet: { path: /livez, port: http-metrics }
             initialDelaySeconds: 5

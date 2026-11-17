@@ -1,9 +1,9 @@
-# 버킷 4개 — sesac-gojigi-images-{계정4}(prefix products/ · reviews/ · stores/, presigned PUT CORS) · sesac-gojigi-seller-docs-{계정4} · sesac-gojigi-reports-{계정4} · sesac-gojigi-log-archive-{계정4}(90일 후 Glacier 수명주기)
+# 버킷 4개 — sesac-gojigi-images-{계정4}(prefix products/, reviews/, stores/, presigned PUT CORS), sesac-gojigi-seller-docs-{계정4}, sesac-gojigi-reports-{계정4}, sesac-gojigi-log-archive-{계정4}(90일 후 Glacier 수명주기)
 
 locals {
-  # 용도 → 이름. images 만 일부 공개(products/ · reviews/ · stores/ 읽기), 나머지는 비공개
+  # 용도 → 이름. images 만 일부 공개(products/, reviews/, stores/ 읽기), 나머지는 비공개
   buckets = {
-    images      = "sesac-gojigi-images-${local.suffix}"      # 상품 · 리뷰 · 스토어 대표 이미지 (presigned PUT, 공개 GET)
+    images      = "sesac-gojigi-images-${local.suffix}"      # 상품, 리뷰, 스토어 대표 이미지 (presigned PUT, 공개 GET)
     seller-docs = "sesac-gojigi-seller-docs-${local.suffix}" # 입점 서류 (비공개)
     reports     = "sesac-gojigi-reports-${local.suffix}"     # 정산 명세서 CSV (비공개, 메일의 presigned 링크)
     log-archive = "sesac-gojigi-log-archive-${local.suffix}" # Lambda 로그 보관 (비공개, 90일 후 Glacier)
@@ -40,7 +40,7 @@ resource "aws_s3_bucket_public_access_block" "this" {
 }
 
 # 브라우저가 <img src> 로 바로 읽도록 세 prefix 만 공개 GET (10/14 결정, stores/ 는 10/15 STR-06 스토어 대표 이미지). 업로드는 presigned PUT 만
-# HTTPS 강제 (Sonar S6249) — 평문 HTTP 요청은 거부. presigned URL · SDK · 브라우저 모두 HTTPS 라 영향 없음
+# HTTPS 강제 (Sonar S6249) — 평문 HTTP 요청은 거부. presigned URL, SDK, 브라우저 모두 HTTPS 라 영향 없음
 locals {
   deny_insecure_transport = {
     for k, b in aws_s3_bucket.this : k => {
@@ -86,7 +86,7 @@ resource "aws_s3_bucket_policy" "images_public_read" {
   depends_on = [aws_s3_bucket_public_access_block.this]
 }
 
-# 브라우저가 presigned URL 로 직접 PUT 하는 버킷 — 상품 · 리뷰 · 스토어 이미지, 입점 서류
+# 브라우저가 presigned URL 로 직접 PUT 하는 버킷 — 상품, 리뷰, 스토어 이미지, 입점 서류
 resource "aws_s3_bucket_cors_configuration" "upload" {
   for_each = toset(["images", "seller-docs"])
 

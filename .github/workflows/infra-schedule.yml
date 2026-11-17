@@ -1,11 +1,11 @@
-# 인프라 일일 스케줄 — 08:00 KST cluster/ apply → bootstrap · 22:00 KST cluster/ destroy (10/13 결정 3). 담당 구지훈
+# 인프라 일일 스케줄 — 08:00 KST cluster/ apply → bootstrap, 22:00 KST cluster/ destroy (10/13 결정 3). 담당 구지훈
 # 시각은 AWS EventBridge Scheduler(Asia/Seoul)가 맞춘다 → Lambda infra-dispatch 가 이 워크플로를 workflow_dispatch 로 실행 (infra/terraform/app/scheduler.tf, 10/26).
 # GitHub schedule 은 정각 혼잡으로 1.5~4시간 늦어(10/23~26 destroy 21:00 → 00:10~01:22) 뺐다 — dispatch 는 신호 후 3~5초 안에 시작
-# vpc · ecr · cicd · app(S3 · SNS/SQS · DynamoDB · SES · EIP · SSM)은 상시 유지 (IRSA 는 cluster/irsa.tf — 매일 함께 재생성) — 이 워크플로는 infra/terraform/cluster/ 만 다룬다
+# vpc, ecr, cicd, app(S3, SNS/SQS, DynamoDB, SES, EIP, SSM)은 상시 유지 (IRSA 는 cluster/irsa.tf — 매일 함께 재생성) — 이 워크플로는 infra/terraform/cluster/ 만 다룬다
 # apply/destroy 는 이 워크플로(OIDC 역할) 또는 구지훈만 (컨벤션 5-2). 수동: Actions → infra-schedule → Run workflow → action
 name: infra-schedule
 on:
-  workflow_dispatch:   # 매일 08:00 · 22:00 은 EventBridge Scheduler → Lambda infra-dispatch 가 보낸다
+  workflow_dispatch:   # 매일 08:00, 22:00 은 EventBridge Scheduler → Lambda infra-dispatch 가 보낸다
     inputs:
       action:
         description: 'apply | destroy'
@@ -13,17 +13,17 @@ on:
         type: choice
         options: [apply, destroy]
 
-# 권한은 잡마다(Sonar S8233 · S8264) — 워크플로 기본은 읽기만. AWS 로그인(OIDC)이 필요한 잡에만 id-token: write
+# 권한은 잡마다(Sonar S8233, S8264) — 워크플로 기본은 읽기만. AWS 로그인(OIDC)이 필요한 잡에만 id-token: write
 permissions:
   contents: read
 
 concurrency:
-  group: infra-schedule   # apply 와 destroy 가 겹치지 않게 (호출되는 bootstrap · secrets-sync 는 다른 그룹 — 같은 그룹이면 호출자가 자기를 기다려 교착)
+  group: infra-schedule   # apply 와 destroy 가 겹치지 않게 (호출되는 bootstrap, secrets-sync 는 다른 그룹 — 같은 그룹이면 호출자가 자기를 기다려 교착)
   cancel-in-progress: false
 
 env:
   TF_DIR: infra/terraform/cluster
-  TF_VERSION: '1.16.5'   # provider.tf required_version "~> 1.16.0" · 로컬과 같은 버전 (use_lockfile 은 1.10+)
+  TF_VERSION: '1.16.5'   # provider.tf required_version "~> 1.16.0", 로컬과 같은 버전 (use_lockfile 은 1.10+)
 
 jobs:
   decide:
@@ -34,7 +34,7 @@ jobs:
     steps:
       - id: pick
         run: |
-          echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"   # 스케줄러 Lambda · 수동 실행 모두 workflow_dispatch
+          echo "action=${{ inputs.action }}" >> "$GITHUB_OUTPUT"   # 스케줄러 Lambda, 수동 실행 모두 workflow_dispatch
 
   # ── 08:00 apply: cluster/ → bootstrap (workflow_call)
   apply:
@@ -53,9 +53,9 @@ jobs:
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: ${{ env.TF_VERSION }}
-      # DB 는 매일 새로 만들어져 번호가 1부터 다시 시작 → 안 지워지는 표의 중복 표식과 겹치면 알림 · 명세서가 빠지고
-      #   옛 알림 링크가 다른 방으로 간다(QA 2차 N-구-7 · 8). 표를 통째로 새로 만들어 DB 와 수명을 맞춘다. 실패해도 클러스터는 띄운다
-      - name: 알림함 · 명세서 이력 비우기
+      # DB 는 매일 새로 만들어져 번호가 1부터 다시 시작 → 안 지워지는 표의 중복 표식과 겹치면 알림, 명세서가 빠지고
+      #   옛 알림 링크가 다른 방으로 간다(QA 2차 N-구-7, 8). 표를 통째로 새로 만들어 DB 와 수명을 맞춘다. 실패해도 클러스터는 띄운다
+      - name: 알림함, 명세서 이력 비우기
         continue-on-error: true
         working-directory: infra/terraform/app
         run: |
@@ -74,7 +74,7 @@ jobs:
   bootstrap:
     needs: apply
     permissions:
-      id-token: write   # bootstrap · secrets-sync 의 OIDC — 호출하는 잡이 준 만큼만 쓸 수 있다
+      id-token: write   # bootstrap, secrets-sync 의 OIDC — 호출하는 잡이 준 만큼만 쓸 수 있다
       contents: read
       actions: read     # bootstrap 은 workflow_call 로 호출 (gh workflow run 방식이면 actions: write 필요)
     uses: ./.github/workflows/bootstrap.yml
@@ -129,8 +129,8 @@ jobs:
           kubectl delete sts --all -n "$NS" --ignore-not-found --timeout=120s
           kubectl delete sts --all -n monitoring --ignore-not-found --timeout=120s
           kubectl delete pvc --all -A --timeout=180s
-          # PV(EBS 볼륨) 삭제는 EBS CSI 가 비동기로 한다 — 다 지워질 때까지 기다린 뒤 destroy (먼저 CSI · 노드가 사라지면 고아 볼륨 과금)
-          # 10/16 관측성(Prometheus · Loki 10Gi)이 추가돼 PVC 4개(mysql · redis · prometheus · loki)
+          # PV(EBS 볼륨) 삭제는 EBS CSI 가 비동기로 한다 — 다 지워질 때까지 기다린 뒤 destroy (먼저 CSI, 노드가 사라지면 고아 볼륨 과금)
+          # 10/16 관측성(Prometheus, Loki 10Gi)이 추가돼 PVC 4개(mysql, redis, prometheus, loki)
           for i in $(seq 1 36); do
             n=$(kubectl get pv --no-headers 2>/dev/null | wc -l)
             [ "$n" = "0" ] && { echo "PV 모두 삭제됨"; break; }
@@ -153,7 +153,7 @@ jobs:
           terraform init -input=false
           terraform destroy -input=false -auto-approve
 
-  # ── 실패 통지 (10/29 코드리뷰 A-구-7) — apply · bootstrap · destroy 중 하나라도 실패하면 SNS sesac-gojigi-alerts → 이메일.
+  # ── 실패 통지 (10/29 코드리뷰 A-구-7) — apply, bootstrap, destroy 중 하나라도 실패하면 SNS sesac-gojigi-alerts → 이메일.
   #    특히 destroy 실패는 밤새 과금. Lambda infra-dispatch 자체 실패는 app/alarms.tf infra_dispatch_errors 알람이 맡는다
   notify-failure:
     needs: [decide, apply, bootstrap, destroy]

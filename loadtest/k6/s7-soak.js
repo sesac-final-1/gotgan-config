@@ -1,5 +1,5 @@
-// S7 혼합 30분 유지(soak) — S1 70% · S3 20% · 로그인/refresh 10%, 1단계에서 찾은 한계의 70% 로 고정
-// 통과: 메모리가 계속 오르지 않을 것 · 재시작 0 — 이 구간 working set 안정값이 memory requests 를 정한다(확장 계획 5-4)
+// S7 혼합 30분 유지(soak) — S1 70%, S3 20%, 로그인/refresh 10%, 1단계에서 찾은 한계의 70% 로 고정
+// 통과: 메모리가 계속 오르지 않을 것, 재시작 0 — 이 구간 working set 안정값이 memory requests 를 정한다(확장 계획 5-4)
 //   k6 run -e LOADTEST_PASSWORD=... -e VUS=<한계의 70%> loadtest/k6/s7-soak.js
 import http from 'k6/http';
 import { sleep } from 'k6';

@@ -16,7 +16,7 @@ groups:
         labels: { severity: critical }
         annotations:
           summary: "{{ .Labels.app }} → {{ .Labels.name }} 호출 서킷이 열렸습니다"
-          description: "대상 서비스 상태 · 지연을 확인하세요. 열린 동안 호출은 바로 실패하거나 대체 동작으로 처리됩니다."
+          description: "대상 서비스 상태, 지연을 확인하세요. 열린 동안 호출은 바로 실패하거나 대체 동작으로 처리됩니다."
         data:
           - refId: A
             relativeTimeRange: { from: 600, to: 0 }
@@ -41,7 +41,7 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "{{ .Labels.app }} DB 커넥션 대기가 1분 넘게 이어집니다"
-          description: "jvm.json 의 Hikari 패널과 느린 쿼리 · 잠금을 확인하세요."
+          description: "jvm.json 의 Hikari 패널과 느린 쿼리, 잠금을 확인하세요."
         data:
           - refId: A
             relativeTimeRange: { from: 600, to: 0 }
@@ -91,7 +91,7 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "{{ .Labels.pod }} 메모리가 limit 의 90% 를 넘었습니다"
-          description: "넘으면 OOMKilled 됩니다. jvm.json 의 힙 · 힙 밖 패널을 확인하세요."
+          description: "넘으면 OOMKilled 됩니다. jvm.json 의 힙, 힙 밖 패널을 확인하세요."
         data:
           - refId: A
             relativeTimeRange: { from: 600, to: 0 }
@@ -166,7 +166,7 @@ groups:
         labels: { severity: critical }
         annotations:
           summary: "{{ .Labels.type }} Saga 가 보상까지 실패했습니다"
-          description: "사람이 확인해야 합니다. orderNo · sagaId 로 Loki 를 검색하세요."
+          description: "사람이 확인해야 합니다. orderNo, sagaId 로 Loki 를 검색하세요."
         data:
           - refId: A
             relativeTimeRange: { from: 600, to: 0 }

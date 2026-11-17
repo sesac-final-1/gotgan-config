@@ -1,7 +1,7 @@
 {{- $admin := index .Values.services "admin-service" }}
 {{- if and $admin $admin.serviceAccount }}
 ---
-# F-1 장애 시연 — admin-service 가 이 네임스페이스의 파드를 조회 · 삭제한다 (11/7, 구지훈). 노드 · 시크릿 · 다른 네임스페이스 권한 없음
+# F-1 장애 시연 — admin-service 가 이 네임스페이스의 파드를 조회, 삭제한다 (11/7, 구지훈). 노드, 시크릿, 다른 네임스페이스 권한 없음
 # 내리기 자체는 앱 설정 APP_CHAOS_ENABLED(기본 false)로 막는다. 레플리카 변경 권한은 주지 않는다(ArgoCD selfHeal 이 되돌림 — 파드 삭제만)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -16,7 +16,7 @@ rules:
     resources: ["deployments", "statefulsets"]   # 원하는 레플리카 수(spec.replicas) 읽기만
     verbs: ["get", "list"]
   - apiGroups: ["batch"]
-    resources: ["jobs"]                          # 관리자 화면 부하테스트(11/16) — k6 Job 생성 · 조회 · 중지. APP_LOADTEST_ENABLED 로 막는다
+    resources: ["jobs"]                          # 관리자 화면 부하테스트(11/16) — k6 Job 생성, 조회, 중지. APP_LOADTEST_ENABLED 로 막는다
     verbs: ["get", "list", "create", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

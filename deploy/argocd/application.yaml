@@ -1,4 +1,4 @@
-# "이 저장소의 deploy/helm 폴더를 감시하라" — kubectl 1회 (담당 이경석 · 가이드라인 12장)
+# "이 저장소의 deploy/helm 폴더를 감시하라" — kubectl 1회 (담당 이경석, 가이드라인 12장)
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

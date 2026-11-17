@@ -1,5 +1,5 @@
 # Keycloak — 클러스터 내부 전용 (외부 미노출). 관리 콘솔은 kubectl port-forward svc/keycloak 8080:8080 -n sesac-gojigi (로컬 8080 고정 — KC_HOSTNAME_ADMIN)
-# 담당 이경석 · 가이드라인 08장 · 15장 7절. realm-gotgan.json 은 ConfigMap keycloak-realm 으로 마운트:
+# 담당 이경석, 가이드라인 08장, 15장 7절. realm-gotgan.json 은 ConfigMap keycloak-realm 으로 마운트:
 #   kubectl create configmap keycloak-realm --from-file=realm-gotgan.json -n sesac-gojigi  (bootstrap 워크플로가 매일 실행)
 # realm JSON 의 ${GOTGAN_BACKEND_CLIENT_SECRET} 은 import 시 같은 이름의 환경 변수(keycloak-secret) 로 치환된다
 apiVersion: apps/v1
@@ -31,14 +31,14 @@ spec:
             - { name: KC_DB, value: mysql }
             - { name: KC_DB_URL, value: "jdbc:mysql://mysql:3306/keycloakdb" }
             - { name: KC_DB_POOL_MAX_SIZE, value: "30" }  # 기본 100 — 11/4 k6 로그인 100 동시에 MySQL 연결이 상한(151)까지 감(이슈 21). 60 VU 로그인 실측 27개
-            - { name: KC_HOSTNAME, value: "https://api.gotgan.click" }   # 공개 주소 — 브라우저 로그인 화면 · 토큰 iss (gateway KEYCLOAK_ISSUER 와 같게). gateway 가 /realms/gotgan/** 를 이리로
-            - { name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC, value: "true" }  # 서버 간 호출(user-service 토큰 · Admin API, gateway JWKS)은 내부 주소 http://keycloak:8080 그대로
+            - { name: KC_HOSTNAME, value: "https://api.gotgan.click" }   # 공개 주소 — 브라우저 로그인 화면, 토큰 iss (gateway KEYCLOAK_ISSUER 와 같게). gateway 가 /realms/gotgan/** 를 이리로
+            - { name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC, value: "true" }  # 서버 간 호출(user-service 토큰, Admin API, gateway JWKS)은 내부 주소 http://keycloak:8080 그대로
             - { name: KC_HOSTNAME_ADMIN, value: "http://localhost:8080" }  # 관리 콘솔은 외부에 열지 않음 — kubectl port-forward svc/keycloak 8080:8080 으로만
             - { name: KC_HTTP_ENABLED, value: "true" }               # 클러스터 내부 HTTP
             - { name: KC_HEALTH_ENABLED, value: "true" }
             - { name: TZ, value: Asia/Seoul }
           envFrom:
-            - secretRef: { name: keycloak-secret }       # KC_DB_USERNAME · KC_DB_PASSWORD · KC_BOOTSTRAP_ADMIN_* · GOTGAN_BACKEND_CLIENT_SECRET (secrets-sync 워크플로)
+            - secretRef: { name: keycloak-secret }       # KC_DB_USERNAME, KC_DB_PASSWORD, KC_BOOTSTRAP_ADMIN_*, GOTGAN_BACKEND_CLIENT_SECRET (secrets-sync 워크플로)
           ports:
             - { containerPort: 8080 }
             - { containerPort: 9000, name: management }

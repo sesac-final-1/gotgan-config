@@ -16,7 +16,7 @@ contactPoints:
             {{ .Annotations.description }}
             {{ end }}
             제목 링크는 port-forward 를 켜야 열립니다: `kubectl -n monitoring port-forward svc/grafana 3000`
-      # 관리자 벨 — admin POST /internal/notifications (admin.md 5절). sourceId 가 같으면 한 번만 쌓이므로 발생 시각을 넣는다 · 해결 알림은 보내지 않음
+      # 관리자 벨 — admin POST /internal/notifications (admin.md 5절). sourceId 가 같으면 한 번만 쌓이므로 발생 시각을 넣는다, 해결 알림은 보내지 않음
       - uid: gotgan-admin-bell
         type: webhook
         disableResolveMessage: true
