@@ -6,7 +6,7 @@
 ## 0. 요약
 
 - **상시 자원은 전부 생성됨** — VPC · ECR · EIP · S3 · SNS/SQS · DynamoDB · SES · SSM (terraform plan "No changes")
-- **클러스터(`cluster/`)는 코드 완료 · 실클러스터 검증 완료 · 현재 삭제 상태** — 매일 08:00 생성 · 22:00 삭제는 `infra-schedule` 워크플로 담당(10/26 부터 EventBridge Scheduler → Lambda 가 실행)
+- **클러스터(`cluster/`)는 코드 완료 · 실클러스터 검증 완료 · 현재 삭제 상태** — 매일 08:00 생성 · 22:00 삭제는 `infra-schedule` 워크플로 담당(10/26 부터 EventBridge Scheduler → Lambda 가 실행) — **11/17 부터 24시간 운영 — 클러스터는 계속 떠 있고 자동 생성과 삭제는 꺼짐, 11/20 발표 후 수동 destroy**
 - ~~막혀 있는 것 하나: GitHub Actions 역할(`cicd/`, 이경석)이 없어 워크플로가 AWS에 로그인하지 못함~~ → 해소 — 역할 생성 뒤 매일 08:00 apply · 22:00 destroy 가 정상 실행(11/7 ~ 11/10 `infra-schedule` 연속 성공)
 
 ---
@@ -88,7 +88,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 ```
 
 - 노드는 프라이빗 서브넷 · 22번 포트 닫힘 — 노드에 들어갈 일이 없습니다
-- 22:00 이후엔 클러스터가 없어서 `kubectl`이 연결되지 않는 것이 정상입니다. 컨텍스트를 `docker-desktop`으로 돌려 두세요
+- 22:00 이후엔 클러스터가 없어서 `kubectl`이 연결되지 않는 것이 정상입니다. 컨텍스트를 `docker-desktop`으로 돌려 두세요 (11/17 부터 24시간 운영이라 해당 없음)
 
 ---
 
@@ -190,7 +190,7 @@ kubectl -n monitoring port-forward svc/grafana 3000:3000      # Grafana
 | 힙 상한 | Helm env `JAVA_TOOL_OPTIONS` 33%(254Mi) · admin 41%(316Mi) | 이미지 기본 75% 에서 admin OOMKilled → 조정 뒤 재시작 0 |
 | CPU requests | gateway 200 · product 250 · order · review · store · chat 150 · 나머지 100m · Keycloak 500m | 합 약 4.23 vCPU(54%) — 노드 1대 장애 때 약 4.05 / 3.92 로 예비 파드 일부 Pending 가능, 살아 있는 파드가 처리 |
 | 커넥션 | 서비스 풀 10 · Keycloak 풀 30 · `max_connections` 300 | 풀 10 × (레플리카 + 롤링 1) 230 + 30 + 20 = 280. 측정 최대 131(레플리카 늘리기 전) → 2차 171 / 300 · 거부 0 |
-| 레플리카 | gateway · payment · product · order · user · store 2 · 나머지 1 · HPA 없음 | 구매 경로 이중화 — 주문 한 건이 거치는 서비스. 2 이상만 노드 분산(`ScheduleAnyway`) + PDB(`maxUnavailable: 1`). 2차(11/6) 파드 삭제 5xx 0 · 노드 drain 때 예비 파드 1개 Pending · 구매 경로 유지 |
+| 레플리카 | gateway · payment · product · order · user · store 2 · 나머지 1 · HPA(11/17): gateway, user, store, product, order 최소 2 최대 4, CPU 70%, 노드는 Cluster Autoscaler 2~3대 | 구매 경로 이중화 — 주문 한 건이 거치는 서비스. 2 이상만 노드 분산(`ScheduleAnyway`) + PDB(`maxUnavailable: 1`). 2차(11/6) 파드 삭제 5xx 0 · 노드 drain 때 예비 파드 1개 Pending · 구매 경로 유지 |
 | 노드 | app t3.xlarge × 2 · db t3.medium | CPU 가 먼저 무너진 서비스 없음. 파드가 늘어도 노드는 그대로 |
 | NetworkPolicy | DB 티어 + 업무 티어(같은 티어 · monitoring) · gateway 8080 개방 | 다른 네임스페이스 → order · Keycloak 차단 실측(config #81) |
 

@@ -12,7 +12,7 @@
 | `scripts/` | scale-nodes · build-and-push (수동 보조) · keycloak-seed (Keycloak 시드 계정 · 스코프) | 사람 · keycloak-seed 는 `bootstrap` | 구지훈 · keycloak-seed 이경석 |
 | `loadtest/` | k6 부하 측정 S1 ~ S8 · 측정 직전 데이터 `prep-data.sh`(stock · settlement · status) · 계정보다 VU 가 많으면 `ACCOUNTS` 로 돌려 씀 | 사람(측정 공지 뒤) | 구지훈 |
 | `docs/` | ADR · 이벤트 목록 · 시크릿 목록(값 없음) · 인프라 · 로그 컨벤션 | 전원 | 전원 |
-| `.github/workflows/` | `infra`(plan) · `infra-schedule`(08:00 apply · 22:00 destroy — EventBridge Scheduler → Lambda 가 실행) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 |
+| `.github/workflows/` | `infra`(plan) · `infra-schedule`(08:00 apply · 22:00 destroy — EventBridge Scheduler → Lambda 가 실행) · `bootstrap` · `secrets-sync` · `security` | GitHub | 구지훈 — **11/17 부터 스케줄 꺼짐(24시간 운영), 수동 실행만** |
 
 ## 전체 아키텍처
 
@@ -26,6 +26,7 @@
 KST 08:00  infra-schedule(apply)  → DynamoDB inbox · settlement-reports 새로 만들기(app/) → terraform apply infra/terraform/cluster (약 16분)
            └→ bootstrap           → secrets-sync(GitHub Secrets → K8s Secret) → k8s 기본 계층(namespace · configmap · networkpolicy) → MySQL · Redis(db 노드) · Keycloak(+ 시드)
                                     → observability → ArgoCD 설치 + Application → 서비스 10개 배포 (약 11분)
+(11/17 부터 24시간 운영이라 아래 08:00, 22:00 자동 실행은 꺼짐, 같은 순서로 수동 실행)
 KST 22:00  infra-schedule(destroy) → ArgoCD 앱 · LoadBalancer Service · PVC 삭제 → terraform destroy cluster
 ```
 
