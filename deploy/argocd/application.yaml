@@ -19,3 +19,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=false
+      - RespectIgnoreDifferences=true       # 아래 무시 항목은 동기화 때도 덮지 않는다
+  # HPA(11/17)가 바꾼 레플리카 수를 Git 의 replicas(= HPA 최소)로 되돌리지 않게 — HPA 컨트롤러가 쓴 필드만 무시
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      managedFieldsManagers:
+        - kube-controller-manager

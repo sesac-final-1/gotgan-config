@@ -1,0 +1,38 @@
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.hpa }}
+---
+# HPA (11/17) — 부하가 오르면 파드를 늘린다. 최소 = replicas(이중화 그대로), 최대 = hpa.maxReplicas.
+# 기준은 CPU(requests 대비 %) — metrics-server(EKS 애드온). 늘린 파드가 노드에 안 들어가면 Cluster Autoscaler(infra/terraform/cluster) 가 노드를 늘린다.
+# replicas 를 HPA 가 바꾸므로 ArgoCD 는 그 값을 덮지 않는다(deploy/argocd/application.yaml ignoreDifferences)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}
+  minReplicas: {{ $svc.replicas | default $.Values.defaults.replicas }}
+  maxReplicas: {{ $svc.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $svc.hpa.cpu | default $.Values.defaults.hpa.cpu }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0         # 오르면 바로 — 시연 부하에 늦지 않게
+      policies:
+        - { type: Pods, value: 2, periodSeconds: 15 }
+    scaleDown:
+      stabilizationWindowSeconds: 300       # 5분 동안 낮을 때만 줄인다 — 부하가 출렁여도 파드가 들락날락하지 않게
+      policies:
+        - { type: Pods, value: 1, periodSeconds: 60 }
+{{- end }}
+{{- end }}
