@@ -78,7 +78,7 @@ services:
   # ── order (perish95)
   order-service:
     repository: sesac-gojigi-order
-    tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
+    tag: "59cb3b8"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8084
     replicas: 2                             # 구매 경로 — 주문 한 건이 product, store, user, payment 를 거친다. 파드, 노드 하나가 죽어도 끊기지 않게 (11/5)
     hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
