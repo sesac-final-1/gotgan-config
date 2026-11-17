@@ -545,7 +545,8 @@
               }
             ]
           },
-          "noValue": "0"
+          "noValue": "요청 제한 없음",
+          "decimals": 0
         },
         "overrides": []
       },
