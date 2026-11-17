@@ -31,6 +31,12 @@ variable "github_actions_role_name" {
   default     = "sesac-gojigi-github-actions"
 }
 
+variable "cluster_autoscaler_chart_version" {
+  description = "Cluster Autoscaler Helm 차트 버전 — 9.59.0 = CA 1.35.0 (클러스터 마이너 버전과 맞춘다)"
+  type        = string
+  default     = "9.59.0"
+}
+
 variable "lbc_chart_version" {
   description = "AWS Load Balancer Controller Helm 차트 버전 — iam_policy.json 은 같은 버전의 공식 파일"
   type        = string

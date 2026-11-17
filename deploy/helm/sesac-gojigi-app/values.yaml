@@ -13,6 +13,8 @@ defaults:
   env:
     - { name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=33 -XX:+ExitOnOutOfMemoryError" }   # 힙 = max(256Mi, 라이브 × 2) → 768 의 33%. 이미지 기본값 75% 를 덮는다 · 힙 + 힙 밖 + 스레드 · 네이티브 약 180Mi ≤ 768
   terminationGracePeriodSeconds: 60
+  hpa:                                      # HPA(11/17, 24시간 운영 · 비용 제약 해제) — 서비스에 hpa 가 있으면 replicas 가 최소, hpa.maxReplicas 가 최대
+    cpu: 70                                 # 목표 CPU = requests 의 70%. 넘으면 늘리고(15초에 최대 2개), 5분 동안 낮으면 줄인다
 
 services:
   # ── gateway (perish95)
@@ -24,6 +26,7 @@ services:
       requests: { cpu: 200m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
     replicas: 2                             # 입구는 2개 — 하나가 죽어도 접속 유지
+    hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     service:
       type: LoadBalancer
       port: 443                             # NLB 리스너 443(TLS 종료) → 파드 8080 — vercel.json 이 https://api.gotgan.click 로 호출. NLB 는 HTTP→HTTPS 리다이렉트 불가라 80 은 열지 않음
@@ -42,6 +45,7 @@ services:
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8081
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
+    hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     secretName: user-service-secret        # secrets-sync 워크플로가 만든 Secret → envFrom
     serviceAccount:
       roleArn: arn:aws:iam::694951014380:role/sesac-gojigi-user-irsa   # Terraform cluster/irsa.tf (이름 고정 → ARN 불변, 구지훈)
@@ -51,6 +55,7 @@ services:
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8082
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
+    hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     resources:
       requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
@@ -63,6 +68,7 @@ services:
     tag: "b93975f"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8083
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
+    hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     resources:
       requests: { cpu: 250m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
@@ -75,6 +81,7 @@ services:
     tag: "680bae7"                          # ← GitHub Actions 가 커밋 SHA 7자리로 바꾸는 줄 (latest 금지)
     port: 8084
     replicas: 2                             # 구매 경로 — 주문 한 건이 product · store · user · payment 를 거친다. 파드 · 노드 하나가 죽어도 끊기지 않게 (11/5)
+    hpa: { maxReplicas: 4 }                 # 부하가 오르면 4개까지 (templates/hpa.yaml) — 노드가 모자라면 Cluster Autoscaler 가 app 노드를 3대까지
     resources:
       requests: { cpu: 150m, memory: 512Mi }   # 노드 1대 장애 때 합계가 할당을 조금 넘어 예비 파드 일부는 Pending(11/6 drain 실측) — 남은 파드로 구매 경로 유지 안에서 S7 · S5 사용량 순 (사이징 계획 5장)
       limits: { memory: 768Mi }
