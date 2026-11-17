@@ -561,7 +561,8 @@
               "url": "/d/logs/logs?var-app=${__field.labels.app}&${__url_time_range}"
             }
           ],
-          "max": 1
+          "max": 1,
+          "noValue": "요청 없음"
         },
         "overrides": []
       },
@@ -737,7 +738,8 @@
               "title": "Logs 에서 보기",
               "url": "/d/logs/logs?var-app=${__field.labels.app}&${__url_time_range}"
             }
-          ]
+          ],
+          "noValue": "요청 없음"
         },
         "overrides": []
       },
@@ -896,7 +898,8 @@
               "title": "Logs 에서 보기",
               "url": "/d/logs/logs?var-app=${__field.labels.app}&${__url_time_range}"
             }
-          ]
+          ],
+          "noValue": "요청 없음"
         },
         "overrides": []
       },
@@ -963,7 +966,8 @@
               "title": "Logs 에서 보기",
               "url": "/d/logs/logs?var-app=${__field.labels.app}&${__url_time_range}"
             }
-          ]
+          ],
+          "noValue": "오류 없음"
         },
         "overrides": []
       },

@@ -488,7 +488,8 @@
             "showPoints": "never",
             "spanNulls": true,
             "axisSoftMax": 1
-          }
+          },
+          "noValue": "주문 없음"
         },
         "overrides": [
           {
@@ -594,7 +595,8 @@
             "showPoints": "never",
             "spanNulls": true,
             "axisSoftMax": 1
-          }
+          },
+          "noValue": "결제 없음"
         },
         "overrides": [
           {
