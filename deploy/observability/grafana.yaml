@@ -131,6 +131,22 @@ spec:
         runAsNonRoot: true
         runAsUser: 472                # 이미지 기본 사용자 grafana
         fsGroup: 472
+      initContainers:
+        # Logs Drilldown(쿼리 없이 로그 탐색) 플러그인만 버전 고정으로 받는다 — 자동 설치는 위 GF_PLUGINS_PREINSTALL_DISABLED 로 꺼 둔 채,
+        # 이미지 안 플러그인(prometheus, loki, zipkin)은 건드리지 않음. 받는 곳은 data(emptyDir) 라 재시작마다 다시 받는다(실패하면 Drilldown 만 빠지고 Grafana 는 뜬다)
+        - name: install-plugins
+          image: grafana/grafana:13.2.4
+          command: ["sh", "-c", "grafana cli --homepath /usr/share/grafana --pluginsDir /var/lib/grafana/plugins plugins install grafana-lokiexplore-app 3.1.0 || echo 'Logs Drilldown 설치 실패 — 플러그인 없이 Grafana 시작'"]   # || echo: 내려받기가 실패해도 0 으로 끝나야 Grafana 가 뜬다(init 실패면 파드가 멈춤)
+          resources:
+            requests: { cpu: 50m, memory: 64Mi, ephemeral-storage: 16Mi }
+            limits: { memory: 256Mi, ephemeral-storage: 64Mi }
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/grafana }
+            - { name: tmp, mountPath: /tmp }
       containers:
         - name: grafana
           image: grafana/grafana:13.2.4
